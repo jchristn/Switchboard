@@ -1,4 +1,4 @@
-![](https://github.com/jchristn/switchboard/blob/main/assets/icon.png?raw=true)
+<img src="https://github.com/jchristn/switchboard/blob/main/assets/icon.png?raw=true" style="max-width: 64px; max-height: 64px;" alt="Switchboard">
 
 # Switchboard
 
