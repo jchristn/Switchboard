@@ -7,7 +7,43 @@
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<DocumentationFile>Switchboard.Core.xml</DocumentationFile>
+		<ApplicationIcon>logo.ico</ApplicationIcon>
+		<PackageId>SwitchboardApplicationProxy</PackageId>
+		<Title>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Title>
+		<Version>1.0.0</Version>
+		<Authors>Joel Christner</Authors>
+		<Company>Joel Christner</Company>
+		<Product>Switchboard</Product>
+		<Description>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Description>
+		<Copyright>(c)2024 Joel Christner</Copyright>
+		<PackageProjectUrl>https://github.com/jchristn/switchboard</PackageProjectUrl>
+		<PackageIcon>logo.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/jchristn/switchboard</RepositoryUrl>
+		<RepositoryType>github</RepositoryType>
+		<PackageTags>reverse proxy application proxy api gateway rest</PackageTags>
+		<PackageReleaseNotes>Initial release</PackageReleaseNotes>
+		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Content Include="logo.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="..\..\assets\logo.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="..\..\LICENSE.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="..\..\README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	</ItemGroup>
 
 	<ItemGroup>
 	  <PackageReference Include="RestWrapper" Version="3.1.0" />
