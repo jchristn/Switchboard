@@ -1,4 +1,4 @@
-<img src="https://github.com/jchristn/switchboard/blob/main/assets/icon.png?raw=true" width="128" height="128" alt="Switchboard">
+<img src="https://github.com/jchristn/switchboard/blob/main/assets/icon.png?raw=true" width="140" height="128" alt="Switchboard">
 
 # Switchboard
 
