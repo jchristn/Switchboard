@@ -20,6 +20,11 @@
         public ApiEndpoint Endpoint { get; set; } = null;
 
         /// <summary>
+        /// Parameterized URL.
+        /// </summary>
+        public string ParameterizedUrl { get; set; } = null;
+
+        /// <summary>
         /// URL parameters.
         /// </summary>
         public NameValueCollection Parameters

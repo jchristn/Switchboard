@@ -20,7 +20,7 @@
     /// <summary>
     /// Gateway service.
     /// </summary>
-    public class GatewayService
+    public class GatewayService : IDisposable
     {
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 
@@ -35,6 +35,7 @@
         private LoggingModule _Logging = null;
         private Serializer _Serializer = null;
         private Random _Random = new Random(Guid.NewGuid().GetHashCode());
+        private bool _IsDisposed = false;
 
         #endregion
 
@@ -56,6 +57,35 @@
         #endregion
 
         #region Public-Methods
+
+        /// <summary>
+        /// Dispose.
+        /// </summary>
+        /// <param name="disposing">Disposing.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_IsDisposed)
+            {
+                if (disposing)
+                {
+                    _Random = null;
+                    _Serializer = null;
+                    _Logging = null;
+                    _Settings = null;
+                }
+
+                _IsDisposed = true;
+            }
+        }
+
+        /// <summary>
+        /// Dispose.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
         /// <summary>
         /// Initialize routes.
@@ -156,48 +186,67 @@
         {
             Guid requestGuid = Guid.NewGuid();
 
-            try
+            MatchingApiEndpoint match = FindApiEndpoint(ctx);
+            if (match == null)
             {
-                MatchingApiEndpoint match = FindApiEndpoint(ctx);
-                if (match == null)
-                {
-                    _Logging.Warn(_Header + "no API endpoint found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
-                    ctx.Response.StatusCode = 400;
-                    ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadRequest, null, "No matching API endpoint found"), true));
-                    return;
-                }
-
-                OriginServer origin = FindOriginServer(match.Endpoint);
-                if (origin == null)
-                {
-                    _Logging.Warn(_Header + "no origin server found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
-                    ctx.Response.StatusCode = 502;
-                    ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway, null, "No origin servers are available to service your request"), true));
-                    return;
-                }
-
-                if (match.Endpoint.MaxRequestBodySize > 0 && ctx.Request.ContentLength > match.Endpoint.MaxRequestBodySize)
-                {
-                    _Logging.Warn(_Header + "request too large from " + ctx.Request.Source.IpAddress + ": " + ctx.Request.ContentLength + " bytes");
-                    ctx.Response.StatusCode = 400;
-                    ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.TooLarge, null, "Your request was too large"), true));
-                    return;
-                }
-
-                await EmitRequest(
-                    requestGuid,
-                    match, 
-                    origin, 
-                    ctx);
+                _Logging.Warn(_Header + "no API endpoint found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
+                ctx.Response.StatusCode = 400;
+                ctx.Response.ContentType = Constants.JsonContentType;
+                await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadRequest, null, "No matching API endpoint found"), true));
+                return;
             }
-            catch (Exception e)
+
+            int maxAttempts = 1;
+            int attempt = 0;
+            if (match.Endpoint.RetryCount > 1) maxAttempts = match.Endpoint.RetryCount;
+
+            while (true)
             {
-                _Logging.Warn(_Header + "exception:" + Environment.NewLine + e.ToString());
-                ctx.Response.StatusCode = 500;
-                await ctx.Response.Send();
+                try
+                {
+                    OriginServer origin = FindOriginServer(match.Endpoint);
+                    if (origin == null)
+                    {
+                        _Logging.Warn(_Header + "no origin server found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
+                        ctx.Response.StatusCode = 502;
+                        ctx.Response.ContentType = Constants.JsonContentType;
+                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway, null, "No origin servers are available to service your request"), true));
+                        return;
+                    }
+
+                    if (match.Endpoint.MaxRequestBodySize > 0 && ctx.Request.ContentLength > match.Endpoint.MaxRequestBodySize)
+                    {
+                        _Logging.Warn(_Header + "request too large from " + ctx.Request.Source.IpAddress + ": " + ctx.Request.ContentLength + " bytes");
+                        ctx.Response.StatusCode = 400;
+                        ctx.Response.ContentType = Constants.JsonContentType;
+                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.TooLarge, null, "Your request was too large"), true));
+                        return;
+                    }
+
+                    bool success = await EmitRequest(
+                        requestGuid,
+                        match,
+                        origin,
+                        ctx);
+
+                    if (success) break;
+                    attempt += 1;
+
+                    if (attempt >= maxAttempts)
+                    {
+                        _Logging.Warn(_Header + "exceeded maximum retries while servicing request to endpoint " + match.Endpoint.Identifier);
+                        ctx.Response.StatusCode = 502;
+                        ctx.Response.ContentType = Constants.JsonContentType;
+                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway, null, "Too many failed attempts were encountered while attempting to service your request."), true));
+                        return;
+                    }
+                }
+                catch (Exception e)
+                {
+                    _Logging.Warn(_Header + "exception:" + Environment.NewLine + e.ToString());
+                    ctx.Response.StatusCode = 500;
+                    await ctx.Response.Send();
+                }
             }
         }
 
@@ -237,26 +286,29 @@
         {
             NameValueCollection nvc = null;
 
+            Matcher matcher = new Matcher(ctx.Request.Url.RawWithoutQuery);
+
             foreach (ApiEndpoint ep in _Settings.Endpoints)
             {
-                if (ep.Method == ctx.Request.Method)
+                if (ep.ParameterizedUrls != null && ep.ParameterizedUrls.Count > 0)
                 {
-                    if (!String.IsNullOrEmpty(ep.UrlPrefix))
+                    if (ep.ParameterizedUrls.Keys.Any(k => k.Equals(ctx.Request.Method.ToString()))
+                        && ep.ParameterizedUrls.Values != null 
+                        && ep.ParameterizedUrls.Values.Count > 0)
                     {
-                        if (!ctx.Request.Url.RawWithoutQuery.StartsWith(ep.UrlPrefix))
+                        KeyValuePair<string, List<string>> match = ep.ParameterizedUrls.First(k => k.Key.Equals(ctx.Request.Method.ToString()));
+                        foreach (string url in match.Value)
                         {
-                            continue;
+                            if (matcher.Match(url, out nvc))
+                            {
+                                return new MatchingApiEndpoint
+                                {
+                                    Endpoint = ep,
+                                    ParameterizedUrl = url,
+                                    Parameters = nvc
+                                };
+                            }
                         }
-                    }
-
-                    Matcher matcher = new Matcher(ep.ParameterizedUrl);
-                    if (matcher.Match(ctx.Request.Url.RawWithoutQuery, out nvc))
-                    {
-                        return new MatchingApiEndpoint
-                        {
-                            Endpoint = ep,
-                            Parameters = nvc
-                        };
                     }
                 }
             }
@@ -269,14 +321,36 @@
             if (endpoint == null) return null;
             if (endpoint.OriginServers == null || endpoint.OriginServers.Count < 1) return null;
 
+            string originIdentifier = null;
+            OriginServer origin = null;
+
             lock (endpoint)
             {
-                int index = _Random.Next(0, endpoint.OriginServers.Count);
-                endpoint.LastIndex = index;
-                string originIdentifier = endpoint.OriginServers[index];
-                OriginServer origin = _Settings.Origins.FirstOrDefault(o => o.Identifier.Equals(originIdentifier));
-                if (origin != default(OriginServer)) return origin;
-                return null;
+                if (endpoint.LoadBalancing == LoadBalancingMode.Random)
+                {
+                    int index = _Random.Next(0, endpoint.OriginServers.Count);
+                    endpoint.LastIndex = index;
+                    originIdentifier = endpoint.OriginServers[index];
+                    origin = _Settings.Origins.FirstOrDefault(o => o.Identifier.Equals(originIdentifier));
+                    if (origin != default(OriginServer)) return origin;
+                    return null;
+                }
+                else if (endpoint.LoadBalancing == LoadBalancingMode.RoundRobin)
+                {
+                    if (endpoint.LastIndex >= endpoint.OriginServers.Count) endpoint.LastIndex = 0;
+                    originIdentifier = endpoint.OriginServers[endpoint.LastIndex];
+
+                    if ((endpoint.LastIndex + 1) > (endpoint.OriginServers.Count - 1)) endpoint.LastIndex = 0;
+                    else endpoint.LastIndex = endpoint.LastIndex + 1;
+
+                    origin = _Settings.Origins.FirstOrDefault(o => o.Identifier.Equals(originIdentifier));
+                    if (origin != default(OriginServer)) return origin;
+                    return null;
+                }
+                else
+                {
+                    throw new ArgumentException("Unknown load balancing scheme '" + endpoint.LoadBalancing.ToString() + "'.");
+                }
             }
         }
 
@@ -307,7 +381,7 @@
             }
         }
 
-        private async Task EmitRequest(
+        private async Task<bool> EmitRequest(
             Guid requestGuid, 
             MatchingApiEndpoint endpoint, 
             OriginServer origin, 
@@ -316,16 +390,22 @@
             _Logging.Debug(_Header + "emitting request to " + origin.Identifier + " for API endpoint " + endpoint.Endpoint.Identifier + " for request " + requestGuid.ToString());
 
             int statusCode = 0;
-
+            
             using (Timestamp ts = new Timestamp())
             {
                 try
                 {
                     using (RestRequest req = new RestRequest(
-                        // origin.UrlPrefix + ctx.Request.Url.RawWithQuery,
-                        "https://www.google.com",
-                        ConvertHttpMethod(endpoint.Endpoint.Method)))
+                        origin.UrlPrefix + ctx.Request.Url.RawWithQuery,
+                        ConvertHttpMethod(ctx.Request.Method)))
                     {
+                        #region Set-Timeout
+
+                        if (endpoint.Endpoint.TimeoutMs > 0)
+                            req.TimeoutMilliseconds = endpoint.Endpoint.TimeoutMs;
+
+                        #endregion
+
                         #region Add-Proxy-Headers
 
                         req.Headers.Add(Constants.ForwardedForHeader, ctx.Request.Source.IpAddress);
@@ -369,22 +449,39 @@
 
                         using (RestResponse resp = await req.SendAsync())
                         {
-                            foreach (string key in resp.Headers)
+                            if (resp != null)
                             {
-                                // global blocked headers
-                                if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
+                                if (resp.StatusCode >= 200 && resp.StatusCode <= 299)
+                                {
+                                    foreach (string key in resp.Headers)
+                                    {
+                                        // global blocked headers
+                                        if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
 
-                                // local blocked headers
-                                if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
+                                        // local blocked headers
+                                        if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
 
-                                string val = resp.Headers.Get(key);
-                                ctx.Response.Headers.Add(key, val);
+                                        string val = resp.Headers.Get(key);
+                                        ctx.Response.Headers.Add(key, val);
+                                    }
+
+                                    statusCode = resp.StatusCode;
+                                    ctx.Response.StatusCode = resp.StatusCode;
+                                    ctx.Response.ContentType = resp.ContentType;
+                                    await ctx.Response.Send(resp.DataAsBytes);
+                                    return true;
+                                }
+                                else
+                                {
+                                    // non-success status code
+                                    return false;
+                                }
                             }
-
-                            statusCode = resp.StatusCode;
-                            ctx.Response.StatusCode = resp.StatusCode;
-                            ctx.Response.ContentType = resp.ContentType;
-                            await ctx.Response.Send(resp.DataAsBytes);
+                            else
+                            {
+                                // no response
+                                return false;
+                            }
                         }
 
                         #endregion
@@ -392,10 +489,15 @@
                 }
                 catch (Exception e)
                 {
-                    _Logging.Warn(_Header + "exception:" + Environment.NewLine + e.ToString());
-                    ctx.Response.StatusCode = 500;
-                    ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.InternalError), true));
+                    _Logging.Warn(
+                        _Header 
+                        + "exception emitting request to " + origin.Identifier 
+                        + " for API endpoint " + endpoint.Endpoint.Identifier 
+                        + " for request " + requestGuid.ToString() 
+                        + Environment.NewLine 
+                        + e.ToString());
+
+                    return false;
                 }
                 finally
                 {

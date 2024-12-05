@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Switchboard.Core", "Switchb
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Switchboard.Server", "Switchboard.Server\Switchboard.Server.csproj", "{1A018475-C41F-4159-844E-644D3A5D8F76}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{842B437D-6CD0-47F0-B4ED-39D096BB11DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{1A018475-C41F-4159-844E-644D3A5D8F76}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1A018475-C41F-4159-844E-644D3A5D8F76}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1A018475-C41F-4159-844E-644D3A5D8F76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{842B437D-6CD0-47F0-B4ED-39D096BB11DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{842B437D-6CD0-47F0-B4ED-39D096BB11DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{842B437D-6CD0-47F0-B4ED-39D096BB11DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{842B437D-6CD0-47F0-B4ED-39D096BB11DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

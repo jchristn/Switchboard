@@ -25,23 +25,24 @@
         public string Name { get; set; } = null;
 
         /// <summary>
-        /// HTTP method.
+        /// Key is the upper-case HTTP method.
+        /// Value is a list of parameterized URLs to match, e.g. /{version}/foo/bar/{id}.
         /// </summary>
-        public HttpMethod Method { get; set; } = HttpMethod.GET;
+        public Dictionary<string, List<string>> ParameterizedUrls
+        {
+            get
+            {
+                return _ParameterizedUrls;
+            }
+            set
+            {
+                if (value == null) value = new Dictionary<string, List<string>>();
+                _ParameterizedUrls = value;
+            }
+        }
         
         /// <summary>
-        /// Parameterized URL to match, e.g. /{version}/foo/bar/{id}.
-        /// </summary>
-        public string ParameterizedUrl { get; set; } = null;
-
-        /// <summary>
-        /// URL prefix to match.
-        /// </summary>
-        public string UrlPrefix { get; set; } = null;
-
-        /// <summary>
         /// Number of milliseconds to wait before considering the request to be timed out.
-        /// Zero indicates no timeout.
         /// Default is 60 seconds.
         /// </summary>
         public int TimeoutMs
@@ -58,36 +59,9 @@
         }
 
         /// <summary>
-        /// Rate limit interval.
-        /// </summary>
-        public RateLimitIntervalEnum RateLimitInterval { get; set; } = RateLimitIntervalEnum.Minutes;
-
-        /// <summary>
-        /// Rate limit per requesting endpoint, within the specified RateLimitInterval.  
-        /// Zero indicates no rate limit.
-        /// </summary>
-        public int RateLimit
-        {
-            get
-            {
-                return _RateLimit;
-            }
-            set
-            {
-                if (value < 0) throw new ArgumentOutOfRangeException(nameof(RateLimit));
-                _RateLimit = value;
-            }
-        }
-
-        /// <summary>
         /// Load-balancing mode.
         /// </summary>
         public LoadBalancingMode LoadBalancing { get; set; } = LoadBalancingMode.RoundRobin;
-
-        /// <summary>
-        /// True to enable sticky sessions.
-        /// </summary>
-        public bool StickySessions { get; set; } = false;
 
         /// <summary>
         /// Enable or disable retries should a backend server return a non-success status code.
@@ -184,9 +158,9 @@
         #region Private-Members
 
         private int _TimeoutMs = 60000;
-        private int _RateLimit = 100;
         private int _RetryCount = 3;
         private int _MaxRequestBodySize = (512 * 1024 * 1024);
+        private Dictionary<string, List<string>> _ParameterizedUrls = new Dictionary<string, List<string>>();
         private List<string> _OriginServers = new List<string>();
         private int _LastIndex = 0;
         private List<string> _BlockedHeaders = new List<string>();

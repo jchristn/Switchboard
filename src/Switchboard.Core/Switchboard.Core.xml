@@ -19,47 +19,21 @@
             Name for this API endpoint.
             </summary>
         </member>
-        <member name="P:Switchboard.Core.ApiEndpoint.Method">
+        <member name="P:Switchboard.Core.ApiEndpoint.ParameterizedUrls">
             <summary>
-            HTTP method.
-            </summary>
-        </member>
-        <member name="P:Switchboard.Core.ApiEndpoint.ParameterizedUrl">
-            <summary>
-            Parameterized URL to match, e.g. /{version}/foo/bar/{id}.
-            </summary>
-        </member>
-        <member name="P:Switchboard.Core.ApiEndpoint.UrlPrefix">
-            <summary>
-            URL prefix to match.
+            Key is the upper-case HTTP method.
+            Value is a list of parameterized URLs to match, e.g. /{version}/foo/bar/{id}.
             </summary>
         </member>
         <member name="P:Switchboard.Core.ApiEndpoint.TimeoutMs">
             <summary>
             Number of milliseconds to wait before considering the request to be timed out.
-            Zero indicates no timeout.
             Default is 60 seconds.
-            </summary>
-        </member>
-        <member name="P:Switchboard.Core.ApiEndpoint.RateLimitInterval">
-            <summary>
-            Rate limit interval.
-            </summary>
-        </member>
-        <member name="P:Switchboard.Core.ApiEndpoint.RateLimit">
-            <summary>
-            Rate limit per requesting endpoint, within the specified RateLimitInterval.  
-            Zero indicates no rate limit.
             </summary>
         </member>
         <member name="P:Switchboard.Core.ApiEndpoint.LoadBalancing">
             <summary>
             Load-balancing mode.
-            </summary>
-        </member>
-        <member name="P:Switchboard.Core.ApiEndpoint.StickySessions">
-            <summary>
-            True to enable sticky sessions.
             </summary>
         </member>
         <member name="P:Switchboard.Core.ApiEndpoint.EnableRetries">
@@ -327,6 +301,11 @@
             API endpoint.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.MatchingApiEndpoint.ParameterizedUrl">
+            <summary>
+            Parameterized URL.
+            </summary>
+        </member>
         <member name="P:Switchboard.Core.MatchingApiEndpoint.Parameters">
             <summary>
             URL parameters.
@@ -352,11 +331,6 @@
             Name for this origin server.
             </summary>
         </member>
-        <member name="P:Switchboard.Core.OriginServer.Method">
-            <summary>
-            HTTP method.
-            </summary>
-        </member>
         <member name="P:Switchboard.Core.OriginServer.Hostname">
             <summary>
             Hostname.
@@ -377,31 +351,6 @@
             URL.
             </summary>
         </member>
-        <member name="T:Switchboard.Core.RateLimitIntervalEnum">
-            <summary>
-            Rate limit interval.
-            </summary>
-        </member>
-        <member name="F:Switchboard.Core.RateLimitIntervalEnum.Seconds">
-            <summary>
-            Seconds.
-            </summary>
-        </member>
-        <member name="F:Switchboard.Core.RateLimitIntervalEnum.Minutes">
-            <summary>
-            Minutes.
-            </summary>
-        </member>
-        <member name="F:Switchboard.Core.RateLimitIntervalEnum.Hours">
-            <summary>
-            Hours.
-            </summary>
-        </member>
-        <member name="F:Switchboard.Core.RateLimitIntervalEnum.Days">
-            <summary>
-            Days.
-            </summary>
-        </member>
         <member name="T:Switchboard.Core.Services.GatewayService">
             <summary>
             Gateway service.
@@ -410,6 +359,17 @@
         <member name="M:Switchboard.Core.Services.GatewayService.#ctor(Switchboard.Core.SwitchboardSettings,SyslogLogging.LoggingModule,SerializationHelper.Serializer)">
             <summary>
             Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.Dispose(System.Boolean)">
+            <summary>
+            Dispose.
+            </summary>
+            <param name="disposing">Disposing.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.Dispose">
+            <summary>
+            Dispose.
             </summary>
         </member>
         <member name="M:Switchboard.Core.Services.GatewayService.InitializeRoutes(WatsonWebserver.Core.WebserverBase)">
@@ -543,6 +503,28 @@
             <param name="hostname">Hostname.</param>
             <param name="minPort">Minimum port number.</param>
             <param name="maxPort">Maximum port number.</param>
+        </member>
+        <member name="T:Switchboard.Core.SwitchboardDaemon">
+            <summary>
+            Switchboard.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.SwitchboardDaemon.#ctor(Switchboard.Core.SwitchboardSettings)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Settings.</param>
+        </member>
+        <member name="M:Switchboard.Core.SwitchboardDaemon.Dispose(System.Boolean)">
+            <summary>
+            Dispose.
+            </summary>
+            <param name="disposing">Disposing.</param>
+        </member>
+        <member name="M:Switchboard.Core.SwitchboardDaemon.Dispose">
+            <summary>
+            Dispose.
+            </summary>
         </member>
         <member name="T:Switchboard.Core.SwitchboardSettings">
             <summary>

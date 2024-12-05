@@ -25,11 +25,6 @@
         public string Name { get; set; } = null;
 
         /// <summary>
-        /// HTTP method.
-        /// </summary>
-        public HttpMethod Method { get; set; } = HttpMethod.GET;
-
-        /// <summary>
         /// Hostname.
         /// </summary>
         public string Hostname

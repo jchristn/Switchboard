@@ -107,6 +107,7 @@
         {
             "alt-svc",
             "connection",
+            "date",
             "host",
             "keep-alive",
             "proxy-authorization",

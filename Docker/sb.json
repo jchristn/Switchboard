@@ -1,0 +1,77 @@
+{
+  "Logging": {
+    "Servers": [
+      {
+        "Hostname": "127.0.0.1",
+        "Port": 514,
+        "RandomizePorts": false,
+        "MinimumPort": 65000,
+        "MaximumPort": 65535
+      }
+    ],
+    "LogDirectory": "./logs/",
+    "LogFilename": "./switchboard.log",
+    "ConsoleLogging": true,
+    "EnableColors": true,
+    "MinimumSeverity": 1
+  },
+  "Endpoints": [],
+  "Origins": [],
+  "BlockedHeaders": [
+    "alt-svc",
+    "connection",
+    "host",
+    "keep-alive",
+    "proxy-authorization",
+    "proxy-connection",
+    "set-cookie",
+    "transfer-encoding",
+    "upgrade",
+    "via",
+    "x-forwarded-for",
+    "x-request-id"
+  ],
+  "Webserver": {
+    "Hostname": "localhost",
+    "Port": 8000,
+    "Prefix": "http://localhost:8000/",
+    "IO": {
+      "StreamBufferSize": 65536,
+      "MaxRequests": 1024,
+      "ReadTimeoutMs": 10000,
+      "MaxIncomingHeadersSize": 65536,
+      "EnableKeepAlive": false
+    },
+    "Ssl": {
+      "Enable": false,
+      "MutuallyAuthenticate": false,
+      "AcceptInvalidAcertificates": true
+    },
+    "Headers": {
+      "IncludeContentLength": true,
+      "DefaultHeaders": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "OPTIONS, HEAD, GET, PUT, POST, DELETE, PATCH",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Expose-Headers": "",
+        "Accept": "*/*",
+        "Accept-Language": "en-US, en",
+        "Accept-Charset": "ISO-8859-1, utf-8",
+        "Cache-Control": "no-cache",
+        "Connection": "close",
+        "Host": "localhost:8000"
+      }
+    },
+    "AccessControl": {
+      "DenyList": {},
+      "PermitList": {},
+      "Mode": "DefaultPermit"
+    },
+    "Debug": {
+      "AccessControl": false,
+      "Routing": false,
+      "Requests": false,
+      "Responses": false
+    }
+  }
+}
