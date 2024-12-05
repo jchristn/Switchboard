@@ -32,7 +32,7 @@
     "x-request-id"
   ],
   "Webserver": {
-    "Hostname": "localhost",
+    "Hostname": "*",
     "Port": 8000,
     "Prefix": "http://localhost:8000/",
     "IO": {
