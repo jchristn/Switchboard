@@ -196,57 +196,47 @@
                 return;
             }
 
-            int maxAttempts = 1;
-            int attempt = 0;
-            if (match.Endpoint.RetryCount > 1) maxAttempts = match.Endpoint.RetryCount;
-
-            while (true)
+            try
             {
-                try
+                OriginServer origin = FindOriginServer(match.Endpoint);
+                if (origin == null)
                 {
-                    OriginServer origin = FindOriginServer(match.Endpoint);
-                    if (origin == null)
-                    {
-                        _Logging.Warn(_Header + "no origin server found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
-                        ctx.Response.StatusCode = 502;
-                        ctx.Response.ContentType = Constants.JsonContentType;
-                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway, null, "No origin servers are available to service your request"), true));
-                        return;
-                    }
-
-                    if (match.Endpoint.MaxRequestBodySize > 0 && ctx.Request.ContentLength > match.Endpoint.MaxRequestBodySize)
-                    {
-                        _Logging.Warn(_Header + "request too large from " + ctx.Request.Source.IpAddress + ": " + ctx.Request.ContentLength + " bytes");
-                        ctx.Response.StatusCode = 400;
-                        ctx.Response.ContentType = Constants.JsonContentType;
-                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.TooLarge, null, "Your request was too large"), true));
-                        return;
-                    }
-
-                    bool success = await EmitRequest(
-                        requestGuid,
-                        match,
-                        origin,
-                        ctx);
-
-                    if (success) break;
-                    attempt += 1;
-
-                    if (attempt >= maxAttempts)
-                    {
-                        _Logging.Warn(_Header + "exceeded maximum retries while servicing request to endpoint " + match.Endpoint.Identifier);
-                        ctx.Response.StatusCode = 502;
-                        ctx.Response.ContentType = Constants.JsonContentType;
-                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway, null, "Too many failed attempts were encountered while attempting to service your request."), true));
-                        return;
-                    }
+                    _Logging.Warn(_Header + "no origin server found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
+                    ctx.Response.StatusCode = 502;
+                    ctx.Response.ContentType = Constants.JsonContentType;
+                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway, null, "No origin servers are available to service your request"), true));
+                    return;
                 }
-                catch (Exception e)
+
+                if (match.Endpoint.MaxRequestBodySize > 0 && ctx.Request.ContentLength > match.Endpoint.MaxRequestBodySize)
                 {
-                    _Logging.Warn(_Header + "exception:" + Environment.NewLine + e.ToString());
-                    ctx.Response.StatusCode = 500;
-                    await ctx.Response.Send();
+                    _Logging.Warn(_Header + "request too large from " + ctx.Request.Source.IpAddress + ": " + ctx.Request.ContentLength + " bytes");
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = Constants.JsonContentType;
+                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.TooLarge, null, "Your request was too large"), true));
+                    return;
                 }
+
+                bool responseReceived = await EmitRequest(
+                    requestGuid,
+                    match,
+                    origin,
+                    ctx);
+
+                if (!responseReceived)
+                {
+                    _Logging.Warn(_Header + "no response or exception from " + origin.Identifier + " for API endpoint " + match.Endpoint.Identifier);
+                    ctx.Response.StatusCode = 502;
+                    ctx.Response.ContentType = Constants.JsonContentType;
+                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway), true));
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception:" + Environment.NewLine + e.ToString());
+                ctx.Response.StatusCode = 500;
+                await ctx.Response.Send();
             }
         }
 
@@ -451,35 +441,26 @@
                         {
                             if (resp != null)
                             {
-                                if (resp.StatusCode >= 200 && resp.StatusCode <= 299)
+                                foreach (string key in resp.Headers)
                                 {
-                                    foreach (string key in resp.Headers)
-                                    {
-                                        // global blocked headers
-                                        if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
+                                    // global blocked headers
+                                    if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
 
-                                        // local blocked headers
-                                        if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
+                                    // local blocked headers
+                                    if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
 
-                                        string val = resp.Headers.Get(key);
-                                        ctx.Response.Headers.Add(key, val);
-                                    }
-
-                                    statusCode = resp.StatusCode;
-                                    ctx.Response.StatusCode = resp.StatusCode;
-                                    ctx.Response.ContentType = resp.ContentType;
-                                    await ctx.Response.Send(resp.DataAsBytes);
-                                    return true;
+                                    string val = resp.Headers.Get(key);
+                                    ctx.Response.Headers.Add(key, val);
                                 }
-                                else
-                                {
-                                    // non-success status code
-                                    return false;
-                                }
+
+                                statusCode = resp.StatusCode;
+                                ctx.Response.StatusCode = resp.StatusCode;
+                                ctx.Response.ContentType = resp.ContentType;
+                                await ctx.Response.Send(resp.DataAsBytes);
+                                return true;
                             }
                             else
                             {
-                                // no response
                                 return false;
                             }
                         }

@@ -36,16 +36,6 @@
             Load-balancing mode.
             </summary>
         </member>
-        <member name="P:Switchboard.Core.ApiEndpoint.EnableRetries">
-            <summary>
-            Enable or disable retries should a backend server return a non-success status code.
-            </summary>
-        </member>
-        <member name="P:Switchboard.Core.ApiEndpoint.RetryCount">
-            <summary>
-            Retry count.
-            </summary>
-        </member>
         <member name="P:Switchboard.Core.ApiEndpoint.MaxRequestBodySize">
             <summary>
             Maximum request body size.  Default is 512MB.

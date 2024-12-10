@@ -64,27 +64,6 @@
         public LoadBalancingMode LoadBalancing { get; set; } = LoadBalancingMode.RoundRobin;
 
         /// <summary>
-        /// Enable or disable retries should a backend server return a non-success status code.
-        /// </summary>
-        public bool EnableRetries { get; set; } = true;
-
-        /// <summary>
-        /// Retry count.
-        /// </summary>
-        public int RetryCount
-        {
-            get
-            {
-                return _RetryCount;
-            }
-            set
-            {
-                if (value < 0) throw new ArgumentOutOfRangeException(nameof(RetryCount));
-                _RetryCount = value;
-            }
-        }
-
-        /// <summary>
         /// Maximum request body size.  Default is 512MB.
         /// </summary>
         public int MaxRequestBodySize
@@ -158,7 +137,6 @@
         #region Private-Members
 
         private int _TimeoutMs = 60000;
-        private int _RetryCount = 3;
         private int _MaxRequestBodySize = (512 * 1024 * 1024);
         private Dictionary<string, List<string>> _ParameterizedUrls = new Dictionary<string, List<string>>();
         private List<string> _OriginServers = new List<string>();
