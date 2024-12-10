@@ -441,6 +441,11 @@
                         {
                             #region With-Data
 
+                            if (String.IsNullOrEmpty(ctx.Request.ContentType))
+                                req.ContentType = ctx.Request.ContentType;
+                            else
+                                req.ContentType = Constants.BinaryContentType;
+
                             using (RestResponse resp = await req.SendAsync(ctx.Request.DataAsBytes))
                             {
                                 if (resp != null)
