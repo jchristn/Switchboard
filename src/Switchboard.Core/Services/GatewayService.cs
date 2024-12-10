@@ -435,34 +435,75 @@
 
                         #endregion
 
-                        #region Send-Response
+                        #region Send-Request
 
-                        using (RestResponse resp = await req.SendAsync())
+                        if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
                         {
-                            if (resp != null)
+                            #region With-Data
+
+                            using (RestResponse resp = await req.SendAsync(ctx.Request.DataAsBytes))
                             {
-                                foreach (string key in resp.Headers)
+                                if (resp != null)
                                 {
-                                    // global blocked headers
-                                    if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
+                                    foreach (string key in resp.Headers)
+                                    {
+                                        // global blocked headers
+                                        if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
 
-                                    // local blocked headers
-                                    if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
+                                        // local blocked headers
+                                        if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
 
-                                    string val = resp.Headers.Get(key);
-                                    ctx.Response.Headers.Add(key, val);
+                                        string val = resp.Headers.Get(key);
+                                        ctx.Response.Headers.Add(key, val);
+                                    }
+
+                                    statusCode = resp.StatusCode;
+                                    ctx.Response.StatusCode = resp.StatusCode;
+                                    ctx.Response.ContentType = resp.ContentType;
+                                    await ctx.Response.Send(resp.DataAsBytes);
+                                    return true;
                                 }
+                                else
+                                {
+                                    return false;
+                                }
+                            }
 
-                                statusCode = resp.StatusCode;
-                                ctx.Response.StatusCode = resp.StatusCode;
-                                ctx.Response.ContentType = resp.ContentType;
-                                await ctx.Response.Send(resp.DataAsBytes);
-                                return true;
-                            }
-                            else
+                            #endregion
+                        }
+                        else
+                        {
+                            #region Without-Data
+
+                            using (RestResponse resp = await req.SendAsync())
                             {
-                                return false;
+                                if (resp != null)
+                                {
+                                    foreach (string key in resp.Headers)
+                                    {
+                                        // global blocked headers
+                                        if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
+
+                                        // local blocked headers
+                                        if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
+
+                                        string val = resp.Headers.Get(key);
+                                        ctx.Response.Headers.Add(key, val);
+                                    }
+
+                                    statusCode = resp.StatusCode;
+                                    ctx.Response.StatusCode = resp.StatusCode;
+                                    ctx.Response.ContentType = resp.ContentType;
+                                    await ctx.Response.Send(resp.DataAsBytes);
+                                    return true;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
                             }
+
+                            #endregion
                         }
 
                         #endregion
