@@ -441,6 +441,15 @@
                         {
                             #region With-Data
 
+                            if (endpoint.Endpoint.LogRequestBody || origin.LogRequestBody)
+                            {
+                                _Logging.Debug(
+                                    _Header
+                                    + "request body (" + ctx.Request.DataAsBytes.Length + " bytes): "
+                                    + Environment.NewLine
+                                    + Encoding.UTF8.GetString(ctx.Request.DataAsBytes));
+                            }
+
                             if (String.IsNullOrEmpty(ctx.Request.ContentType))
                                 req.ContentType = ctx.Request.ContentType;
                             else
@@ -462,6 +471,24 @@
                                         ctx.Response.Headers.Add(key, val);
                                     }
 
+                                    if (endpoint.Endpoint.LogResponseBody || origin.LogResponseBody)
+                                    {
+                                        if (resp.DataAsBytes != null && resp.DataAsBytes.Length > 0)
+                                        {
+                                            _Logging.Debug(
+                                                _Header
+                                                + "response body (" + resp.DataAsBytes.Length + " bytes) status " + resp.StatusCode + ": "
+                                                + Environment.NewLine
+                                                + Encoding.UTF8.GetString(resp.DataAsBytes));
+                                        }
+                                        else
+                                        {
+                                            _Logging.Debug(
+                                                _Header
+                                                + "response body (0 bytes) status " + resp.StatusCode);
+                                        }
+                                    }
+
                                     statusCode = resp.StatusCode;
                                     ctx.Response.StatusCode = resp.StatusCode;
                                     ctx.Response.ContentType = resp.ContentType;
@@ -480,6 +507,9 @@
                         {
                             #region Without-Data
 
+                            if (endpoint.Endpoint.LogRequestBody || origin.LogRequestBody)
+                                _Logging.Debug(_Header + "request body (0 bytes)");
+
                             using (RestResponse resp = await req.SendAsync())
                             {
                                 if (resp != null)
@@ -494,6 +524,24 @@
 
                                         string val = resp.Headers.Get(key);
                                         ctx.Response.Headers.Add(key, val);
+                                    }
+
+                                    if (endpoint.Endpoint.LogResponseBody || origin.LogResponseBody)
+                                    {
+                                        if (resp.DataAsBytes != null && resp.DataAsBytes.Length > 0)
+                                        {
+                                            _Logging.Debug(
+                                                _Header
+                                                + "response body (" + resp.DataAsBytes.Length + " bytes) status " + resp.StatusCode + ": "
+                                                + Environment.NewLine
+                                                + Encoding.UTF8.GetString(resp.DataAsBytes));
+                                        }
+                                        else
+                                        {
+                                            _Logging.Debug(
+                                                _Header
+                                                + "response body (0 bytes) status " + resp.StatusCode);
+                                        }
                                     }
 
                                     statusCode = resp.StatusCode;

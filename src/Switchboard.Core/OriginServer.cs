@@ -62,6 +62,16 @@
         public bool Ssl { get; set; } = false;
 
         /// <summary>
+        /// True to log the request body.
+        /// </summary>
+        public bool LogRequestBody { get; set; } = false;
+
+        /// <summary>
+        /// True to log the response body.
+        /// </summary>
+        public bool LogResponseBody { get; set; } = false;
+
+        /// <summary>
         /// URL.
         /// </summary>
         public string UrlPrefix

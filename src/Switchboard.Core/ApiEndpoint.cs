@@ -64,6 +64,16 @@
         public LoadBalancingMode LoadBalancing { get; set; } = LoadBalancingMode.RoundRobin;
 
         /// <summary>
+        /// True to log the request body.
+        /// </summary>
+        public bool LogRequestBody { get; set; } = false;
+
+        /// <summary>
+        /// True to log the response body.
+        /// </summary>
+        public bool LogResponseBody { get; set; } = false;
+
+        /// <summary>
         /// Maximum request body size.  Default is 512MB.
         /// </summary>
         public int MaxRequestBodySize

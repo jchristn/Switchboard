@@ -36,6 +36,16 @@
             Load-balancing mode.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.LogRequestBody">
+            <summary>
+            True to log the request body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.LogResponseBody">
+            <summary>
+            True to log the response body.
+            </summary>
+        </member>
         <member name="P:Switchboard.Core.ApiEndpoint.MaxRequestBodySize">
             <summary>
             Maximum request body size.  Default is 512MB.
@@ -334,6 +344,16 @@
         <member name="P:Switchboard.Core.OriginServer.Ssl">
             <summary>
             Enable or disable SSL.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.LogRequestBody">
+            <summary>
+            True to log the request body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.LogResponseBody">
+            <summary>
+            True to log the response body.
             </summary>
         </member>
         <member name="P:Switchboard.Core.OriginServer.UrlPrefix">

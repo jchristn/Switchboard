@@ -10,7 +10,7 @@
 		<ApplicationIcon>logo.ico</ApplicationIcon>
 		<PackageId>SwitchboardApplicationProxy</PackageId>
 		<Title>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Title>
-		<Version>1.0.4</Version>
+		<Version>1.0.6</Version>
 		<Authors>Joel Christner</Authors>
 		<Company>Joel Christner</Company>
 		<Product>Switchboard</Product>
