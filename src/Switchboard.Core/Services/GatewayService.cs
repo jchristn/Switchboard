@@ -441,6 +441,11 @@
                         {
                             #region With-Data
 
+                            if (!String.IsNullOrEmpty(ctx.Request.ContentType))
+                                req.ContentType = ctx.Request.ContentType;
+                            else
+                                req.ContentType = Constants.BinaryContentType;
+
                             if (endpoint.Endpoint.LogRequestBody || origin.LogRequestBody)
                             {
                                 _Logging.Debug(
@@ -448,12 +453,9 @@
                                     + "request body (" + ctx.Request.DataAsBytes.Length + " bytes): "
                                     + Environment.NewLine
                                     + Encoding.UTF8.GetString(ctx.Request.DataAsBytes));
-                            }
 
-                            if (String.IsNullOrEmpty(ctx.Request.ContentType))
-                                req.ContentType = ctx.Request.ContentType;
-                            else
-                                req.ContentType = Constants.BinaryContentType;
+                                _Logging.Debug(_Header + "using content-type: " + req.ContentType);
+                            }
 
                             using (RestResponse resp = await req.SendAsync(ctx.Request.DataAsBytes))
                             {
@@ -508,7 +510,10 @@
                             #region Without-Data
 
                             if (endpoint.Endpoint.LogRequestBody || origin.LogRequestBody)
+                            {
                                 _Logging.Debug(_Header + "request body (0 bytes)");
+                                _Logging.Debug(_Header + "using content-type: " + req.ContentType);
+                            }
 
                             using (RestResponse resp = await req.SendAsync())
                             {
