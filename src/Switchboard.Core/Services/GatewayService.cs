@@ -196,6 +196,18 @@
                 return;
             }
 
+            if (match.Endpoint.LogRequestFull)
+                _Logging.Debug(_Header + "incoming request:" + Environment.NewLine + _Serializer.SerializeJson(ctx.Request, true));
+
+            if (match.Endpoint.BlockHttp10 && ctx.Request.ProtocolVersion.Equals("HTTP/1.0"))
+            {
+                _Logging.Debug(_Header + "denying HTTP/1.0 request due to API endpoint configuration");
+                ctx.Response.StatusCode = 505;
+                ctx.Response.ContentType = Constants.JsonContentType;
+                await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.UnsupportedHttpVersion), true));
+                return;
+            }
+
             try
             {
                 OriginServer origin = FindOriginServer(match.Endpoint);
@@ -524,6 +536,7 @@
                         }
                         else
                         {
+                            ctx.Response.ProtocolVersion = "HTTP/1.1";
                             ctx.Response.ServerSentEvents = true;
 
                             while (true)

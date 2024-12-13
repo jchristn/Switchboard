@@ -81,6 +81,16 @@
         public LoadBalancingMode LoadBalancing { get; set; } = LoadBalancingMode.RoundRobin;
 
         /// <summary>
+        /// True to terminate HTTP/1.0 requests.
+        /// </summary>
+        public bool BlockHttp10 { get; set; } = false;
+
+        /// <summary>
+        /// True to enable logging of the full request.
+        /// </summary>
+        public bool LogRequestFull { get; set; } = false;
+
+        /// <summary>
         /// True to log the request body.
         /// </summary>
         public bool LogRequestBody { get; set; } = false;

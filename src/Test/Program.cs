@@ -169,6 +169,10 @@
 
 
                                 #endregion
+
+                                Console.WriteLine("");
+                                Console.WriteLine("Press ENTER to end");
+                                Console.ReadLine();
                             }
                         }
                     }
@@ -219,6 +223,8 @@
                 Identifier = "sse-endpoint",
                 Name = "SSE Endpoint",
                 LoadBalancing = _LoadBalancingMode,
+                BlockHttp10 = true,
+                LogRequestFull = true,
                 ParameterizedUrls = new Dictionary<string, List<string>>
                 {
                     {

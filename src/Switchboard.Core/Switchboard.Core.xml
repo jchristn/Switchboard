@@ -42,6 +42,16 @@
             Load-balancing mode.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.BlockHttp10">
+            <summary>
+            True to terminate HTTP/1.0 requests.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.LogRequestFull">
+            <summary>
+            True to enable logging of the full request.
+            </summary>
+        </member>
         <member name="P:Switchboard.Core.ApiEndpoint.LogRequestBody">
             <summary>
             True to log the request body.
@@ -155,6 +165,11 @@
         <member name="F:Switchboard.Core.ApiErrorEnum.TooLarge">
             <summary>
             Request too large.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.UnsupportedHttpVersion">
+            <summary>
+            Unsupported HTTP version.
             </summary>
         </member>
         <member name="T:Switchboard.Core.ApiErrorResponse">

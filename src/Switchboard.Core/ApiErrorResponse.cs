@@ -49,6 +49,8 @@
                         return "The requested resource was not found.";
                     case ApiErrorEnum.TooLarge:
                         return "The size of your request exceeds the maximum allowed by this server.";
+                    case ApiErrorEnum.UnsupportedHttpVersion:
+                        return "The HTTP version of your request is not supported.";
 
                     default:
                         return "An unknown error code '" + Error.ToString() + "' was encountered.";
@@ -93,6 +95,8 @@
                         return 401;
                     case ApiErrorEnum.TooLarge:
                         return 413;
+                    case ApiErrorEnum.UnsupportedHttpVersion:
+                        return 505;
 
                     default:
                         return 500;

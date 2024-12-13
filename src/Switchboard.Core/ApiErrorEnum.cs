@@ -77,6 +77,11 @@
         /// Request too large.
         /// </summary>
         [EnumMember(Value = "TooLarge")]
-        TooLarge
+        TooLarge,
+        /// <summary>
+        /// Unsupported HTTP version.
+        /// </summary>
+        [EnumMember(Value = "UnsupportedHttpVersion")]
+        UnsupportedHttpVersion
     }
 }
