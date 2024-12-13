@@ -379,7 +379,8 @@
         {
             _Logging.Debug(_Header + "emitting request to " + origin.Identifier + " for API endpoint " + endpoint.Endpoint.Identifier + " for request " + requestGuid.ToString());
 
-            int statusCode = 0;
+            RestRequest req = null;
+            RestResponse resp = null;
             
             using (Timestamp ts = new Timestamp())
             {
@@ -397,187 +398,169 @@
 
                     #endregion
 
-                    using (RestRequest req = new RestRequest(
-                        origin.UrlPrefix + url,
-                        ConvertHttpMethod(ctx.Request.Method)))
+                    #region Build-Request-and-Add-Headers
+
+                    req = new RestRequest(origin.UrlPrefix + url, ConvertHttpMethod(ctx.Request.Method));
+
+                    if (endpoint.Endpoint.TimeoutMs > 0)
+                        req.TimeoutMilliseconds = endpoint.Endpoint.TimeoutMs;
+
+                    req.Headers.Add(Constants.ForwardedForHeader, ctx.Request.Source.IpAddress);
+                    req.Headers.Add(Constants.RequestIdHeader, requestGuid.ToString());
+
+                    if (ctx.Request.Headers != null && ctx.Request.Headers.Count > 0)
                     {
-                        #region Set-Timeout
-
-                        if (endpoint.Endpoint.TimeoutMs > 0)
-                            req.TimeoutMilliseconds = endpoint.Endpoint.TimeoutMs;
-
-                        #endregion
-
-                        #region Add-Proxy-Headers
-
-                        req.Headers.Add(Constants.ForwardedForHeader, ctx.Request.Source.IpAddress);
-                        req.Headers.Add(Constants.RequestIdHeader, requestGuid.ToString());
-
-                        #endregion
-
-                        #region Add-Original-Headers
-
-                        if (ctx.Request.Headers != null && ctx.Request.Headers.Count > 0)
+                        foreach (string key in ctx.Request.Headers.Keys)
                         {
-                            foreach (string key in ctx.Request.Headers.Keys)
-                            {
-                                // global blocked headers
-                                if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
+                            // global blocked headers
+                            if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
 
-                                // local blocked headers
-                                if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
+                            // local blocked headers
+                            if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
 
-                                string val = ctx.Request.Headers.Get(key);
-                                req.Headers.Add(key, val);
-                            }
+                            string val = ctx.Request.Headers.Get(key);
+                            req.Headers.Add(key, val);
                         }
+                    }
 
-                        #endregion
-
-                        #region Replace-Host-Header
-
-                        foreach (string key in req.Headers.AllKeys)
+                    foreach (string key in req.Headers.AllKeys)
+                    {
+                        if (key.ToLower().Equals("host"))
                         {
-                            if (key.ToLower().Equals("host"))
-                            {
-                                req.Headers.Remove(key);
-                                req.Headers.Add("Host", origin.Hostname + ":" + origin.Port.ToString());
-                            }
+                            req.Headers.Remove(key);
+                            req.Headers.Add("Host", origin.Hostname + ":" + origin.Port.ToString());
                         }
+                    }
 
-                        #endregion
+                    #endregion
 
-                        #region Send-Request
+                    #region Log-Request-Body
 
-                        if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
-                        {
-                            #region With-Data
+                    if (endpoint.Endpoint.LogRequestBody || origin.LogRequestBody)
+                    {
+                        _Logging.Debug(
+                            _Header
+                            + "request body (" + ctx.Request.DataAsBytes.Length + " bytes): "
+                            + Environment.NewLine
+                            + Encoding.UTF8.GetString(ctx.Request.DataAsBytes));
 
-                            if (!String.IsNullOrEmpty(ctx.Request.ContentType))
-                                req.ContentType = ctx.Request.ContentType;
-                            else
-                                req.ContentType = Constants.BinaryContentType;
+                        _Logging.Debug(_Header + "using content-type: " + req.ContentType);
+                    }
 
-                            if (endpoint.Endpoint.LogRequestBody || origin.LogRequestBody)
-                            {
-                                _Logging.Debug(
-                                    _Header
-                                    + "request body (" + ctx.Request.DataAsBytes.Length + " bytes): "
-                                    + Environment.NewLine
-                                    + Encoding.UTF8.GetString(ctx.Request.DataAsBytes));
+                    #endregion
 
-                                _Logging.Debug(_Header + "using content-type: " + req.ContentType);
-                            }
+                    #region Send-Request
 
-                            using (RestResponse resp = await req.SendAsync(ctx.Request.DataAsBytes))
-                            {
-                                if (resp != null)
-                                {
-                                    foreach (string key in resp.Headers)
-                                    {
-                                        // global blocked headers
-                                        if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
+                    if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
+                    {
+                        #region With-Data
 
-                                        // local blocked headers
-                                        if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
-
-                                        string val = resp.Headers.Get(key);
-                                        ctx.Response.Headers.Add(key, val);
-                                    }
-
-                                    if (endpoint.Endpoint.LogResponseBody || origin.LogResponseBody)
-                                    {
-                                        if (resp.DataAsBytes != null && resp.DataAsBytes.Length > 0)
-                                        {
-                                            _Logging.Debug(
-                                                _Header
-                                                + "response body (" + resp.DataAsBytes.Length + " bytes) status " + resp.StatusCode + ": "
-                                                + Environment.NewLine
-                                                + Encoding.UTF8.GetString(resp.DataAsBytes));
-                                        }
-                                        else
-                                        {
-                                            _Logging.Debug(
-                                                _Header
-                                                + "response body (0 bytes) status " + resp.StatusCode);
-                                        }
-                                    }
-
-                                    statusCode = resp.StatusCode;
-                                    ctx.Response.StatusCode = resp.StatusCode;
-                                    ctx.Response.ContentType = resp.ContentType;
-                                    await ctx.Response.Send(resp.DataAsBytes);
-                                    return true;
-                                }
-                                else
-                                {
-                                    return false;
-                                }
-                            }
-
-                            #endregion
-                        }
+                        if (!String.IsNullOrEmpty(ctx.Request.ContentType))
+                            req.ContentType = ctx.Request.ContentType;
                         else
-                        {
-                            #region Without-Data
+                            req.ContentType = Constants.BinaryContentType;
 
-                            if (endpoint.Endpoint.LogRequestBody || origin.LogRequestBody)
-                            {
-                                _Logging.Debug(_Header + "request body (0 bytes)");
-                                _Logging.Debug(_Header + "using content-type: " + req.ContentType);
-                            }
-
-                            using (RestResponse resp = await req.SendAsync())
-                            {
-                                if (resp != null)
-                                {
-                                    foreach (string key in resp.Headers)
-                                    {
-                                        // global blocked headers
-                                        if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
-
-                                        // local blocked headers
-                                        if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
-
-                                        string val = resp.Headers.Get(key);
-                                        ctx.Response.Headers.Add(key, val);
-                                    }
-
-                                    if (endpoint.Endpoint.LogResponseBody || origin.LogResponseBody)
-                                    {
-                                        if (resp.DataAsBytes != null && resp.DataAsBytes.Length > 0)
-                                        {
-                                            _Logging.Debug(
-                                                _Header
-                                                + "response body (" + resp.DataAsBytes.Length + " bytes) status " + resp.StatusCode + ": "
-                                                + Environment.NewLine
-                                                + Encoding.UTF8.GetString(resp.DataAsBytes));
-                                        }
-                                        else
-                                        {
-                                            _Logging.Debug(
-                                                _Header
-                                                + "response body (0 bytes) status " + resp.StatusCode);
-                                        }
-                                    }
-
-                                    statusCode = resp.StatusCode;
-                                    ctx.Response.StatusCode = resp.StatusCode;
-                                    ctx.Response.ContentType = resp.ContentType;
-                                    await ctx.Response.Send(resp.DataAsBytes);
-                                    return true;
-                                }
-                                else
-                                {
-                                    return false;
-                                }
-                            }
-
-                            #endregion
-                        }
+                        resp = await req.SendAsync(ctx.Request.DataAsBytes);
 
                         #endregion
                     }
+                    else
+                    {
+                        #region Without-Data
+
+                        resp = await req.SendAsync();
+
+                        #endregion
+                    }
+
+                    if (resp != null)
+                    {
+                        #region Log-Response-Body
+
+                        if (endpoint.Endpoint.LogResponseBody || origin.LogResponseBody)
+                        {
+                            if (resp.DataAsBytes != null && resp.DataAsBytes.Length > 0)
+                            {
+                                _Logging.Debug(
+                                    _Header
+                                    + "response body (" + resp.DataAsBytes.Length + " bytes) status " + resp.StatusCode + ": "
+                                    + Environment.NewLine
+                                    + Encoding.UTF8.GetString(resp.DataAsBytes));
+                            }
+                            else
+                            {
+                                _Logging.Debug(
+                                    _Header
+                                    + "response body (0 bytes) status " + resp.StatusCode);
+                            }
+                        }
+
+                        #endregion
+
+                        #region Set-Headers
+
+                        ctx.Response.StatusCode = resp.StatusCode;
+                        ctx.Response.ContentType = resp.ContentType;
+
+                        foreach (string key in resp.Headers)
+                        {
+                            // global blocked headers
+                            if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
+
+                            // local blocked headers
+                            if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
+
+                            string val = resp.Headers.Get(key);
+                            ctx.Response.Headers.Add(key, val);
+                        }
+
+                        #endregion
+
+                        #region Send-Response
+
+                        if (!resp.ServerSentEvents)
+                        {
+                            await ctx.Response.Send(resp.DataAsBytes);
+                        }
+                        else
+                        {
+                            ctx.Response.ServerSentEvents = true;
+
+                            while (true)
+                            {
+                                ServerSentEvent sse = await resp.ReadEventAsync();
+
+                                if (sse == null)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    if (!String.IsNullOrEmpty(sse.Data))
+                                    {
+                                        await ctx.Response.SendEvent(sse.Data, false);
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+
+                            await ctx.Response.SendEvent(null, true);
+                        }
+
+                        #endregion
+
+                        return true;
+                    }
+                    else
+                    {
+                        _Logging.Warn(_Header + "no response from origin " + url);
+                        return false;
+                    }
+
+                    #endregion
                 }
                 catch (Exception e)
                 {
@@ -594,7 +577,16 @@
                 finally
                 {
                     ts.End = DateTime.UtcNow;
-                    _Logging.Debug(_Header + "completed request " + requestGuid.ToString() + " origin " + origin.Identifier + " endpoint " + endpoint.Endpoint.Identifier + " " + statusCode + " (" + ts.TotalMs + "ms)");
+                    _Logging.Debug(
+                        _Header 
+                        + "completed request " + requestGuid.ToString() + " " 
+                        + "origin " + origin.Identifier + " "
+                        + "endpoint " + endpoint.Endpoint.Identifier + " " 
+                        + (resp != null ? resp.StatusCode : "0") + " "
+                        + "(" + ts.TotalMs + "ms)");
+
+                    if (req != null) req.Dispose();
+                    if (resp != null) resp.Dispose();
                 }
             }
         }

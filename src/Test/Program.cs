@@ -22,12 +22,17 @@
         private static WebserverSettings _Server3Settings = null;
         private static Webserver _Server3 = null;
 
-        private static int _NumRequests = 30;
+        private static WebserverSettings _Server4Settings = null;
+        private static Webserver _Server4 = null;
+
+        private static int _NumRequests = 10;
 
         public static async Task Main(string[] args)
         {
             InitializeSettings();
             InitializeOriginServers();
+
+            string url;
 
             using (SwitchboardDaemon switchboard = new SwitchboardDaemon(_Settings))
             {
@@ -37,68 +42,134 @@
                     {
                         using (_Server3 = new Webserver(_Server3Settings, Server3Route))
                         {
-                            _Server1.Start();
-                            _Server2.Start();
-                            _Server3.Start();
-
-                            #region Should-Succeed
-
-                            for (int i = 0; i < _NumRequests; i++)
+                            using (_Server4 = new Webserver(_Server4Settings, Server4Route))
                             {
+                                _Server1.Start();
+                                _Server2.Start();
+                                _Server3.Start();
+                                _Server4.Start();
+
+                                #region Should-Succeed
+
                                 Console.WriteLine("");
-                                Console.WriteLine("Request " + i);
+                                Console.WriteLine("-------------");
+                                Console.WriteLine("Success tests");
+                                Console.WriteLine("-------------");
 
-                                string url = "http://localhost:8000/test";
-                                if (i % 2 == 0) url += "?foo=bar";
-                                Console.WriteLine("| URL: " + url);
+                                for (int i = 0; i < _NumRequests; i++)
+                                {
+                                    Console.WriteLine("");
+                                    Console.WriteLine("Request " + i);
 
-                                using (RestRequest req = new RestRequest(url))
+                                    url = "http://localhost:8000/test";
+                                    if (i % 2 == 0) url += "?foo=bar";
+                                    Console.WriteLine("| URL: " + url);
+
+                                    using (RestRequest req = new RestRequest(url))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
+                                        }
+                                    }
+                                }
+
+                                #endregion
+
+                                #region Should-Fail
+
+                                Console.WriteLine("");
+                                Console.WriteLine("----------------------");
+                                Console.WriteLine("Failure test (bad URL)");
+                                Console.WriteLine("----------------------");
+
+                                Console.WriteLine("");
+                                Console.WriteLine("Expecting failure");
+
+                                using (RestRequest req = new RestRequest("http://localhost:8000/undefined"))
                                 {
                                     using (RestResponse resp = await req.SendAsync())
                                     {
                                         Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
                                     }
                                 }
-                            }
 
-                            #endregion
+                                #endregion
 
-                            #region Should-Fail
+                                #region URL-Rewrite
 
-                            Console.WriteLine("");
-                            Console.WriteLine("Expecting failure");
-
-                            using (RestRequest req = new RestRequest("http://localhost:8000/undefined"))
-                            {
-                                using (RestResponse resp = await req.SendAsync())
-                                {
-                                    Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
-                                }
-                            }
-
-                            #endregion
-
-                            #region URL-Rewrite
-
-                            for (int i = 0; i < _NumRequests; i++)
-                            {
                                 Console.WriteLine("");
-                                Console.WriteLine("URL rewrite request " + i);
+                                Console.WriteLine("----------------");
+                                Console.WriteLine("URL rewrite test");
+                                Console.WriteLine("----------------");
 
-                                string url = "http://localhost:8000/users/" + i.ToString();
-                                if (i % 2 == 0) url += "?foo=bar";
-                                Console.WriteLine("| URL: " + url);
+                                for (int i = 0; i < _NumRequests; i++)
+                                {
+                                    Console.WriteLine("");
+                                    Console.WriteLine("URL rewrite request " + i);
+
+                                    url = "http://localhost:8000/users/" + i.ToString();
+                                    if (i % 2 == 0) url += "?foo=bar";
+                                    Console.WriteLine("| URL: " + url);
+
+                                    using (RestRequest req = new RestRequest(url))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
+                                        }
+                                    }
+                                }
+
+                                #endregion
+
+                                #region Server-Sent-Events
+
+                                Console.WriteLine("");
+                                Console.WriteLine("-----------------------");
+                                Console.WriteLine("Server-sent events test");
+                                Console.WriteLine("-----------------------");
+
+                                url = "http://localhost:8000/sse";
 
                                 using (RestRequest req = new RestRequest(url))
                                 {
                                     using (RestResponse resp = await req.SendAsync())
                                     {
-                                        Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
+                                        if (resp.ServerSentEvents)
+                                        {
+                                            Console.WriteLine("| Using server-sent events");
+
+                                            while (true)
+                                            {
+                                                ServerSentEvent sse = await resp.ReadEventAsync();
+                                                if (sse == null) break;
+                                                else
+                                                {
+                                                    string data = sse.Data;
+                                                    if (!String.IsNullOrEmpty(data)) data = data.Trim();
+
+                                                    if (!String.IsNullOrEmpty(data))
+                                                    {
+                                                        Console.WriteLine("| Event: " + data);
+                                                    }
+                                                    else
+                                                    {
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
+                                        }
                                     }
                                 }
-                            }
 
-                            #endregion
+
+                                #endregion
+                            }
                         }
                     }
                 }
@@ -109,25 +180,26 @@
         {
             _Settings = new SwitchboardSettings();
             _Settings.Logging.MinimumSeverity = 1;
+
             _Settings.Endpoints.Add(new ApiEndpoint
             {
-                Identifier = "testendpoint",
+                Identifier = "test-endpoint",
                 Name = "Test Endpoint",
                 LoadBalancing = _LoadBalancingMode,
                 ParameterizedUrls = new Dictionary<string, List<string>>
                 {
-                    { 
-                        "GET", 
-                        new List<string> 
-                        { 
+                    {
+                        "GET",
+                        new List<string>
+                        {
                             "/test",
                             "/users/{UserId}"
-                        } 
+                        }
                     },
                 },
                 RewriteUrls = new Dictionary<string, Dictionary<string, string>>
                 {
-                    { 
+                    {
                         "GET", new Dictionary<string, string>
                         {
                             { "/users/{UserId}", "/{UserId}" }
@@ -141,6 +213,28 @@
                     "server3"
                 }
             });
+
+            _Settings.Endpoints.Add(new ApiEndpoint
+            {
+                Identifier = "sse-endpoint",
+                Name = "SSE Endpoint",
+                LoadBalancing = _LoadBalancingMode,
+                ParameterizedUrls = new Dictionary<string, List<string>>
+                {
+                    {
+                        "GET",
+                        new List<string>
+                        {
+                            "/sse"
+                        }
+                    },
+                },
+                OriginServers = new List<string>
+                {
+                    "server4"
+                }
+            });
+
             _Settings.Origins.Add(new OriginServer
             {
                 Identifier = "server1",
@@ -149,6 +243,7 @@
                 Port = 8001,
                 Ssl = false
             });
+
             _Settings.Origins.Add(new OriginServer
             {
                 Identifier = "server2",
@@ -157,12 +252,22 @@
                 Port = 8002,
                 Ssl = false
             });
+
             _Settings.Origins.Add(new OriginServer
             {
                 Identifier = "server3",
                 Name = "Server 3",
                 Hostname = "localhost",
                 Port = 8003,
+                Ssl = false
+            });
+
+            _Settings.Origins.Add(new OriginServer
+            {
+                Identifier = "server4",
+                Name = "Server 4",
+                Hostname = "localhost",
+                Port = 8004,
                 Ssl = false
             });
         }
@@ -180,6 +285,10 @@
             _Server3Settings = new WebserverSettings();
             _Server3Settings.Hostname = "localhost";
             _Server3Settings.Port = 8003;
+
+            _Server4Settings = new WebserverSettings();
+            _Server4Settings.Hostname = "localhost";
+            _Server4Settings.Port = 8004;
         }
 
         private static async Task Server1Route(HttpContextBase ctx)
@@ -218,6 +327,26 @@
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = "text/plain";
             await ctx.Response.Send("Hello from server 3");
+            return;
+        }
+
+        private static async Task Server4Route(HttpContextBase ctx)
+        {
+            Console.WriteLine("| Server 4");
+            Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
+            if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
+                Console.WriteLine("| Querystring: " + ctx.Request.Query.Querystring);
+
+            ctx.Response.StatusCode = 200;
+            ctx.Response.ServerSentEvents = true;
+
+            for (int i = 0; i < 10; i++)
+            {
+                await Task.Delay(500);
+                await ctx.Response.SendEvent("Event " + i.ToString(), false);
+            }
+
+            await ctx.Response.SendEvent(null, true);
             return;
         }
 
