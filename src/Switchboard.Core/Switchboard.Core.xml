@@ -25,6 +25,12 @@
             Value is a list of parameterized URLs to match, e.g. /{version}/foo/bar/{id}.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.RewriteUrls">
+            <summary>
+            Key is the upper-case HTTP method.
+            Value is a dictionary where the key is the original URL and the value is the URL to which the request should be directed.
+            </summary>
+        </member>
         <member name="P:Switchboard.Core.ApiEndpoint.TimeoutMs">
             <summary>
             Number of milliseconds to wait before considering the request to be timed out.
@@ -570,6 +576,20 @@
             <summary>
             Instantiate.
             </summary>
+        </member>
+        <member name="T:Switchboard.Core.UrlTools">
+            <summary>
+            URL tools.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.UrlTools.RewriteUrl(System.String,System.String,Switchboard.Core.ApiEndpoint)">
+            <summary>
+            Rewrite a URL based on URL rewrite rules from an API endpoint.
+            </summary>
+            <param name="method">HTTP method.</param>
+            <param name="url">Original URL.</param>
+            <param name="endpoint">API endpoint.</param>
+            <returns>Rewritten URL or original URL if no change.</returns>
         </member>
         <member name="T:Switchboard.Core.YamlSerializer">
             <summary>

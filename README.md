@@ -34,7 +34,16 @@ settings.Endpoints.Add(new ApiEndpoint
     LoadBalancing = LoadBalancingMode.RoundRobin,
     ParameterizedUrls = new Dictionary<string, List<string>>
     {
-        { "GET", new List<string> { "/my-api" } }
+        { "GET", new List<string> { "/my-api" } } // /my-api will be sent directly to the origin server
+    },
+    RewriteUrls = new Dictionary<string, Dictionary<string, string>>
+    {
+        {
+            "GET", new Dictionary<string, string> 
+            {
+                "/users/{UserGuid}", "/{UserGuid}" // rewrite /users/foo to just /foo
+            }
+        }
     },
     OriginServers = new List<string>
     {

@@ -385,8 +385,20 @@
             {
                 try
                 {
+                    #region Rewrite-URL
+
+                    string url = UrlTools.RewriteUrl(
+                        ctx.Request.Method.ToString(),
+                        ctx.Request.Url.RawWithoutQuery,
+                        endpoint.Endpoint);
+
+                    if (ctx.Request.Query != null && !String.IsNullOrEmpty(ctx.Request.Query.Querystring))
+                        url += "?" + ctx.Request.Query.Querystring;
+
+                    #endregion
+
                     using (RestRequest req = new RestRequest(
-                        origin.UrlPrefix + ctx.Request.Url.RawWithQuery,
+                        origin.UrlPrefix + url,
                         ConvertHttpMethod(ctx.Request.Method)))
                     {
                         #region Set-Timeout

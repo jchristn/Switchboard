@@ -40,7 +40,24 @@
                 _ParameterizedUrls = value;
             }
         }
-        
+
+        /// <summary>
+        /// Key is the upper-case HTTP method.
+        /// Value is a dictionary where the key is the original URL and the value is the URL to which the request should be directed.
+        /// </summary>
+        public Dictionary<string, Dictionary<string, string>> RewriteUrls
+        {
+            get
+            {
+                return _RewriteUrls;
+            }
+            set
+            {
+                if (value == null) value = new Dictionary<string, Dictionary<string, string>>();
+                _RewriteUrls = value;
+            }
+        }
+
         /// <summary>
         /// Number of milliseconds to wait before considering the request to be timed out.
         /// Default is 60 seconds.
@@ -149,6 +166,7 @@
         private int _TimeoutMs = 60000;
         private int _MaxRequestBodySize = (512 * 1024 * 1024);
         private Dictionary<string, List<string>> _ParameterizedUrls = new Dictionary<string, List<string>>();
+        private Dictionary<string, Dictionary<string, string>> _RewriteUrls = new Dictionary<string, Dictionary<string, string>>();
         private List<string> _OriginServers = new List<string>();
         private int _LastIndex = 0;
         private List<string> _BlockedHeaders = new List<string>();

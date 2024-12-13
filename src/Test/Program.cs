@@ -45,11 +45,18 @@
 
                             for (int i = 0; i < _NumRequests; i++)
                             {
-                                using (RestRequest req = new RestRequest("http://localhost:8000/test"))
+                                Console.WriteLine("");
+                                Console.WriteLine("Request " + i);
+
+                                string url = "http://localhost:8000/test";
+                                if (i % 2 == 0) url += "?foo=bar";
+                                Console.WriteLine("| URL: " + url);
+
+                                using (RestRequest req = new RestRequest(url))
                                 {
                                     using (RestResponse resp = await req.SendAsync())
                                     {
-                                        Console.WriteLine("Response " + i + " (" + resp.StatusCode + "): " + resp.DataAsString);
+                                        Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
                                     }
                                 }
                             }
@@ -58,11 +65,36 @@
 
                             #region Should-Fail
 
+                            Console.WriteLine("");
+                            Console.WriteLine("Expecting failure");
+
                             using (RestRequest req = new RestRequest("http://localhost:8000/undefined"))
                             {
                                 using (RestResponse resp = await req.SendAsync())
                                 {
-                                    Console.WriteLine("Response (" + resp.StatusCode + "): " + resp.DataAsString);
+                                    Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
+                                }
+                            }
+
+                            #endregion
+
+                            #region URL-Rewrite
+
+                            for (int i = 0; i < _NumRequests; i++)
+                            {
+                                Console.WriteLine("");
+                                Console.WriteLine("URL rewrite request " + i);
+
+                                string url = "http://localhost:8000/users/" + i.ToString();
+                                if (i % 2 == 0) url += "?foo=bar";
+                                Console.WriteLine("| URL: " + url);
+
+                                using (RestRequest req = new RestRequest(url))
+                                {
+                                    using (RestResponse resp = await req.SendAsync())
+                                    {
+                                        Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
+                                    }
                                 }
                             }
 
@@ -84,7 +116,23 @@
                 LoadBalancing = _LoadBalancingMode,
                 ParameterizedUrls = new Dictionary<string, List<string>>
                 {
-                    { "GET", new List<string> { "/test" } }
+                    { 
+                        "GET", 
+                        new List<string> 
+                        { 
+                            "/test",
+                            "/users/{UserId}"
+                        } 
+                    },
+                },
+                RewriteUrls = new Dictionary<string, Dictionary<string, string>>
+                {
+                    { 
+                        "GET", new Dictionary<string, string>
+                        {
+                            { "/users/{UserId}", "/{UserId}" }
+                        }
+                    }
                 },
                 OriginServers = new List<string>
                 {
@@ -136,6 +184,11 @@
 
         private static async Task Server1Route(HttpContextBase ctx)
         {
+            Console.WriteLine("| Server 1");
+            Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
+            if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring)) 
+                Console.WriteLine("| Querystring: " + ctx.Request.Query.Querystring);
+
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = "text/plain";
             await ctx.Response.Send("Hello from server 1");
@@ -144,6 +197,11 @@
 
         private static async Task Server2Route(HttpContextBase ctx)
         {
+            Console.WriteLine("| Server 2");
+            Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
+            if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
+                Console.WriteLine("| Querystring: " + ctx.Request.Query.Querystring);
+
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = "text/plain";
             await ctx.Response.Send("Hello from server 2");
@@ -152,6 +210,11 @@
 
         private static async Task Server3Route(HttpContextBase ctx)
         {
+            Console.WriteLine("| Server 3");
+            Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
+            if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
+                Console.WriteLine("| Querystring: " + ctx.Request.Query.Querystring);
+
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = "text/plain";
             await ctx.Response.Send("Hello from server 3");
