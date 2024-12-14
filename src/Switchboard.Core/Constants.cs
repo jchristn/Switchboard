@@ -131,7 +131,7 @@ namespace Switchboard.Core
         /// <summary>
         /// Request ID header, generally x-request-id.
         /// </summary>
-        public static string RequestIdHeader = "x-request-id";
+        public static string RequestIdHeader = "x-sb-request-id";
 
         #endregion
     }

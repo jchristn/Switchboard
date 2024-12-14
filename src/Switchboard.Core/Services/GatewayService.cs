@@ -430,8 +430,11 @@
                             // local blocked headers
                             if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
 
-                            string val = ctx.Request.Headers.Get(key);
-                            req.Headers.Add(key, val);
+                            if (!req.Headers.AllKeys.Contains(key))
+                            {
+                                string val = ctx.Request.Headers.Get(key);
+                                req.Headers.Add(key, val);
+                            }
                         }
                     }
 
