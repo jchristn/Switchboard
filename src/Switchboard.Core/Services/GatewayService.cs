@@ -229,11 +229,11 @@
                     return;
                 }
 
-                bool responseReceived = await EmitRequest(
+                bool responseReceived = await ProxyRequest(
                     requestGuid,
+                    ctx,
                     match,
-                    origin,
-                    ctx);
+                    origin);
 
                 if (!responseReceived)
                 {
@@ -383,13 +383,13 @@
             }
         }
 
-        private async Task<bool> EmitRequest(
-            Guid requestGuid, 
-            MatchingApiEndpoint endpoint, 
-            OriginServer origin, 
-            HttpContextBase ctx)
+        private async Task<bool> ProxyRequest(
+            Guid requestGuid,
+            HttpContextBase ctx,
+            MatchingApiEndpoint endpoint,
+            OriginServer origin)
         {
-            _Logging.Debug(_Header + "emitting request to " + origin.Identifier + " for API endpoint " + endpoint.Endpoint.Identifier + " for request " + requestGuid.ToString());
+            _Logging.Debug(_Header + "proxying request to " + origin.Identifier + " for API endpoint " + endpoint.Endpoint.Identifier + " for request " + requestGuid.ToString());
 
             RestRequest req = null;
             RestResponse resp = null;
@@ -535,7 +535,8 @@
 
                         if (!resp.ServerSentEvents)
                         {
-                            await ctx.Response.Send(resp.DataAsBytes);
+                            long contentLength = (resp.ContentLength != null ? resp.ContentLength.Value : 0);
+                            await ctx.Response.Send(contentLength, resp.Data);
                         }
                         else
                         {
@@ -582,7 +583,7 @@
                 {
                     _Logging.Warn(
                         _Header 
-                        + "exception emitting request to " + origin.Identifier 
+                        + "exception proxying request to " + origin.Identifier 
                         + " for API endpoint " + endpoint.Endpoint.Identifier 
                         + " for request " + requestGuid.ToString() 
                         + Environment.NewLine 
