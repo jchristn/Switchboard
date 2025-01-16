@@ -73,16 +73,30 @@ settings.Origins.Add(new OriginServer
     Ssl = false
 });
 
-// define the authentication callback
-private static async Task<AuthenticationResult> AuthenticateRequest(HttpContextBase ctx)
+// define the authentication and authorization callback
+private static async Task<AuthContext> AuthenticateAndAuthorizeRequest(HttpContextBase ctx)
 {
-    return new AuthenticationResult
+    return new AuthContext
     {
-        Result = AuthenticationResultEnum.Success,
-        Metadata = new Dictionary<string, string>()
+        Authentication = new AuthenticationContext
         {
-            { "Authenticated", "true" },
-            { "Foo", "Bar" }
+            Result = AuthenticationResultEnum.Success,
+            Metadata = new Dictionary<string, string>() // use this object as you wish
+            {
+                { "Authenticated", "true" }
+            }
+        },
+        Authorization = new AuthorizationContext
+        {
+            Result = AuthorizationResultEnum.Success,
+            Metadata = new Dictionary<string, string>() // use this object as you wish
+            {
+                { "Authorized", "true" }
+            }
+        },
+        Metadata = new Dictionary<string, string>() // use this object as you wish
+        {
+            { "Allow", "true" }
         }
     };
 }
@@ -90,7 +104,7 @@ private static async Task<AuthenticationResult> AuthenticateRequest(HttpContextB
 // start Switchboard
 using (SwitchboardDaemon sb = new SwitchboardDaemon(settings))
 {
-    sb.Callbacks.Authenticate = AuthenticateRequest;
+    sb.Callbacks.AuthenticateAndAuthorize = AuthenticateAndAuthorizeRequest;
     ...
 }
 ```

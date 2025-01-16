@@ -192,7 +192,7 @@
         public async Task DefaultRoute(HttpContextBase ctx)
         {
             Guid requestGuid = Guid.NewGuid();
-            AuthenticationResult authResult = null;
+            AuthContext authContext = null;
 
             try
             {
@@ -220,22 +220,28 @@
 
                 if (match.AuthRequired)
                 {
-                    if (_Callbacks == null || _Callbacks.Authenticate == null)
+                    if (_Callbacks == null || _Callbacks.AuthenticateAndAuthorize == null)
                     {
-                        _Logging.Warn(_Header + "API endpoint " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery + " requires authentication but no authentication callback set");
+                        _Logging.Warn(_Header + "API endpoint " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery + " requires auth but no auth callback set");
                         ctx.Response.StatusCode = 401;
                         ctx.Response.ContentType = Constants.JsonContentType;
                         await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed), true));
                         return;
                     }
 
-                    authResult = await _Callbacks.Authenticate(ctx);
-                    if (authResult.Result != AuthenticationResultEnum.Success)
+                    authContext = await _Callbacks.AuthenticateAndAuthorize(ctx);
+                    if (authContext.Authentication.Result != AuthenticationResultEnum.Success 
+                        && authContext.Authorization.Result != AuthorizationResultEnum.Success)
                     {
-                        _Logging.Warn(_Header + "auth failure reported for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery + " (" + authResult.Result + "): " + authResult.FailureMessage);
+                        _Logging.Warn(
+                            _Header + 
+                            "auth failure reported for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery + " " +
+                            "(" + authContext.Authentication.Result + "/" + authContext.Authorization.Result + ")" +
+                            ": " + authContext.FailureMessage);
+
                         ctx.Response.StatusCode = 401;
                         ctx.Response.ContentType = Constants.JsonContentType;
-                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed, null, authResult.FailureMessage), true));
+                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed, null, authContext.FailureMessage), true));
                         return;
                     }
                 }
@@ -264,7 +270,7 @@
                     ctx,
                     match,
                     origin,
-                    authResult);
+                    authContext);
 
                 if (!responseReceived)
                 {
@@ -451,7 +457,7 @@
             HttpContextBase ctx,
             MatchingApiEndpoint endpoint,
             OriginServer origin,
-            AuthenticationResult authResult)
+            AuthContext authResult)
         {
             _Logging.Debug(_Header + "proxying request to " + origin.Identifier + " for API endpoint " + endpoint.Endpoint.Identifier + " for request " + requestGuid.ToString());
 
