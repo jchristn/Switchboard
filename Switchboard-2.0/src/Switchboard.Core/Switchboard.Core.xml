@@ -347,6 +347,11 @@
             LocationBlocked.
             </summary>
         </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.InternalError">
+            <summary>
+            InternalError.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.Constants">
             <summary>
             Constants.

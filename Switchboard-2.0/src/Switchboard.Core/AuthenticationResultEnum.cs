@@ -71,6 +71,11 @@
         /// LocationBlocked.
         /// </summary>
         [EnumMember(Value = "LocationBlocked")]
-        LocationBlocked
+        LocationBlocked,
+        /// <summary>
+        /// InternalError.
+        /// </summary>
+        [EnumMember(Value = "InternalError")]
+        InternalError
     }
 }
