@@ -1,0 +1,795 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Switchboard.Core</name>
+    </assembly>
+    <members>
+        <member name="T:Switchboard.Core.ApiEndpoint">
+            <summary>
+            API endpoint.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.Identifier">
+            <summary>
+            Unique identifier for this API endpoint.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.Name">
+            <summary>
+            Name for this API endpoint.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.TimeoutMs">
+            <summary>
+            Number of milliseconds to wait before considering the request to be timed out.
+            Default is 60 seconds.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.LoadBalancing">
+            <summary>
+            Load-balancing mode.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.BlockHttp10">
+            <summary>
+            True to terminate HTTP/1.0 requests.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.LogRequestFull">
+            <summary>
+            True to enable logging of the full request.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.LogRequestBody">
+            <summary>
+            True to log the request body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.LogResponseBody">
+            <summary>
+            True to log the response body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.MaxRequestBodySize">
+            <summary>
+            Maximum request body size.  Default is 512MB.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.OriginServers">
+            <summary>
+            Origin server identifiers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.LastIndex">
+            <summary>
+            Last-used index.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.UseGlobalBlockedHeaders">
+            <summary>
+            True to use global blocked headers.  Headers in the global blocked headers will not be forwarded from incoming requests to origin servers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.AuthContextHeader">
+            <summary>
+            Header to add when passing authentication context to an origin server.  
+            When set, the entire AuthenticationResult object will be JSON serialized and base64 encoded, and passed to the origin server using this header.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.BlockedHeaders">
+            <summary>
+            Explicit list of blocked headers.  These headers are not forwarded from incoming requests to origin servers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.Unauthenticated">
+            <summary>
+            Unauthenticated API endpoints.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.Authenticated">
+            <summary>
+            Authenticated API endpoints.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.RewriteUrls">
+            <summary>
+            Key is the upper-case HTTP method.
+            Value is a dictionary where the key is the original URL and the value is the URL to which the request should be directed.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.ApiEndpoint.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.ApiEndpointGroup">
+            <summary>
+            API endpoint group.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpointGroup.ParameterizedUrls">
+            <summary>
+            Key is the upper-case HTTP method.
+            Value is a list of parameterized URLs to match, e.g. /{version}/foo/bar/{id}.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.ApiEndpointGroup.#ctor">
+            <summary>
+            API endpoint group.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.ApiErrorEnum">
+            <summary>
+            API error codes.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.AuthenticationFailed">
+            <summary>
+            Authentication failed.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.AuthorizationFailed">
+            <summary>
+            Authorization failed.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.BadGateway">
+            <summary>
+            Bad gateway.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.BadRequest">
+            <summary>
+            Bad request.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.Conflict">
+            <summary>
+            Conflict.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.DeserializationError">
+            <summary>
+            DeserializationError.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.Inactive">
+            <summary>
+            Inactive.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.InternalError">
+            <summary>
+            Internal error.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.InvalidRange">
+            <summary>
+            Invalid range.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.InUse">
+            <summary>
+            In use.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.NotEmpty">
+            <summary>
+            Not empty.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.NotFound">
+            <summary>
+            Not found.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.TokenExpired">
+            <summary>
+            Token expired.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.TooLarge">
+            <summary>
+            Request too large.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.UnsupportedHttpVersion">
+            <summary>
+            Unsupported HTTP version.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.ApiErrorResponse">
+            <summary>
+            API error response.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiErrorResponse.Error">
+            <summary>
+            Error.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiErrorResponse.Message">
+            <summary>
+            Human-readable message.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiErrorResponse.StatusCode">
+            <summary>
+            HTTP status code.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiErrorResponse.Context">
+            <summary>
+            Additional contextual information.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiErrorResponse.Description">
+            <summary>
+            Description.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.ApiErrorResponse.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.ApiErrorResponse.#ctor(Switchboard.Core.ApiErrorEnum,System.Object,System.String)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="error">Error code.</param>
+            <param name="context">Context.</param>
+            <param name="description">Description.</param>
+            
+        </member>
+        <member name="T:Switchboard.Core.AuthenticationResult">
+            <summary>
+            Authentication result.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthenticationResult.Result">
+            <summary>
+            Authentication result.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthenticationResult.FailureMessage">
+            <summary>
+            Message to provide to the user in the event that authentication was not successful.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthenticationResult.Metadata">
+            <summary>
+            User-assignable metadata, useful for passing context to and from your application and Switchboard.
+            This object must be serializable to JSON.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.AuthenticationResult.#ctor">
+            <summary>
+            Authentication result.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.AuthenticationResult.ToBase64String(SerializationHelper.Serializer)">
+            <summary>
+            Create a base64 representation of the authentication result.
+            </summary>
+            <returns>Base64 string.</returns>
+        </member>
+        <member name="M:Switchboard.Core.AuthenticationResult.FromBase64String(System.String,SerializationHelper.Serializer)">
+            <summary>
+            Return a populated authentication result object from a supplied base64 string.
+            </summary>
+            <param name="base64">Base64 string.</param>
+            <param name="serializer">Serializer.</param>
+            <returns>AuthenticationResult.</returns>
+        </member>
+        <member name="T:Switchboard.Core.AuthenticationResultEnum">
+            <summary>
+            Authentication result.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.Success">
+            <summary>
+            Success.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.InvalidCredentials">
+            <summary>
+            InvalidCredentials.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.NotFound">
+            <summary>
+            NotFound.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.Inactive">
+            <summary>
+            Inactive.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.Denied">
+            <summary>
+            Denied.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.Locked">
+            <summary>
+            Locked.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.TemporaryPassword">
+            <summary>
+            TemporaryPassword.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.PasswordExpired">
+            <summary>
+            PasswordExpired.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.TokenExpired">
+            <summary>
+            TokenExpired.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.SessionExpired">
+            <summary>
+            SessionExpired.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.DeviceNotTrusted">
+            <summary>
+            DeviceNotTrusted.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.LocationBlocked">
+            <summary>
+            LocationBlocked.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Constants">
+            <summary>
+            Constants.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.Logo">
+            <summary>
+            Logo.
+            See patorjk.com font Small.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.SettingsFile">
+            <summary>
+            Settings file.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.HtmlHomepage">
+            <summary>
+            Default HTML homepage.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.LogFilename">
+            <summary>
+            Log filename.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.LogDirectory">
+            <summary>
+            Log directory.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.BinaryContentType">
+            <summary>
+            Binary content type.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.JsonContentType">
+            <summary>
+            JSON content type.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.HtmlContentType">
+            <summary>
+            HTML content type.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.PngContentType">
+            <summary>
+            PNG content type.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.TextContentType">
+            <summary>
+            Text content type.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.FaviconFilename">
+            <summary>
+            Favicon filename.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.FaviconContentType">
+            <summary>
+            Favicon content type.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.DefaultGUID">
+            <summary>
+            Default GUID.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.ForwardedForHeader">
+            <summary>
+            Forwarded for header, generally x-forwarded-for.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.RequestIdHeader">
+            <summary>
+            Request ID header, generally x-request-id.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Constants.AuthContextHeader">
+            <summary>
+            Authentication context header.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.LoadBalancingMode">
+            <summary>
+            Load balancing mode.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.LoadBalancingMode.Random">
+            <summary>
+            Random.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.LoadBalancingMode.RoundRobin">
+            <summary>
+            Round robin.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.MatchingApiEndpoint">
+            <summary>
+            Matching API endpoint.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.MatchingApiEndpoint.AuthRequired">
+            <summary>
+            Boolean indicating if the endpoint requires authentication.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.MatchingApiEndpoint.Endpoint">
+            <summary>
+            API endpoint.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.MatchingApiEndpoint.ParameterizedUrl">
+            <summary>
+            Parameterized URL.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.MatchingApiEndpoint.Parameters">
+            <summary>
+            URL parameters.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.MatchingApiEndpoint.#ctor">
+            <summary>
+            Matching API endpoint.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.OriginServer">
+            <summary>
+            Origin server.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.Identifier">
+            <summary>
+            Unique identifier for this origin server.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.Name">
+            <summary>
+            Name for this origin server.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.Hostname">
+            <summary>
+            Hostname.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.Port">
+            <summary>
+            TCP port.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.Ssl">
+            <summary>
+            Enable or disable SSL.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.LogRequestBody">
+            <summary>
+            True to log the request body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.LogResponseBody">
+            <summary>
+            True to log the response body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.UrlPrefix">
+            <summary>
+            URL.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Services.GatewayService">
+            <summary>
+            Gateway service.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.#ctor(Switchboard.Core.SwitchboardSettings,Switchboard.Core.SwitchboardCallbacks,SyslogLogging.LoggingModule,SerializationHelper.Serializer)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Settings.</param>
+            <param name="callbacks">Callbacks.</param>
+            <param name="logging">Logging.</param>
+            <param name="serializer">Serializer.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.Dispose(System.Boolean)">
+            <summary>
+            Dispose.
+            </summary>
+            <param name="disposing">Disposing.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.Dispose">
+            <summary>
+            Dispose.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.InitializeRoutes(WatsonWebserver.Core.WebserverBase)">
+            <summary>
+            Initialize routes.
+            </summary>
+            <param name="webserver">Webserver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.OptionsRoute(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Route for handling OPTIONS requests.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.PreRoutingHandler(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Pre-routing handler.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.PostRoutingHandler(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Post-routing handler.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.AuthenticateRequest(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Authenticate request.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.GatewayService.DefaultRoute(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Default request handler.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Settings.LoggingSettings">
+            <summary>
+            Logging settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.LoggingSettings.Servers">
+            <summary>
+            List of syslog servers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.LoggingSettings.LogDirectory">
+            <summary>
+            Log directory.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.LoggingSettings.LogFilename">
+            <summary>
+            Log filename.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.LoggingSettings.ConsoleLogging">
+            <summary>
+            Enable or disable console logging.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.LoggingSettings.EnableColors">
+            <summary>
+            Enable colors in logging.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.LoggingSettings.MinimumSeverity">
+            <summary>
+            Minimum severity.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.LoggingSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.SyslogServer">
+            <summary>
+            Syslog server settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.SyslogServer.Hostname">
+            <summary>
+            Hostname.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.SyslogServer.Port">
+            <summary>
+            Port.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.SyslogServer.RandomizePorts">
+            <summary>
+            Boolean to indicate whether or not randomized port numbers should be used.
+            If false, the value in 'Port' will be used.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.SyslogServer.MinimumPort">
+            <summary>
+            Minimum port.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.SyslogServer.MaximumPort">
+            <summary>
+            Maximum port.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.SyslogServer.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.SyslogServer.#ctor(System.String,System.Int32)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="hostname">Hostname.</param>
+            <param name="port">Port.</param>
+        </member>
+        <member name="M:Switchboard.Core.Settings.SyslogServer.#ctor(System.String,System.Int32,System.Int32)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="hostname">Hostname.</param>
+            <param name="minPort">Minimum port number.</param>
+            <param name="maxPort">Maximum port number.</param>
+        </member>
+        <member name="T:Switchboard.Core.SwitchboardCallbacks">
+            <summary>
+            Switchboard callbacks.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardCallbacks.Authenticate">
+            <summary>
+            Authenticate a request.  This method will pass to your application an HttpContextBase object.  Your application should return a populated AuthenticationResult object.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.SwitchboardCallbacks.#ctor">
+            <summary>
+            Switchboard callbacks.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.SwitchboardDaemon">
+            <summary>
+            Switchboard.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardDaemon.Callbacks">
+            <summary>
+            Switchboard callbacks.  Attach handlers to these methods to integrate your application logic into Switchboard.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.SwitchboardDaemon.#ctor(Switchboard.Core.SwitchboardSettings)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Settings.</param>
+        </member>
+        <member name="M:Switchboard.Core.SwitchboardDaemon.Dispose(System.Boolean)">
+            <summary>
+            Dispose.
+            </summary>
+            <param name="disposing">Disposing.</param>
+        </member>
+        <member name="M:Switchboard.Core.SwitchboardDaemon.Dispose">
+            <summary>
+            Dispose.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.SwitchboardSettings">
+            <summary>
+            Settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardSettings.Logging">
+            <summary>
+            Logging settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardSettings.Endpoints">
+            <summary>
+            Endpoints.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardSettings.Origins">
+            <summary>
+            Origin servers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardSettings.BlockedHeaders">
+            <summary>
+            List of blocked headers.  These headers are not forwarded from incoming requests to origin servers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardSettings.Webserver">
+            <summary>
+            Webserver settings.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.SwitchboardSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.UrlTools">
+            <summary>
+            URL tools.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.UrlTools.RewriteUrl(System.String,System.String,Switchboard.Core.ApiEndpoint)">
+            <summary>
+            Rewrite a URL based on URL rewrite rules from an API endpoint.
+            </summary>
+            <param name="method">HTTP method.</param>
+            <param name="url">Original URL.</param>
+            <param name="endpoint">API endpoint.</param>
+            <returns>Rewritten URL or original URL if no change.</returns>
+        </member>
+        <member name="T:Switchboard.Core.YamlSerializer">
+            <summary>
+            YAML serializer.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.YamlSerializer.ToYaml(System.Object)">
+            <summary>
+            Serialize to YAML.
+            </summary>
+            <param name="obj"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Switchboard.Core.YamlSerializer.FromYaml``1(System.String)">
+            <summary>
+            Deserialize from YAML.
+            </summary>
+            <typeparam name="T">Type.</typeparam>
+            <param name="yaml">YAML.</param>
+            <returns>Instance.</returns>
+        </member>
+    </members>
+</doc>
