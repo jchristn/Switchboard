@@ -45,7 +45,7 @@
 
             using (SwitchboardDaemon switchboard = new SwitchboardDaemon(_Settings))
             {
-                switchboard.Callbacks.Authenticate = AuthenticateRequest;
+                switchboard.Callbacks.AuthenticateAndAuthorize = AuthenticateAndAuthorizeRequest;
 
                 using (_Server1 = new Webserver(_Server1Settings, Server1Route))
                 {
@@ -148,31 +148,61 @@
             }
         }
 
-        private static async Task<AuthenticationResult> AuthenticateRequest(HttpContextBase ctx)
+        private static async Task<AuthContext> AuthenticateAndAuthorizeRequest(HttpContextBase ctx)
         {
             string authHeader = ctx.Request.RetrieveHeaderValue("Authorization");
             if (!String.IsNullOrEmpty(authHeader))
             {
-                return new AuthenticationResult
+                return new AuthContext
                 {
-                    Result = AuthenticationResultEnum.Success,
+                    Authentication = new AuthenticationContext
+                    {
+                        Result = AuthenticationResultEnum.Success,
+                        Metadata = new Dictionary<string, string>()
+                        {
+                            { "Authenticated", "true" }
+                        }
+                    },
+                    Authorization = new AuthorizationContext
+                    {
+                        Result = AuthorizationResultEnum.Success,
+                        Metadata = new Dictionary<string, string>()
+                        {
+                            { "Authorized", "true" }
+                        }
+                    },
                     Metadata = new Dictionary<string, string>()
                     {
-                        { "Authenticated", "true" },
-                        { "Foo", "Bar" }
+                        { "Allow", "true" }
                     }
                 };
             }
             else
             {
-                return new AuthenticationResult
+                return new AuthContext
                 {
-                    Result = AuthenticationResultEnum.Denied,
+                    Authentication = new AuthenticationContext
+                    {
+                        Result = AuthenticationResultEnum.Denied,
+                        Metadata = new Dictionary<string, string>()
+                        {
+                            { "Authenticated", "false" }
+                        }
+                    },
+                    Authorization = new AuthorizationContext
+                    {
+                        Result = AuthorizationResultEnum.Denied,
+                        Metadata = new Dictionary<string, string>()
+                        {
+                            { "Authorized", "false" }
+                        }
+                    },
                     Metadata = new Dictionary<string, string>()
                     {
-                        { "Fix", "Add an Authorization header, literally any Authorization header." }
+                        { "Allow", "false" },
+                        { "Error", "Supply an Authorization header in your request" }
                     },
-                    FailureMessage = "Add an Authorization header, literally any Authorization header."
+                    FailureMessage = "Supply an Authorization header in your request"
                 };
             }
         }
@@ -292,7 +322,7 @@
                     Console.WriteLine(
                         "| Auth context: " + Environment.NewLine
                         + _Serializer.SerializeJson(
-                            AuthenticationResult.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer), 
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer), 
                             true));
                 }
             }
@@ -321,7 +351,7 @@
                     Console.WriteLine(
                         "| Auth context: " + Environment.NewLine
                         + _Serializer.SerializeJson(
-                            AuthenticationResult.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
                             true));
                 }
             }
@@ -350,7 +380,7 @@
                     Console.WriteLine(
                         "| Auth context: " + Environment.NewLine
                         + _Serializer.SerializeJson(
-                            AuthenticationResult.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
                             true));
                 }
             }
@@ -379,7 +409,7 @@
                     Console.WriteLine(
                         "| Auth context: " + Environment.NewLine
                         + _Serializer.SerializeJson(
-                            AuthenticationResult.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
                             true));
                 }
             }

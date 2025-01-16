@@ -15,9 +15,9 @@
         #region Public-Members
 
         /// <summary>
-        /// Authenticate a request.  This method will pass to your application an HttpContextBase object.  Your application should return a populated AuthenticationResult object.
+        /// Authenticate and authorize a request.  This method will pass to your application an HttpContextBase object.  Your application should return a populated AuthContext object.
         /// </summary>
-        public Func<HttpContextBase, Task<AuthenticationResult>> Authenticate { get; set; }
+        public Func<HttpContextBase, Task<AuthContext>> AuthenticateAndAuthorize { get; set; }
 
         #endregion
 

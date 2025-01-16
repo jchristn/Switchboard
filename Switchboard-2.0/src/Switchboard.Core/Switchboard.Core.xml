@@ -242,45 +242,71 @@
             <param name="description">Description.</param>
             
         </member>
-        <member name="T:Switchboard.Core.AuthenticationResult">
+        <member name="T:Switchboard.Core.AuthContext">
             <summary>
-            Authentication result.
+            Auth context.
             </summary>
         </member>
-        <member name="P:Switchboard.Core.AuthenticationResult.Result">
+        <member name="P:Switchboard.Core.AuthContext.Authentication">
             <summary>
-            Authentication result.
+            Authentication context.
             </summary>
         </member>
-        <member name="P:Switchboard.Core.AuthenticationResult.FailureMessage">
+        <member name="P:Switchboard.Core.AuthContext.Authorization">
             <summary>
-            Message to provide to the user in the event that authentication was not successful.
+            Authorization context.
             </summary>
         </member>
-        <member name="P:Switchboard.Core.AuthenticationResult.Metadata">
+        <member name="P:Switchboard.Core.AuthContext.Metadata">
             <summary>
             User-assignable metadata, useful for passing context to and from your application and Switchboard.
             This object must be serializable to JSON.
             </summary>
         </member>
-        <member name="M:Switchboard.Core.AuthenticationResult.#ctor">
+        <member name="P:Switchboard.Core.AuthContext.FailureMessage">
             <summary>
-            Authentication result.
+            Message to provide to the user in the event that authentication or authorization was not successful.
             </summary>
         </member>
-        <member name="M:Switchboard.Core.AuthenticationResult.ToBase64String(SerializationHelper.Serializer)">
+        <member name="M:Switchboard.Core.AuthContext.#ctor">
             <summary>
-            Create a base64 representation of the authentication result.
+            Auth context.
             </summary>
-            <returns>Base64 string.</returns>
         </member>
-        <member name="M:Switchboard.Core.AuthenticationResult.FromBase64String(System.String,SerializationHelper.Serializer)">
+        <member name="M:Switchboard.Core.AuthContext.FromBase64String(System.String,SerializationHelper.Serializer)">
             <summary>
             Return a populated authentication result object from a supplied base64 string.
             </summary>
             <param name="base64">Base64 string.</param>
             <param name="serializer">Serializer.</param>
             <returns>AuthenticationResult.</returns>
+        </member>
+        <member name="M:Switchboard.Core.AuthContext.ToBase64String(SerializationHelper.Serializer)">
+            <summary>
+            Create a base64 representation of the authentication context.
+            </summary>
+            <returns>Base64 string.</returns>
+        </member>
+        <member name="T:Switchboard.Core.AuthenticationContext">
+            <summary>
+            Authentication context.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthenticationContext.Result">
+            <summary>
+            Authentication result.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthenticationContext.Metadata">
+            <summary>
+            User-assignable metadata, useful for passing context to and from your application and Switchboard.
+            This object must be serializable to JSON.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.AuthenticationContext.#ctor">
+            <summary>
+            Authentication context.
+            </summary>
         </member>
         <member name="T:Switchboard.Core.AuthenticationResultEnum">
             <summary>
@@ -348,6 +374,61 @@
             </summary>
         </member>
         <member name="F:Switchboard.Core.AuthenticationResultEnum.InternalError">
+            <summary>
+            InternalError.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.AuthorizationContext">
+            <summary>
+            Authorization context.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthorizationContext.Result">
+            <summary>
+            Authorization result.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthorizationContext.Metadata">
+            <summary>
+            User-assignable metadata, useful for passing context to and from your application and Switchboard.
+            This object must be serializable to JSON.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.AuthorizationContext.#ctor">
+            <summary>
+            Authorization context.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.AuthorizationContext.ToBase64String(SerializationHelper.Serializer)">
+            <summary>
+            Create a base64 representation of the authentication result.
+            </summary>
+            <returns>Base64 string.</returns>
+        </member>
+        <member name="M:Switchboard.Core.AuthorizationContext.FromBase64String(System.String,SerializationHelper.Serializer)">
+            <summary>
+            Return a populated authentication result object from a supplied base64 string.
+            </summary>
+            <param name="base64">Base64 string.</param>
+            <param name="serializer">Serializer.</param>
+            <returns>AuthenticationResult.</returns>
+        </member>
+        <member name="T:Switchboard.Core.AuthorizationResultEnum">
+            <summary>
+            Authorization result.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthorizationResultEnum.Success">
+            <summary>
+            Success.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthorizationResultEnum.Denied">
+            <summary>
+            Denied.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthorizationResultEnum.InternalError">
             <summary>
             InternalError.
             </summary>
@@ -690,9 +771,9 @@
             Switchboard callbacks.
             </summary>
         </member>
-        <member name="P:Switchboard.Core.SwitchboardCallbacks.Authenticate">
+        <member name="P:Switchboard.Core.SwitchboardCallbacks.AuthenticateAndAuthorize">
             <summary>
-            Authenticate a request.  This method will pass to your application an HttpContextBase object.  Your application should return a populated AuthenticationResult object.
+            Authenticate and authorize a request.  This method will pass to your application an HttpContextBase object.  Your application should return a populated AuthContext object.
             </summary>
         </member>
         <member name="M:Switchboard.Core.SwitchboardCallbacks.#ctor">

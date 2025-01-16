@@ -5,21 +5,16 @@ using System.Text;
 namespace Switchboard.Core
 {
     /// <summary>
-    /// Authentication result.
+    /// Authorization context.
     /// </summary>
-    public class AuthenticationResult
+    public class AuthorizationContext
     {
         #region Public-Members
 
         /// <summary>
-        /// Authentication result.
+        /// Authorization result.
         /// </summary>
-        public AuthenticationResultEnum Result { get; set; } = AuthenticationResultEnum.Success;
-
-        /// <summary>
-        /// Message to provide to the user in the event that authentication was not successful.
-        /// </summary>
-        public string FailureMessage { get; set; } = null;
+        public AuthorizationResultEnum Result { get; set; } = AuthorizationResultEnum.Success;
 
         /// <summary>
         /// User-assignable metadata, useful for passing context to and from your application and Switchboard.
@@ -36,9 +31,9 @@ namespace Switchboard.Core
         #region Constructors-and-Factories
 
         /// <summary>
-        /// Authentication result.
+        /// Authorization context.
         /// </summary>
-        public AuthenticationResult()
+        public AuthorizationContext()
         {
 
         }
@@ -66,14 +61,14 @@ namespace Switchboard.Core
         /// <param name="base64">Base64 string.</param>
         /// <param name="serializer">Serializer.</param>
         /// <returns>AuthenticationResult.</returns>
-        public static AuthenticationResult FromBase64String(string base64, Serializer serializer)
+        public static AuthenticationContext FromBase64String(string base64, Serializer serializer)
         {
             if (String.IsNullOrEmpty(base64)) throw new ArgumentNullException(nameof(base64));
             if (serializer == null) throw new ArgumentNullException(nameof(serializer));
 
             byte[] bytes = Convert.FromBase64String(base64);
             string json = Encoding.UTF8.GetString(bytes);
-            return serializer.DeserializeJson<AuthenticationResult>(json);
+            return serializer.DeserializeJson<AuthenticationContext>(json);
         }
 
         #endregion
