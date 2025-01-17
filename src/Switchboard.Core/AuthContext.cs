@@ -61,6 +61,7 @@
 
         #region Private-Members
 
+        private static Serializer _Serializer = new Serializer();
         private AuthenticationContext _Authentication = new AuthenticationContext();
         private AuthorizationContext _Authorization = new AuthorizationContext();
 
@@ -80,35 +81,31 @@
         /// Return a populated authentication result object from a supplied base64 string.
         /// </summary>
         /// <param name="base64">Base64 string.</param>
-        /// <param name="serializer">Serializer.</param>
         /// <returns>AuthenticationResult.</returns>
-        public static AuthContext FromBase64String(string base64, Serializer serializer)
+        public static AuthContext FromBase64String(string base64)
         {
             if (String.IsNullOrEmpty(base64)) throw new ArgumentNullException(nameof(base64));
-            if (serializer == null) throw new ArgumentNullException(nameof(serializer));
 
             byte[] bytes = Convert.FromBase64String(base64);
             string json = Encoding.UTF8.GetString(bytes);
-            return serializer.DeserializeJson<AuthContext>(json);
+            return _Serializer.DeserializeJson<AuthContext>(json);
         }
 
         /// <summary>
         /// Try to parse a base64 string into an authentication context.
         /// </summary>
         /// <param name="base64">Base64 string.</param>
-        /// <param name="serializer">Serializer.</param>
         /// <param name="authContext">Auth context.</param>
-        /// <returns></returns>
-        public static bool TryFromBase64String(string base64, Serializer serializer, out AuthContext authContext)
+        /// <returns>True if successful.</returns>
+        public static bool TryFromBase64String(string base64, out AuthContext authContext)
         {
             if (String.IsNullOrEmpty(base64)) throw new ArgumentNullException(nameof(base64));
-            if (serializer == null) throw new ArgumentNullException(nameof(serializer));
 
             authContext = null;
 
             try
             {
-                authContext = AuthContext.FromBase64String(base64, serializer);
+                authContext = AuthContext.FromBase64String(base64);
                 return true;
             }
             catch (Exception)

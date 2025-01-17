@@ -322,7 +322,7 @@
                     Console.WriteLine(
                         "| Auth context: " + Environment.NewLine
                         + _Serializer.SerializeJson(
-                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer), 
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader)), 
                             true));
                 }
             }
@@ -351,7 +351,7 @@
                     Console.WriteLine(
                         "| Auth context: " + Environment.NewLine
                         + _Serializer.SerializeJson(
-                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader)),
                             true));
                 }
             }
@@ -380,7 +380,7 @@
                     Console.WriteLine(
                         "| Auth context: " + Environment.NewLine
                         + _Serializer.SerializeJson(
-                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader)),
                             true));
                 }
             }
@@ -409,7 +409,7 @@
                     Console.WriteLine(
                         "| Auth context: " + Environment.NewLine
                         + _Serializer.SerializeJson(
-                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader)),
                             true));
                 }
             }

@@ -273,22 +273,20 @@
             Auth context.
             </summary>
         </member>
-        <member name="M:Switchboard.Core.AuthContext.FromBase64String(System.String,SerializationHelper.Serializer)">
+        <member name="M:Switchboard.Core.AuthContext.FromBase64String(System.String)">
             <summary>
             Return a populated authentication result object from a supplied base64 string.
             </summary>
             <param name="base64">Base64 string.</param>
-            <param name="serializer">Serializer.</param>
             <returns>AuthenticationResult.</returns>
         </member>
-        <member name="M:Switchboard.Core.AuthContext.TryFromBase64String(System.String,SerializationHelper.Serializer,Switchboard.Core.AuthContext@)">
+        <member name="M:Switchboard.Core.AuthContext.TryFromBase64String(System.String,Switchboard.Core.AuthContext@)">
             <summary>
             Try to parse a base64 string into an authentication context.
             </summary>
             <param name="base64">Base64 string.</param>
-            <param name="serializer">Serializer.</param>
             <param name="authContext">Auth context.</param>
-            <returns></returns>
+            <returns>True if successful.</returns>
         </member>
         <member name="M:Switchboard.Core.AuthContext.ToBase64String(SerializationHelper.Serializer)">
             <summary>
