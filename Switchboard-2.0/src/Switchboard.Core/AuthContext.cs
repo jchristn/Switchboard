@@ -92,6 +92,31 @@
             return serializer.DeserializeJson<AuthContext>(json);
         }
 
+        /// <summary>
+        /// Try to parse a base64 string into an authentication context.
+        /// </summary>
+        /// <param name="base64">Base64 string.</param>
+        /// <param name="serializer">Serializer.</param>
+        /// <param name="authContext">Auth context.</param>
+        /// <returns></returns>
+        public static bool TryFromBase64String(string base64, Serializer serializer, out AuthContext authContext)
+        {
+            if (String.IsNullOrEmpty(base64)) throw new ArgumentNullException(nameof(base64));
+            if (serializer == null) throw new ArgumentNullException(nameof(serializer));
+
+            authContext = null;
+
+            try
+            {
+                authContext = AuthContext.FromBase64String(base64, serializer);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         #endregion
 
         #region Public-Methods
