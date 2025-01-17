@@ -15,11 +15,90 @@
     "EnableColors": true,
     "MinimumSeverity": 1
   },
-  "Endpoints": [],
-  "Origins": [],
+  "Endpoints": [
+    {
+      "Identifier": "test-endpoint",
+      "Name": "Test Endpoint",
+      "TimeoutMs": 60000,
+      "LoadBalancing": "RoundRobin",
+      "BlockHttp10": false,
+      "LogRequestFull": false,
+      "LogRequestBody": false,
+      "LogResponseBody": false,
+      "MaxRequestBodySize": 536870912,
+      "OriginServers": [
+        "server1",
+        "server2",
+        "server3",
+        "server4"
+      ],
+      "LastIndex": 0,
+      "UseGlobalBlockedHeaders": true,
+      "AuthContextHeader": "x-sb-auth-context",
+      "BlockedHeaders": [],
+      "Unauthenticated": {
+        "ParameterizedUrls": {
+          "GET": [
+            "/unauthenticated"
+          ]
+        }
+      },
+      "Authenticated": {
+        "ParameterizedUrls": {
+          "GET": [
+            "/authenticated"
+          ]
+        }
+      },
+      "RewriteUrls": {}
+    }
+  ],
+  "Origins": [
+    {
+      "Identifier": "server1",
+      "Name": "Server 1",
+      "Hostname": "localhost",
+      "Port": 8001,
+      "Ssl": false,
+      "LogRequestBody": false,
+      "LogResponseBody": false,
+      "UrlPrefix": "http://localhost:8001"
+    },
+    {
+      "Identifier": "server2",
+      "Name": "Server 2",
+      "Hostname": "localhost",
+      "Port": 8002,
+      "Ssl": false,
+      "LogRequestBody": false,
+      "LogResponseBody": false,
+      "UrlPrefix": "http://localhost:8002"
+    },
+    {
+      "Identifier": "server3",
+      "Name": "Server 3",
+      "Hostname": "localhost",
+      "Port": 8003,
+      "Ssl": false,
+      "LogRequestBody": false,
+      "LogResponseBody": false,
+      "UrlPrefix": "http://localhost:8003"
+    },
+    {
+      "Identifier": "server4",
+      "Name": "Server 4",
+      "Hostname": "localhost",
+      "Port": 8004,
+      "Ssl": false,
+      "LogRequestBody": false,
+      "LogResponseBody": false,
+      "UrlPrefix": "http://localhost:8004"
+    }
+  ],
   "BlockedHeaders": [
     "alt-svc",
     "connection",
+    "date",
     "host",
     "keep-alive",
     "proxy-authorization",
@@ -34,7 +113,6 @@
   "Webserver": {
     "Hostname": "*",
     "Port": 8000,
-    "Prefix": "http://localhost:8000/",
     "IO": {
       "StreamBufferSize": 65536,
       "MaxRequests": 1024,

@@ -21,9 +21,12 @@
                 Identifier = "testendpoint",
                 Name = "Test Endpoint",
                 LoadBalancing = LoadBalancingMode.RoundRobin,
-                ParameterizedUrls = new Dictionary<string, List<string>>
+                Unauthenticated = new ApiEndpointGroup
                 {
-                    { "GET", new List<string> { "/test" } }
+                    ParameterizedUrls = new Dictionary<string, List<string>>
+                    {
+                        { "GET", new List<string> { "/test" } }
+                    }
                 },
                 OriginServers = new List<string>
                 {

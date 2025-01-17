@@ -19,18 +19,6 @@
             Name for this API endpoint.
             </summary>
         </member>
-        <member name="P:Switchboard.Core.ApiEndpoint.ParameterizedUrls">
-            <summary>
-            Key is the upper-case HTTP method.
-            Value is a list of parameterized URLs to match, e.g. /{version}/foo/bar/{id}.
-            </summary>
-        </member>
-        <member name="P:Switchboard.Core.ApiEndpoint.RewriteUrls">
-            <summary>
-            Key is the upper-case HTTP method.
-            Value is a dictionary where the key is the original URL and the value is the URL to which the request should be directed.
-            </summary>
-        </member>
         <member name="P:Switchboard.Core.ApiEndpoint.TimeoutMs">
             <summary>
             Number of milliseconds to wait before considering the request to be timed out.
@@ -82,14 +70,52 @@
             True to use global blocked headers.  Headers in the global blocked headers will not be forwarded from incoming requests to origin servers.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.AuthContextHeader">
+            <summary>
+            Header to add when passing authentication context to an origin server.  
+            When set, the entire AuthenticationResult object will be JSON serialized and base64 encoded, and passed to the origin server using this header.
+            </summary>
+        </member>
         <member name="P:Switchboard.Core.ApiEndpoint.BlockedHeaders">
             <summary>
             Explicit list of blocked headers.  These headers are not forwarded from incoming requests to origin servers.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.Unauthenticated">
+            <summary>
+            Unauthenticated API endpoints.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.Authenticated">
+            <summary>
+            Authenticated API endpoints.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.RewriteUrls">
+            <summary>
+            Key is the upper-case HTTP method.
+            Value is a dictionary where the key is the original URL and the value is the URL to which the request should be directed.
+            </summary>
+        </member>
         <member name="M:Switchboard.Core.ApiEndpoint.#ctor">
             <summary>
             Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.ApiEndpointGroup">
+            <summary>
+            API endpoint group.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpointGroup.ParameterizedUrls">
+            <summary>
+            Key is the upper-case HTTP method.
+            Value is a list of parameterized URLs to match, e.g. /{version}/foo/bar/{id}.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.ApiEndpointGroup.#ctor">
+            <summary>
+            API endpoint group.
             </summary>
         </member>
         <member name="T:Switchboard.Core.ApiErrorEnum">
@@ -216,6 +242,206 @@
             <param name="description">Description.</param>
             
         </member>
+        <member name="T:Switchboard.Core.AuthContext">
+            <summary>
+            Auth context.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthContext.Authentication">
+            <summary>
+            Authentication context.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthContext.Authorization">
+            <summary>
+            Authorization context.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthContext.Metadata">
+            <summary>
+            User-assignable metadata, useful for passing context to and from your application and Switchboard.
+            This object must be serializable to JSON.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthContext.FailureMessage">
+            <summary>
+            Message to provide to the user in the event that authentication or authorization was not successful.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.AuthContext.#ctor">
+            <summary>
+            Auth context.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.AuthContext.FromBase64String(System.String,SerializationHelper.Serializer)">
+            <summary>
+            Return a populated authentication result object from a supplied base64 string.
+            </summary>
+            <param name="base64">Base64 string.</param>
+            <param name="serializer">Serializer.</param>
+            <returns>AuthenticationResult.</returns>
+        </member>
+        <member name="M:Switchboard.Core.AuthContext.TryFromBase64String(System.String,SerializationHelper.Serializer,Switchboard.Core.AuthContext@)">
+            <summary>
+            Try to parse a base64 string into an authentication context.
+            </summary>
+            <param name="base64">Base64 string.</param>
+            <param name="serializer">Serializer.</param>
+            <param name="authContext">Auth context.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Switchboard.Core.AuthContext.ToBase64String(SerializationHelper.Serializer)">
+            <summary>
+            Create a base64 representation of the authentication context.
+            </summary>
+            <returns>Base64 string.</returns>
+        </member>
+        <member name="T:Switchboard.Core.AuthenticationContext">
+            <summary>
+            Authentication context.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthenticationContext.Result">
+            <summary>
+            Authentication result.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthenticationContext.Metadata">
+            <summary>
+            User-assignable metadata, useful for passing context to and from your application and Switchboard.
+            This object must be serializable to JSON.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.AuthenticationContext.#ctor">
+            <summary>
+            Authentication context.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.AuthenticationResultEnum">
+            <summary>
+            Authentication result.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.Success">
+            <summary>
+            Success.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.InvalidCredentials">
+            <summary>
+            InvalidCredentials.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.NotFound">
+            <summary>
+            NotFound.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.Inactive">
+            <summary>
+            Inactive.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.Denied">
+            <summary>
+            Denied.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.Locked">
+            <summary>
+            Locked.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.TemporaryPassword">
+            <summary>
+            TemporaryPassword.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.PasswordExpired">
+            <summary>
+            PasswordExpired.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.TokenExpired">
+            <summary>
+            TokenExpired.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.SessionExpired">
+            <summary>
+            SessionExpired.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.DeviceNotTrusted">
+            <summary>
+            DeviceNotTrusted.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.LocationBlocked">
+            <summary>
+            LocationBlocked.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthenticationResultEnum.InternalError">
+            <summary>
+            InternalError.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.AuthorizationContext">
+            <summary>
+            Authorization context.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthorizationContext.Result">
+            <summary>
+            Authorization result.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.AuthorizationContext.Metadata">
+            <summary>
+            User-assignable metadata, useful for passing context to and from your application and Switchboard.
+            This object must be serializable to JSON.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.AuthorizationContext.#ctor">
+            <summary>
+            Authorization context.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.AuthorizationContext.ToBase64String(SerializationHelper.Serializer)">
+            <summary>
+            Create a base64 representation of the authentication result.
+            </summary>
+            <returns>Base64 string.</returns>
+        </member>
+        <member name="M:Switchboard.Core.AuthorizationContext.FromBase64String(System.String,SerializationHelper.Serializer)">
+            <summary>
+            Return a populated authentication result object from a supplied base64 string.
+            </summary>
+            <param name="base64">Base64 string.</param>
+            <param name="serializer">Serializer.</param>
+            <returns>AuthenticationResult.</returns>
+        </member>
+        <member name="T:Switchboard.Core.AuthorizationResultEnum">
+            <summary>
+            Authorization result.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthorizationResultEnum.Success">
+            <summary>
+            Success.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthorizationResultEnum.Denied">
+            <summary>
+            Denied.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.AuthorizationResultEnum.InternalError">
+            <summary>
+            InternalError.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.Constants">
             <summary>
             Constants.
@@ -297,6 +523,11 @@
             Request ID header, generally x-request-id.
             </summary>
         </member>
+        <member name="F:Switchboard.Core.Constants.AuthContextHeader">
+            <summary>
+            Authentication context header.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.LoadBalancingMode">
             <summary>
             Load balancing mode.
@@ -317,6 +548,11 @@
             Matching API endpoint.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.MatchingApiEndpoint.AuthRequired">
+            <summary>
+            Boolean indicating if the endpoint requires authentication.
+            </summary>
+        </member>
         <member name="P:Switchboard.Core.MatchingApiEndpoint.Endpoint">
             <summary>
             API endpoint.
@@ -334,7 +570,7 @@
         </member>
         <member name="M:Switchboard.Core.MatchingApiEndpoint.#ctor">
             <summary>
-            Instantiate.
+            Matching API endpoint.
             </summary>
         </member>
         <member name="T:Switchboard.Core.OriginServer">
@@ -387,10 +623,14 @@
             Gateway service.
             </summary>
         </member>
-        <member name="M:Switchboard.Core.Services.GatewayService.#ctor(Switchboard.Core.SwitchboardSettings,SyslogLogging.LoggingModule,SerializationHelper.Serializer)">
+        <member name="M:Switchboard.Core.Services.GatewayService.#ctor(Switchboard.Core.SwitchboardSettings,Switchboard.Core.SwitchboardCallbacks,SyslogLogging.LoggingModule,SerializationHelper.Serializer)">
             <summary>
             Instantiate.
             </summary>
+            <param name="settings">Settings.</param>
+            <param name="callbacks">Callbacks.</param>
+            <param name="logging">Logging.</param>
+            <param name="serializer">Serializer.</param>
         </member>
         <member name="M:Switchboard.Core.Services.GatewayService.Dispose(System.Boolean)">
             <summary>
@@ -535,9 +775,29 @@
             <param name="minPort">Minimum port number.</param>
             <param name="maxPort">Maximum port number.</param>
         </member>
+        <member name="T:Switchboard.Core.SwitchboardCallbacks">
+            <summary>
+            Switchboard callbacks.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardCallbacks.AuthenticateAndAuthorize">
+            <summary>
+            Authenticate and authorize a request.  This method will pass to your application an HttpContextBase object.  Your application should return a populated AuthContext object.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.SwitchboardCallbacks.#ctor">
+            <summary>
+            Switchboard callbacks.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.SwitchboardDaemon">
             <summary>
             Switchboard.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardDaemon.Callbacks">
+            <summary>
+            Switchboard callbacks.  Attach handlers to these methods to integrate your application logic into Switchboard.
             </summary>
         </member>
         <member name="M:Switchboard.Core.SwitchboardDaemon.#ctor(Switchboard.Core.SwitchboardSettings)">

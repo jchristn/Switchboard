@@ -2,10 +2,13 @@
 
 ## Current Version
 
-v1.0.x
+v2.0.x
 
-- Initial release
+- Added authentication support
+- Reorganized API endpoints into groups (`ApiEndpointGroup`) for authenticated `Authenticated` and unauthenticated `Unauthenticated`
 
 ## Previous Versions
 
-Notes from previous versions will be placed here.
+v1.0.x
+
+- Initial release

@@ -133,6 +133,11 @@ namespace Switchboard.Core
         /// </summary>
         public static string RequestIdHeader = "x-sb-request-id";
 
+        /// <summary>
+        /// Authentication context header.
+        /// </summary>
+        public static string AuthContextHeader = "x-sb-auth-context";
+
         #endregion
     }
 }

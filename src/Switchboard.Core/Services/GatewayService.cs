@@ -32,6 +32,7 @@
 
         private readonly string _Header = "[Gateway] ";
         private SwitchboardSettings _Settings = null;
+        private SwitchboardCallbacks _Callbacks = null;
         private LoggingModule _Logging = null;
         private Serializer _Serializer = null;
         private Random _Random = new Random(Guid.NewGuid().GetHashCode());
@@ -44,12 +45,18 @@
         /// <summary>
         /// Instantiate.
         /// </summary>
+        /// <param name="settings">Settings.</param>
+        /// <param name="callbacks">Callbacks.</param>
+        /// <param name="logging">Logging.</param>
+        /// <param name="serializer">Serializer.</param>
         public GatewayService(
             SwitchboardSettings settings,
+            SwitchboardCallbacks callbacks,
             LoggingModule logging,
             Serializer serializer)
         {
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _Callbacks = callbacks ?? throw new ArgumentNullException(nameof(callbacks));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
             _Serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         }
@@ -185,31 +192,60 @@
         public async Task DefaultRoute(HttpContextBase ctx)
         {
             Guid requestGuid = Guid.NewGuid();
-
-            MatchingApiEndpoint match = FindApiEndpoint(ctx);
-            if (match == null)
-            {
-                _Logging.Warn(_Header + "no API endpoint found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
-                ctx.Response.StatusCode = 400;
-                ctx.Response.ContentType = Constants.JsonContentType;
-                await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadRequest, null, "No matching API endpoint found"), true));
-                return;
-            }
-
-            if (match.Endpoint.LogRequestFull)
-                _Logging.Debug(_Header + "incoming request:" + Environment.NewLine + _Serializer.SerializeJson(ctx.Request, true));
-
-            if (match.Endpoint.BlockHttp10 && ctx.Request.ProtocolVersion.Equals("HTTP/1.0"))
-            {
-                _Logging.Debug(_Header + "denying HTTP/1.0 request due to API endpoint configuration");
-                ctx.Response.StatusCode = 505;
-                ctx.Response.ContentType = Constants.JsonContentType;
-                await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.UnsupportedHttpVersion), true));
-                return;
-            }
+            AuthContext authContext = null;
 
             try
             {
+                MatchingApiEndpoint match = FindApiEndpoint(ctx);
+                if (match == null)
+                {
+                    _Logging.Warn(_Header + "no API endpoint found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = Constants.JsonContentType;
+                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadRequest, null, "No matching API endpoint found"), true));
+                    return;
+                }
+
+                if (match.Endpoint.LogRequestFull)
+                    _Logging.Debug(_Header + "incoming request:" + Environment.NewLine + _Serializer.SerializeJson(ctx.Request, true));
+
+                if (match.Endpoint.BlockHttp10 && ctx.Request.ProtocolVersion.Equals("HTTP/1.0"))
+                {
+                    _Logging.Debug(_Header + "denying HTTP/1.0 request due to API endpoint configuration");
+                    ctx.Response.StatusCode = 505;
+                    ctx.Response.ContentType = Constants.JsonContentType;
+                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.UnsupportedHttpVersion), true));
+                    return;
+                }
+
+                if (match.AuthRequired)
+                {
+                    if (_Callbacks == null || _Callbacks.AuthenticateAndAuthorize == null)
+                    {
+                        _Logging.Warn(_Header + "API endpoint " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery + " requires auth but no auth callback set");
+                        ctx.Response.StatusCode = 401;
+                        ctx.Response.ContentType = Constants.JsonContentType;
+                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed), true));
+                        return;
+                    }
+
+                    authContext = await _Callbacks.AuthenticateAndAuthorize(ctx);
+                    if (authContext.Authentication.Result != AuthenticationResultEnum.Success 
+                        && authContext.Authorization.Result != AuthorizationResultEnum.Success)
+                    {
+                        _Logging.Warn(
+                            _Header + 
+                            "auth failure reported for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery + " " +
+                            "(" + authContext.Authentication.Result + "/" + authContext.Authorization.Result + ")" +
+                            ": " + authContext.FailureMessage);
+
+                        ctx.Response.StatusCode = 401;
+                        ctx.Response.ContentType = Constants.JsonContentType;
+                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed, null, authContext.FailureMessage), true));
+                        return;
+                    }
+                }
+
                 OriginServer origin = FindOriginServer(match.Endpoint);
                 if (origin == null)
                 {
@@ -233,7 +269,8 @@
                     requestGuid,
                     ctx,
                     match,
-                    origin);
+                    origin,
+                    authContext);
 
                 if (!responseReceived)
                 {
@@ -292,19 +329,22 @@
 
             foreach (ApiEndpoint ep in _Settings.Endpoints)
             {
-                if (ep.ParameterizedUrls != null && ep.ParameterizedUrls.Count > 0)
+                #region Unauthenticated-Endpoints
+
+                if (ep.Unauthenticated.ParameterizedUrls != null && ep.Unauthenticated.ParameterizedUrls.Count > 0)
                 {
-                    if (ep.ParameterizedUrls.Keys.Any(k => k.Equals(ctx.Request.Method.ToString()))
-                        && ep.ParameterizedUrls.Values != null 
-                        && ep.ParameterizedUrls.Values.Count > 0)
+                    if (ep.Unauthenticated.ParameterizedUrls.Keys.Any(k => k.Equals(ctx.Request.Method.ToString()))
+                        && ep.Unauthenticated.ParameterizedUrls.Values != null
+                        && ep.Unauthenticated.ParameterizedUrls.Values.Count > 0)
                     {
-                        KeyValuePair<string, List<string>> match = ep.ParameterizedUrls.First(k => k.Key.Equals(ctx.Request.Method.ToString()));
+                        KeyValuePair<string, List<string>> match = ep.Unauthenticated.ParameterizedUrls.First(k => k.Key.Equals(ctx.Request.Method.ToString()));
                         foreach (string url in match.Value)
                         {
                             if (matcher.Match(url, out nvc))
                             {
                                 return new MatchingApiEndpoint
                                 {
+                                    AuthRequired = false,
                                     Endpoint = ep,
                                     ParameterizedUrl = url,
                                     Parameters = nvc
@@ -313,6 +353,35 @@
                         }
                     }
                 }
+
+                #endregion
+
+                #region Authenticated-Endpoints
+
+                if (ep.Authenticated.ParameterizedUrls != null && ep.Authenticated.ParameterizedUrls.Count > 0)
+                {
+                    if (ep.Authenticated.ParameterizedUrls.Keys.Any(k => k.Equals(ctx.Request.Method.ToString()))
+                        && ep.Authenticated.ParameterizedUrls.Values != null
+                        && ep.Authenticated.ParameterizedUrls.Values.Count > 0)
+                    {
+                        KeyValuePair<string, List<string>> match = ep.Authenticated.ParameterizedUrls.First(k => k.Key.Equals(ctx.Request.Method.ToString()));
+                        foreach (string url in match.Value)
+                        {
+                            if (matcher.Match(url, out nvc))
+                            {
+                                return new MatchingApiEndpoint
+                                {
+                                    AuthRequired = true,
+                                    Endpoint = ep,
+                                    ParameterizedUrl = url,
+                                    Parameters = nvc
+                                };
+                            }
+                        }
+                    }
+                }
+
+                #endregion
             }
 
             return null;
@@ -387,13 +456,14 @@
             Guid requestGuid,
             HttpContextBase ctx,
             MatchingApiEndpoint endpoint,
-            OriginServer origin)
+            OriginServer origin,
+            AuthContext authResult)
         {
             _Logging.Debug(_Header + "proxying request to " + origin.Identifier + " for API endpoint " + endpoint.Endpoint.Identifier + " for request " + requestGuid.ToString());
 
             RestRequest req = null;
             RestResponse resp = null;
-            
+
             using (Timestamp ts = new Timestamp())
             {
                 try
@@ -419,6 +489,9 @@
 
                     req.Headers.Add(Constants.ForwardedForHeader, ctx.Request.Source.IpAddress);
                     req.Headers.Add(Constants.RequestIdHeader, requestGuid.ToString());
+
+                    if (authResult != null && !String.IsNullOrEmpty(endpoint.Endpoint.AuthContextHeader))
+                        req.Headers.Add(endpoint.Endpoint.AuthContextHeader, authResult.ToBase64String(_Serializer));
 
                     if (ctx.Request.Headers != null && ctx.Request.Headers.Count > 0)
                     {
@@ -582,11 +655,11 @@
                 catch (Exception e)
                 {
                     _Logging.Warn(
-                        _Header 
-                        + "exception proxying request to " + origin.Identifier 
-                        + " for API endpoint " + endpoint.Endpoint.Identifier 
-                        + " for request " + requestGuid.ToString() 
-                        + Environment.NewLine 
+                        _Header
+                        + "exception proxying request to " + origin.Identifier
+                        + " for API endpoint " + endpoint.Endpoint.Identifier
+                        + " for request " + requestGuid.ToString()
+                        + Environment.NewLine
                         + e.ToString());
 
                     return false;
@@ -595,10 +668,10 @@
                 {
                     ts.End = DateTime.UtcNow;
                     _Logging.Debug(
-                        _Header 
-                        + "completed request " + requestGuid.ToString() + " " 
+                        _Header
+                        + "completed request " + requestGuid.ToString() + " "
                         + "origin " + origin.Identifier + " "
-                        + "endpoint " + endpoint.Endpoint.Identifier + " " 
+                        + "endpoint " + endpoint.Endpoint.Identifier + " "
                         + (resp != null ? resp.StatusCode : "0") + " "
                         + "(" + ts.TotalMs + "ms)");
 

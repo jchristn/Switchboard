@@ -20,6 +20,22 @@
     {
         #region Public-Members
 
+        /// <summary>
+        /// Switchboard callbacks.  Attach handlers to these methods to integrate your application logic into Switchboard.
+        /// </summary>
+        public SwitchboardCallbacks Callbacks
+        {
+            get
+            {
+                return _Callbacks;
+            }
+            set
+            {
+                if (value == null) _Callbacks = new SwitchboardCallbacks();
+                _Callbacks = value;
+            }
+        }
+
         #endregion
 
         #region Private-Members
@@ -27,6 +43,7 @@
         private static string _Header = "[SwitchboardDaemon] ";
         private static int _ProcessId = Environment.ProcessId;
         private SwitchboardSettings _Settings = null;
+        private SwitchboardCallbacks _Callbacks = new SwitchboardCallbacks();
         private Serializer _Serializer = new Serializer();
         private LoggingModule _Logging = null;
         private GatewayService _GatewayService = null;
@@ -142,7 +159,11 @@
 
             #region Services
 
-            _GatewayService = new GatewayService(_Settings, _Logging, _Serializer);
+            _GatewayService = new GatewayService(
+                _Settings, 
+                _Callbacks, 
+                _Logging, 
+                _Serializer);
 
             #endregion
 

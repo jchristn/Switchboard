@@ -8,9 +8,10 @@ Switchboard is a lightweight application proxy combining reverse proxy and API g
 
 If you have any issues or feedback, please file an issue here in Github. We'd love to have you help by contributing code for new features, optimization to the existing codebase, ideas for future releases, or fixes!
 
-## New in v1.0.x
+## New in v2.0.x
 
-- Initial release
+- Added authentication support
+- Reorganized API endpoints into groups (`ApiEndpointGroup`) for authenticated `Authenticated` and unauthenticated `Unauthenticated`
 
 ## Default Configuration
 
@@ -32,9 +33,20 @@ settings.Endpoints.Add(new ApiEndpoint
     Identifier = "my-api-endpoint",
     Name = "My API endpoint",
     LoadBalancing = LoadBalancingMode.RoundRobin,
-    ParameterizedUrls = new Dictionary<string, List<string>>
+    Unauthenticated = new ApiEndpointGroup // URLs that do not require authentication via the authentication callback
     {
-        { "GET", new List<string> { "/my-api" } } // /my-api will be sent directly to the origin server
+        ParameterizedUrls = new Dictionary<string, List<string>>
+        {
+            { "GET", new List<string> { "/unauthenticated" } },
+        }
+    },
+    Authenticated = new ApiEndpointGroup // URLs that require authentication via the authentication callback
+    {
+        ParameterizedUrls = new Dictionary<string, List<string>>
+        {
+            { "GET", new List<string> { "/authenticated" } },
+            { "GET", new List<string> { "/users/{UserGuid}" } }
+        }
     },
     RewriteUrls = new Dictionary<string, Dictionary<string, string>>
     {
@@ -61,9 +73,38 @@ settings.Origins.Add(new OriginServer
     Ssl = false
 });
 
+// define the authentication and authorization callback
+private static async Task<AuthContext> AuthenticateAndAuthorizeRequest(HttpContextBase ctx)
+{
+    return new AuthContext
+    {
+        Authentication = new AuthenticationContext
+        {
+            Result = AuthenticationResultEnum.Success,
+            Metadata = new Dictionary<string, string>() // use this object as you wish
+            {
+                { "Authenticated", "true" }
+            }
+        },
+        Authorization = new AuthorizationContext
+        {
+            Result = AuthorizationResultEnum.Success,
+            Metadata = new Dictionary<string, string>() // use this object as you wish
+            {
+                { "Authorized", "true" }
+            }
+        },
+        Metadata = new Dictionary<string, string>() // use this object as you wish
+        {
+            { "Allow", "true" }
+        }
+    };
+}
+
 // start Switchboard
 using (SwitchboardDaemon sb = new SwitchboardDaemon(settings))
 {
+    sb.Callbacks.AuthenticateAndAuthorize = AuthenticateAndAuthorizeRequest;
     ...
 }
 ```

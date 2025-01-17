@@ -15,6 +15,11 @@
         #region Public-Members
 
         /// <summary>
+        /// Boolean indicating if the endpoint requires authentication.
+        /// </summary>
+        public bool AuthRequired { get; set; } = false;
+
+        /// <summary>
         /// API endpoint.
         /// </summary>
         public ApiEndpoint Endpoint { get; set; } = null;
@@ -51,7 +56,7 @@
         #region Constructors-and-Factories
 
         /// <summary>
-        /// Instantiate.
+        /// Matching API endpoint.
         /// </summary>
         public MatchingApiEndpoint()
         {

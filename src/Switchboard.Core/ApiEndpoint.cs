@@ -25,40 +25,6 @@
         public string Name { get; set; } = null;
 
         /// <summary>
-        /// Key is the upper-case HTTP method.
-        /// Value is a list of parameterized URLs to match, e.g. /{version}/foo/bar/{id}.
-        /// </summary>
-        public Dictionary<string, List<string>> ParameterizedUrls
-        {
-            get
-            {
-                return _ParameterizedUrls;
-            }
-            set
-            {
-                if (value == null) value = new Dictionary<string, List<string>>();
-                _ParameterizedUrls = value;
-            }
-        }
-
-        /// <summary>
-        /// Key is the upper-case HTTP method.
-        /// Value is a dictionary where the key is the original URL and the value is the URL to which the request should be directed.
-        /// </summary>
-        public Dictionary<string, Dictionary<string, string>> RewriteUrls
-        {
-            get
-            {
-                return _RewriteUrls;
-            }
-            set
-            {
-                if (value == null) value = new Dictionary<string, Dictionary<string, string>>();
-                _RewriteUrls = value;
-            }
-        }
-
-        /// <summary>
         /// Number of milliseconds to wait before considering the request to be timed out.
         /// Default is 60 seconds.
         /// </summary>
@@ -154,6 +120,12 @@
         public bool UseGlobalBlockedHeaders { get; set; } = true;
 
         /// <summary>
+        /// Header to add when passing authentication context to an origin server.  
+        /// When set, the entire AuthenticationResult object will be JSON serialized and base64 encoded, and passed to the origin server using this header.
+        /// </summary>
+        public string AuthContextHeader { get; set; } = Constants.AuthContextHeader;
+
+        /// <summary>
         /// Explicit list of blocked headers.  These headers are not forwarded from incoming requests to origin servers.
         /// </summary>
         public List<string> BlockedHeaders
@@ -169,17 +141,67 @@
             }
         }
 
+        /// <summary>
+        /// Unauthenticated API endpoints.
+        /// </summary>
+        public ApiEndpointGroup Unauthenticated
+        {
+            get
+            {
+                return _Unauthenticated;
+            }
+            set
+            {
+                if (value == null) value = new ApiEndpointGroup();
+                _Unauthenticated = value;
+            }
+        }
+
+        /// <summary>
+        /// Authenticated API endpoints.
+        /// </summary>
+        public ApiEndpointGroup Authenticated
+        {
+            get
+            {
+                return _Authenticated;
+            }
+            set
+            {
+                if (value == null) value = new ApiEndpointGroup();
+                _Authenticated = value;
+            }
+        }
+
+        /// <summary>
+        /// Key is the upper-case HTTP method.
+        /// Value is a dictionary where the key is the original URL and the value is the URL to which the request should be directed.
+        /// </summary>
+        public Dictionary<string, Dictionary<string, string>> RewriteUrls
+        {
+            get
+            {
+                return _RewriteUrls;
+            }
+            set
+            {
+                if (value == null) value = new Dictionary<string, Dictionary<string, string>>();
+                _RewriteUrls = value;
+            }
+        }
+
         #endregion
 
         #region Private-Members
 
         private int _TimeoutMs = 60000;
         private int _MaxRequestBodySize = (512 * 1024 * 1024);
-        private Dictionary<string, List<string>> _ParameterizedUrls = new Dictionary<string, List<string>>();
-        private Dictionary<string, Dictionary<string, string>> _RewriteUrls = new Dictionary<string, Dictionary<string, string>>();
         private List<string> _OriginServers = new List<string>();
         private int _LastIndex = 0;
         private List<string> _BlockedHeaders = new List<string>();
+        private ApiEndpointGroup _Unauthenticated = new ApiEndpointGroup();
+        private ApiEndpointGroup _Authenticated = new ApiEndpointGroup();
+        private Dictionary<string, Dictionary<string, string>> _RewriteUrls = new Dictionary<string, Dictionary<string, string>>();
 
         #endregion
 

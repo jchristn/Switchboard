@@ -1,7 +1,10 @@
 ﻿namespace Test
 {
     using System;
+    using System.IO;
+    using System.Text;
     using RestWrapper;
+    using SerializationHelper;
     using Switchboard.Core;
     using WatsonWebserver;
     using WatsonWebserver.Core;
@@ -9,8 +12,11 @@
     public static class Program
     {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
 
         private static SwitchboardSettings _Settings = null;
+        private static Serializer _Serializer = new Serializer();
         private static LoadBalancingMode _LoadBalancingMode = LoadBalancingMode.RoundRobin;
 
         private static WebserverSettings _Server1Settings = null;
@@ -25,10 +31,13 @@
         private static WebserverSettings _Server4Settings = null;
         private static Webserver _Server4 = null;
 
-        private static int _NumRequests = 10;
+        private static int _NumRequests = 8;
 
         public static async Task Main(string[] args)
         {
+            Console.WriteLine("");
+            Console.WriteLine("Unauthenticated URL : GET /unauthenticated");
+            Console.WriteLine("Authenticated URL   : GET /authenticated");
             InitializeSettings();
             InitializeOriginServers();
 
@@ -36,6 +45,8 @@
 
             using (SwitchboardDaemon switchboard = new SwitchboardDaemon(_Settings))
             {
+                switchboard.Callbacks.AuthenticateAndAuthorize = AuthenticateAndAuthorizeRequest;
+
                 using (_Server1 = new Webserver(_Server1Settings, Server1Route))
                 {
                     using (_Server2 = new Webserver(_Server2Settings, Server2Route))
@@ -52,16 +63,16 @@
                                 #region Should-Succeed
 
                                 Console.WriteLine("");
-                                Console.WriteLine("-------------");
-                                Console.WriteLine("Success tests");
-                                Console.WriteLine("-------------");
+                                Console.WriteLine("-----------------------------");
+                                Console.WriteLine("Unauthenticated success tests");
+                                Console.WriteLine("-----------------------------");
 
                                 for (int i = 0; i < _NumRequests; i++)
                                 {
                                     Console.WriteLine("");
                                     Console.WriteLine("Request " + i);
 
-                                    url = "http://localhost:8000/test";
+                                    url = "http://localhost:8000/unauthenticated";
                                     if (i % 2 == 0) url += "?foo=bar";
                                     Console.WriteLine("| URL: " + url);
 
@@ -84,7 +95,7 @@
                                 Console.WriteLine("----------------------");
 
                                 Console.WriteLine("");
-                                Console.WriteLine("Expecting failure");
+                                Console.WriteLine("Expecting failure due to bad URL");
 
                                 using (RestRequest req = new RestRequest("http://localhost:8000/undefined"))
                                 {
@@ -99,74 +110,31 @@
                                 #region URL-Rewrite
 
                                 Console.WriteLine("");
-                                Console.WriteLine("----------------");
-                                Console.WriteLine("URL rewrite test");
-                                Console.WriteLine("----------------");
+                                Console.WriteLine("----------------------------------------------");
+                                Console.WriteLine("Authenticated requests test (half should fail)");
+                                Console.WriteLine("----------------------------------------------");
 
                                 for (int i = 0; i < _NumRequests; i++)
                                 {
                                     Console.WriteLine("");
-                                    Console.WriteLine("URL rewrite request " + i);
+                                    Console.Write("---" + Environment.NewLine + "Authenticated request " + i);
+                                    if (i % 2 == 0) Console.WriteLine(": should succeed" + Environment.NewLine + "---");
+                                    else Console.WriteLine(": should fail" + Environment.NewLine + "---");
 
-                                    url = "http://localhost:8000/users/" + i.ToString();
+                                    url = "http://localhost:8000/authenticated";
                                     if (i % 2 == 0) url += "?foo=bar";
                                     Console.WriteLine("| URL: " + url);
 
                                     using (RestRequest req = new RestRequest(url))
                                     {
+                                        if (i % 2 == 0) req.Authorization.BearerToken = "foo";
+
                                         using (RestResponse resp = await req.SendAsync())
                                         {
                                             Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
                                         }
                                     }
                                 }
-
-                                #endregion
-
-                                #region Server-Sent-Events
-
-                                Console.WriteLine("");
-                                Console.WriteLine("-----------------------");
-                                Console.WriteLine("Server-sent events test");
-                                Console.WriteLine("-----------------------");
-
-                                url = "http://localhost:8000/sse";
-
-                                using (RestRequest req = new RestRequest(url))
-                                {
-                                    using (RestResponse resp = await req.SendAsync())
-                                    {
-                                        if (resp.ServerSentEvents)
-                                        {
-                                            Console.WriteLine("| Using server-sent events");
-
-                                            while (true)
-                                            {
-                                                ServerSentEvent sse = await resp.ReadEventAsync();
-                                                if (sse == null) break;
-                                                else
-                                                {
-                                                    string data = sse.Data;
-                                                    if (!String.IsNullOrEmpty(data)) data = data.Trim();
-
-                                                    if (!String.IsNullOrEmpty(data))
-                                                    {
-                                                        Console.WriteLine("| Event: " + data);
-                                                    }
-                                                    else
-                                                    {
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
-                                        }
-                                    }
-                                }
-
 
                                 #endregion
 
@@ -180,6 +148,65 @@
             }
         }
 
+        private static async Task<AuthContext> AuthenticateAndAuthorizeRequest(HttpContextBase ctx)
+        {
+            string authHeader = ctx.Request.RetrieveHeaderValue("Authorization");
+            if (!String.IsNullOrEmpty(authHeader))
+            {
+                return new AuthContext
+                {
+                    Authentication = new AuthenticationContext
+                    {
+                        Result = AuthenticationResultEnum.Success,
+                        Metadata = new Dictionary<string, string>()
+                        {
+                            { "Authenticated", "true" }
+                        }
+                    },
+                    Authorization = new AuthorizationContext
+                    {
+                        Result = AuthorizationResultEnum.Success,
+                        Metadata = new Dictionary<string, string>()
+                        {
+                            { "Authorized", "true" }
+                        }
+                    },
+                    Metadata = new Dictionary<string, string>()
+                    {
+                        { "Allow", "true" }
+                    }
+                };
+            }
+            else
+            {
+                return new AuthContext
+                {
+                    Authentication = new AuthenticationContext
+                    {
+                        Result = AuthenticationResultEnum.Denied,
+                        Metadata = new Dictionary<string, string>()
+                        {
+                            { "Authenticated", "false" }
+                        }
+                    },
+                    Authorization = new AuthorizationContext
+                    {
+                        Result = AuthorizationResultEnum.Denied,
+                        Metadata = new Dictionary<string, string>()
+                        {
+                            { "Authorized", "false" }
+                        }
+                    },
+                    Metadata = new Dictionary<string, string>()
+                    {
+                        { "Allow", "false" },
+                        { "Error", "Supply an Authorization header in your request" }
+                    },
+                    FailureMessage = "Supply an Authorization header in your request"
+                };
+            }
+        }
+
         private static void InitializeSettings()
         {
             _Settings = new SwitchboardSettings();
@@ -190,23 +217,22 @@
                 Identifier = "test-endpoint",
                 Name = "Test Endpoint",
                 LoadBalancing = _LoadBalancingMode,
-                ParameterizedUrls = new Dictionary<string, List<string>>
+                AuthContextHeader = Constants.AuthContextHeader,
+                Unauthenticated = new ApiEndpointGroup
                 {
+                    ParameterizedUrls = new Dictionary<string, List<string>>
                     {
-                        "GET",
-                        new List<string>
                         {
-                            "/test",
-                            "/users/{UserId}"
+                            "GET", new List<string> { "/unauthenticated" }
                         }
-                    },
+                    }
                 },
-                RewriteUrls = new Dictionary<string, Dictionary<string, string>>
+                Authenticated = new ApiEndpointGroup
                 {
+                    ParameterizedUrls = new Dictionary<string, List<string>>
                     {
-                        "GET", new Dictionary<string, string>
                         {
-                            { "/users/{UserId}", "/{UserId}" }
+                            "GET", new List<string> { "/authenticated" }
                         }
                     }
                 },
@@ -214,29 +240,7 @@
                 {
                     "server1",
                     "server2",
-                    "server3"
-                }
-            });
-
-            _Settings.Endpoints.Add(new ApiEndpoint
-            {
-                Identifier = "sse-endpoint",
-                Name = "SSE Endpoint",
-                LoadBalancing = _LoadBalancingMode,
-                BlockHttp10 = true,
-                LogRequestFull = true,
-                ParameterizedUrls = new Dictionary<string, List<string>>
-                {
-                    {
-                        "GET",
-                        new List<string>
-                        {
-                            "/sse"
-                        }
-                    },
-                },
-                OriginServers = new List<string>
-                {
+                    "server3",
                     "server4"
                 }
             });
@@ -276,6 +280,8 @@
                 Port = 8004,
                 Ssl = false
             });
+
+            File.WriteAllBytes("./sb.json", Encoding.UTF8.GetBytes(_Serializer.SerializeJson(_Settings, true)));
         }
 
         private static void InitializeOriginServers()
@@ -303,10 +309,26 @@
             Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
             if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring)) 
                 Console.WriteLine("| Querystring: " + ctx.Request.Query.Querystring);
+            if (ctx.Request.Headers.Count > 0)
+            {
+                Console.WriteLine("| Headers:");
+                foreach (string key in ctx.Request.Headers.AllKeys)
+                {
+                    Console.WriteLine("  | " + key + ": " + ctx.Request.Headers.Get(key));
+                }
 
+                if (ctx.Request.Headers.AllKeys.Contains(Constants.AuthContextHeader))
+                {
+                    Console.WriteLine(
+                        "| Auth context: " + Environment.NewLine
+                        + _Serializer.SerializeJson(
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer), 
+                            true));
+                }
+            }
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = "text/plain";
-            await ctx.Response.Send("Hello from server 1");
+            await ctx.Response.Send("Hello from server 1: " + ctx.Request.Method + " " + ctx.Request.Url.RawWithQuery);
             return;
         }
 
@@ -316,10 +338,26 @@
             Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
             if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
                 Console.WriteLine("| Querystring: " + ctx.Request.Query.Querystring);
+            if (ctx.Request.Headers.Count > 0)
+            {
+                Console.WriteLine("| Headers:");
+                foreach (string key in ctx.Request.Headers.AllKeys)
+                {
+                    Console.WriteLine("  | " + key + ": " + ctx.Request.Headers.Get(key));
+                }
 
+                if (ctx.Request.Headers.AllKeys.Contains(Constants.AuthContextHeader))
+                {
+                    Console.WriteLine(
+                        "| Auth context: " + Environment.NewLine
+                        + _Serializer.SerializeJson(
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
+                            true));
+                }
+            }
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = "text/plain";
-            await ctx.Response.Send("Hello from server 2");
+            await ctx.Response.Send("Hello from server 2: " + ctx.Request.Method + " " + ctx.Request.Url.RawWithQuery);
             return;
         }
 
@@ -329,10 +367,26 @@
             Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
             if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
                 Console.WriteLine("| Querystring: " + ctx.Request.Query.Querystring);
+            if (ctx.Request.Headers.Count > 0)
+            {
+                Console.WriteLine("| Headers:");
+                foreach (string key in ctx.Request.Headers.AllKeys)
+                {
+                    Console.WriteLine("  | " + key + ": " + ctx.Request.Headers.Get(key));
+                }
 
+                if (ctx.Request.Headers.AllKeys.Contains(Constants.AuthContextHeader))
+                {
+                    Console.WriteLine(
+                        "| Auth context: " + Environment.NewLine
+                        + _Serializer.SerializeJson(
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
+                            true));
+                }
+            }
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = "text/plain";
-            await ctx.Response.Send("Hello from server 3");
+            await ctx.Response.Send("Hello from server 3: " + ctx.Request.Method + " " + ctx.Request.Url.RawWithQuery);
             return;
         }
 
@@ -342,20 +396,31 @@
             Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
             if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
                 Console.WriteLine("| Querystring: " + ctx.Request.Query.Querystring);
-
-            ctx.Response.StatusCode = 200;
-            ctx.Response.ServerSentEvents = true;
-
-            for (int i = 0; i < 10; i++)
+            if (ctx.Request.Headers.Count > 0)
             {
-                await Task.Delay(500);
-                await ctx.Response.SendEvent("Event " + i.ToString(), false);
-            }
+                Console.WriteLine("| Headers:");
+                foreach (string key in ctx.Request.Headers.AllKeys)
+                {
+                    Console.WriteLine("  | " + key + ": " + ctx.Request.Headers.Get(key));
+                }
 
-            await ctx.Response.SendEvent(null, true);
+                if (ctx.Request.Headers.AllKeys.Contains(Constants.AuthContextHeader))
+                {
+                    Console.WriteLine(
+                        "| Auth context: " + Environment.NewLine
+                        + _Serializer.SerializeJson(
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader), _Serializer),
+                            true));
+                }
+            }
+            ctx.Response.StatusCode = 200;
+            ctx.Response.ContentType = "text/plain";
+            await ctx.Response.Send("Hello from server 4: " + ctx.Request.Method + " " + ctx.Request.Url.RawWithQuery);
             return;
         }
 
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
     }
 }
