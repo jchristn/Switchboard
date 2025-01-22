@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<Title>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Title>
-		<Version>2.0.4</Version>
+		<Version>2.0.5</Version>
 		<Description>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Description>
 		<Copyright>(c)2025 Joel Christner</Copyright>
 		<PackageReleaseNotes>Add authentication support</PackageReleaseNotes>
@@ -47,11 +47,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="RestWrapper" Version="3.1.3" />
-	  <PackageReference Include="SerializationHelper" Version="2.0.1" />
-	  <PackageReference Include="SyslogLogging" Version="2.0.6" />
-	  <PackageReference Include="Watson" Version="6.3.2" />
-	  <PackageReference Include="YamlDotNet" Version="16.2.1" />
+	  <PackageReference Include="RestWrapper" Version="3.1.4" />
+	  <PackageReference Include="SerializationHelper" Version="2.0.2" />
+	  <PackageReference Include="SyslogLogging" Version="2.0.8" />
+	  <PackageReference Include="Watson" Version="6.3.5" />
 	</ItemGroup>
 
 </Project>

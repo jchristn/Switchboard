@@ -864,25 +864,5 @@
             <param name="endpoint">API endpoint.</param>
             <returns>Rewritten URL or original URL if no change.</returns>
         </member>
-        <member name="T:Switchboard.Core.YamlSerializer">
-            <summary>
-            YAML serializer.
-            </summary>
-        </member>
-        <member name="M:Switchboard.Core.YamlSerializer.ToYaml(System.Object)">
-            <summary>
-            Serialize to YAML.
-            </summary>
-            <param name="obj"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Switchboard.Core.YamlSerializer.FromYaml``1(System.String)">
-            <summary>
-            Deserialize from YAML.
-            </summary>
-            <typeparam name="T">Type.</typeparam>
-            <param name="yaml">YAML.</param>
-            <returns>Instance.</returns>
-        </member>
     </members>
 </doc>
