@@ -62,7 +62,14 @@
       "Ssl": false,
       "LogRequestBody": false,
       "LogResponseBody": false,
-      "UrlPrefix": "http://localhost:8001"
+      "UrlPrefix": "http://localhost:8001",
+      "HealthCheckIntervalMs": 5000,
+      "UnhealthyThreshold": 2,
+      "HealthyThreshold": 2,
+      "HealthCheckMethod": "Get",
+      "HealthCheckUrl": "/",
+      "MaxParallelRequests": 10,
+      "RateLimitRequestsThreshold": 30
     },
     {
       "Identifier": "server2",
@@ -72,7 +79,14 @@
       "Ssl": false,
       "LogRequestBody": false,
       "LogResponseBody": false,
-      "UrlPrefix": "http://localhost:8002"
+      "UrlPrefix": "http://localhost:8002",
+      "HealthCheckIntervalMs": 5000,
+      "UnhealthyThreshold": 2,
+      "HealthyThreshold": 2,
+      "HealthCheckMethod": "Get",
+      "HealthCheckUrl": "/",
+      "MaxParallelRequests": 10,
+      "RateLimitRequestsThreshold": 30
     },
     {
       "Identifier": "server3",
@@ -82,7 +96,14 @@
       "Ssl": false,
       "LogRequestBody": false,
       "LogResponseBody": false,
-      "UrlPrefix": "http://localhost:8003"
+      "UrlPrefix": "http://localhost:8003",
+      "HealthCheckIntervalMs": 5000,
+      "UnhealthyThreshold": 2,
+      "HealthyThreshold": 2,
+      "HealthCheckMethod": "Get",
+      "HealthCheckUrl": "/",
+      "MaxParallelRequests": 10,
+      "RateLimitRequestsThreshold": 30
     },
     {
       "Identifier": "server4",
@@ -92,7 +113,14 @@
       "Ssl": false,
       "LogRequestBody": false,
       "LogResponseBody": false,
-      "UrlPrefix": "http://localhost:8004"
+      "UrlPrefix": "http://localhost:8004",
+      "HealthCheckIntervalMs": 5000,
+      "UnhealthyThreshold": 2,
+      "HealthyThreshold": 2,
+      "HealthCheckMethod": "Get",
+      "HealthCheckUrl": "/",
+      "MaxParallelRequests": 10,
+      "RateLimitRequestsThreshold": 30
     }
   ],
   "BlockedHeaders": [

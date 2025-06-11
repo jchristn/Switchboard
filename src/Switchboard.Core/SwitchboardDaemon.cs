@@ -46,6 +46,7 @@
         private SwitchboardCallbacks _Callbacks = new SwitchboardCallbacks();
         private Serializer _Serializer = new Serializer();
         private LoggingModule _Logging = null;
+        private HealthCheckService _HealthCheckService = null;
         private GatewayService _GatewayService = null;
         private Webserver _Webserver = null;
 
@@ -158,6 +159,11 @@
             #endregion
 
             #region Services
+
+            _HealthCheckService = new HealthCheckService(
+                _Settings,
+                _Logging,
+                _Serializer);
 
             _GatewayService = new GatewayService(
                 _Settings, 

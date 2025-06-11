@@ -183,6 +183,11 @@
             Not found.
             </summary>
         </member>
+        <member name="F:Switchboard.Core.ApiErrorEnum.SlowDown">
+            <summary>
+            Slow down.
+            </summary>
+        </member>
         <member name="F:Switchboard.Core.ApiErrorEnum.TokenExpired">
             <summary>
             Token expired.
@@ -526,6 +531,11 @@
             Authentication context header.
             </summary>
         </member>
+        <member name="F:Switchboard.Core.Constants.OriginServerHeader">
+            <summary>
+            Origin server ID header.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.LoadBalancingMode">
             <summary>
             Load balancing mode.
@@ -599,6 +609,51 @@
         <member name="P:Switchboard.Core.OriginServer.Ssl">
             <summary>
             Enable or disable SSL.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.HealthCheckIntervalMs">
+            <summary>
+            Interval at which health is checked against this origin.
+            Default is 5 seconds (5000).  Minimum is 1 second (1000).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.UnhealthyThreshold">
+            <summary>
+            Number of consecutive failed health checks before marking an origin as unhealthy.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.HealthyThreshold">
+            <summary>
+            Number of consecutive successful health checks before marking an origin as healthy.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.HealthCheckMethod">
+            <summary>
+            HTTP method to use when performing a healthcheck.
+            Default is GET.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.HealthCheckUrl">
+            <summary>
+            URL to use when performing a healthcheck.
+            Default is /.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.Healthy">
+            <summary>
+            Boolean indicating if the backend is healthy.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.MaxParallelRequests">
+            <summary>
+            Maximum number of parallel requests to this backend.
+            Default is 10.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.RateLimitRequestsThreshold">
+            <summary>
+            Threshold at which 429 rate limit responses are sent.
+            Default is 30.
             </summary>
         </member>
         <member name="P:Switchboard.Core.OriginServer.LogRequestBody">
@@ -681,6 +736,30 @@
             </summary>
             <param name="ctx">HTTP context.</param>
             <returns>Task.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Services.HealthCheckService">
+            <summary>
+            Health check service.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.HealthCheckService.#ctor(Switchboard.Core.SwitchboardSettings,SyslogLogging.LoggingModule,SerializationHelper.Serializer)">
+            <summary>
+            Health check service.
+            </summary>
+            <param name="settings">Settings.</param>
+            <param name="logging">Logging.</param>
+            <param name="serializer">Serializer.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.HealthCheckService.Dispose(System.Boolean)">
+            <summary>
+            Dispose.
+            </summary>
+            <param name="disposing">Disposing.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.HealthCheckService.Dispose">
+            <summary>
+            Dispose.
+            </summary>
         </member>
         <member name="T:Switchboard.Core.Settings.LoggingSettings">
             <summary>
