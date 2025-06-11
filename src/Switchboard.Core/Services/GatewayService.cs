@@ -5,8 +5,10 @@
     using System.Collections.Specialized;
     using System.IO;
     using System.Linq;
+    using System.Net.Sockets;
     using System.Reflection;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using RestWrapper;
     using SerializationHelper;
@@ -30,13 +32,15 @@
 
         #region Private-Members
 
-        private readonly string _Header = "[Gateway] ";
+        private readonly string _Header = "[GatewayService] ";
         private SwitchboardSettings _Settings = null;
         private SwitchboardCallbacks _Callbacks = null;
         private LoggingModule _Logging = null;
         private Serializer _Serializer = null;
         private Random _Random = new Random(Guid.NewGuid().GetHashCode());
         private bool _IsDisposed = false;
+
+        private const int BUFFER_SIZE = 65536;
 
         #endregion
 
@@ -265,6 +269,21 @@
                     return;
                 }
 
+                int totalRequests =
+                    Volatile.Read(ref origin.ActiveRequests) +
+                    Volatile.Read(ref origin.PendingRequests);
+
+                if (totalRequests > origin.RateLimitRequestsThreshold)
+                {
+                    _Logging.Warn(_Header + "too many active requests for origin " + origin.Identifier + ", sending 429 response to request from " + ctx.Request.Source.IpAddress);
+                    ctx.Response.StatusCode = 429;
+                    ctx.Response.ContentType = Constants.JsonContentType;
+                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.SlowDown)));
+                    return;
+                }
+
+                Interlocked.Increment(ref origin.PendingRequests);
+
                 bool responseReceived = await ProxyRequest(
                     requestGuid,
                     ctx,
@@ -392,35 +411,51 @@
             if (endpoint == null) return null;
             if (endpoint.OriginServers == null || endpoint.OriginServers.Count < 1) return null;
 
-            string originIdentifier = null;
             OriginServer origin = null;
 
-            lock (endpoint)
+            lock (endpoint.Lock)
             {
-                if (endpoint.LoadBalancing == LoadBalancingMode.Random)
-                {
-                    int index = _Random.Next(0, endpoint.OriginServers.Count);
-                    endpoint.LastIndex = index;
-                    originIdentifier = endpoint.OriginServers[index];
-                    origin = _Settings.Origins.FirstOrDefault(o => o.Identifier.Equals(originIdentifier));
-                    if (origin != default(OriginServer)) return origin;
-                    return null;
-                }
-                else if (endpoint.LoadBalancing == LoadBalancingMode.RoundRobin)
-                {
-                    if (endpoint.LastIndex >= endpoint.OriginServers.Count) endpoint.LastIndex = 0;
-                    originIdentifier = endpoint.OriginServers[endpoint.LastIndex];
+                List<OriginServer> healthyOrigins = _Settings.Origins
+                    .Where(b => endpoint.OriginServers.Contains(b.Identifier))
+                    .Where(b =>
+                    {
+                        lock (b.Lock)
+                        {
+                            return b.Healthy;
+                        }
+                    })
+                    .ToList();
 
-                    if ((endpoint.LastIndex + 1) > (endpoint.OriginServers.Count - 1)) endpoint.LastIndex = 0;
-                    else endpoint.LastIndex = endpoint.LastIndex + 1;
-
-                    origin = _Settings.Origins.FirstOrDefault(o => o.Identifier.Equals(originIdentifier));
-                    if (origin != default(OriginServer)) return origin;
+                if (healthyOrigins.Count < 1)
+                {
+                    _Logging.Warn(_Header + "no healthy origins found for endpoint " + endpoint.Identifier);
                     return null;
                 }
                 else
                 {
-                    throw new ArgumentException("Unknown load balancing scheme '" + endpoint.LoadBalancing.ToString() + "'.");
+                    if (endpoint.LoadBalancing == LoadBalancingMode.Random)
+                    {
+                        int index = _Random.Next(0, healthyOrigins.Count);
+                        endpoint.LastIndex = index;
+                        origin = healthyOrigins[index];
+                        if (origin != default(OriginServer)) return origin;
+                        return null;
+                    }
+                    else if (endpoint.LoadBalancing == LoadBalancingMode.RoundRobin)
+                    {
+                        if (endpoint.LastIndex >= healthyOrigins.Count) endpoint.LastIndex = _Random.Next(0, healthyOrigins.Count);
+                        origin = healthyOrigins[endpoint.LastIndex];
+
+                        if ((endpoint.LastIndex + 1) > (endpoint.OriginServers.Count - 1)) endpoint.LastIndex = 0;
+                        else endpoint.LastIndex = endpoint.LastIndex + 1;
+
+                        if (origin != default(OriginServer)) return origin;
+                        return null;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Unknown load balancing scheme '" + endpoint.LoadBalancing.ToString() + "'.");
+                    }
                 }
             }
         }
@@ -459,205 +494,227 @@
             OriginServer origin,
             AuthContext authResult)
         {
-            _Logging.Debug(_Header + "proxying request to " + origin.Identifier + " for API endpoint " + endpoint.Endpoint.Identifier + " for request " + requestGuid.ToString());
+            _Logging.Debug(_Header + "proxying request to " + origin.Identifier + " for endpoint " + endpoint.Endpoint.Identifier + " for request " + requestGuid.ToString());
 
-            RestRequest req = null;
             RestResponse resp = null;
 
             using (Timestamp ts = new Timestamp())
             {
+                string url = origin.UrlPrefix + ctx.Request.Url.RawWithQuery;
+
                 try
                 {
-                    #region Rewrite-URL
+                    #region Enter-Semaphore
 
-                    string url = UrlTools.RewriteUrl(
-                        ctx.Request.Method.ToString(),
-                        ctx.Request.Url.RawWithoutQuery,
-                        endpoint.Endpoint);
-
-                    if (ctx.Request.Query != null && !String.IsNullOrEmpty(ctx.Request.Query.Querystring))
-                        url += "?" + ctx.Request.Query.Querystring;
+                    await origin.Semaphore.WaitAsync().ConfigureAwait(false);
+                    Interlocked.Increment(ref origin.ActiveRequests);
+                    Interlocked.Decrement(ref origin.PendingRequests);
 
                     #endregion
 
-                    #region Build-Request-and-Add-Headers
+                    #region Build-Request-and-Send
 
-                    req = new RestRequest(origin.UrlPrefix + url, ConvertHttpMethod(ctx.Request.Method));
-
-                    if (endpoint.Endpoint.TimeoutMs > 0)
-                        req.TimeoutMilliseconds = endpoint.Endpoint.TimeoutMs;
-
-                    req.Headers.Add(Constants.ForwardedForHeader, ctx.Request.Source.IpAddress);
-                    req.Headers.Add(Constants.RequestIdHeader, requestGuid.ToString());
-
-                    if (authResult != null && !String.IsNullOrEmpty(endpoint.Endpoint.AuthContextHeader))
-                        req.Headers.Add(endpoint.Endpoint.AuthContextHeader, authResult.ToBase64String(_Serializer));
-
-                    if (ctx.Request.Headers != null && ctx.Request.Headers.Count > 0)
+                    using (RestRequest req = new RestRequest(url, ConvertHttpMethod(ctx.Request.Method)))
                     {
-                        foreach (string key in ctx.Request.Headers.Keys)
+                        if (endpoint.Endpoint.TimeoutMs > 0) req.TimeoutMilliseconds = endpoint.Endpoint.TimeoutMs;
+
+                        req.Headers.Add(Constants.ForwardedForHeader, ctx.Request.Source.IpAddress);
+                        req.Headers.Add(Constants.RequestIdHeader, requestGuid.ToString());
+
+                        if (ctx.Request.Headers != null && ctx.Request.Headers.Count > 0)
                         {
-                            // global blocked headers
-                            if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
-
-                            // local blocked headers
-                            if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
-
-                            if (!req.Headers.AllKeys.Contains(key))
+                            foreach (string key in ctx.Request.Headers.Keys)
                             {
-                                string val = ctx.Request.Headers.Get(key);
-                                req.Headers.Add(key, val);
-                            }
-                        }
-                    }
-
-                    foreach (string key in req.Headers.AllKeys)
-                    {
-                        if (key.ToLower().Equals("host"))
-                        {
-                            req.Headers.Remove(key);
-                            req.Headers.Add("Host", origin.Hostname + ":" + origin.Port.ToString());
-                        }
-                    }
-
-                    #endregion
-
-                    #region Log-Request-Body
-
-                    if (endpoint.Endpoint.LogRequestBody || origin.LogRequestBody)
-                    {
-                        _Logging.Debug(
-                            _Header
-                            + "request body (" + ctx.Request.DataAsBytes.Length + " bytes): "
-                            + Environment.NewLine
-                            + Encoding.UTF8.GetString(ctx.Request.DataAsBytes));
-
-                        _Logging.Debug(_Header + "using content-type: " + req.ContentType);
-                    }
-
-                    #endregion
-
-                    #region Send-Request
-
-                    if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
-                    {
-                        #region With-Data
-
-                        if (!String.IsNullOrEmpty(ctx.Request.ContentType))
-                            req.ContentType = ctx.Request.ContentType;
-                        else
-                            req.ContentType = Constants.BinaryContentType;
-
-                        resp = await req.SendAsync(ctx.Request.DataAsBytes);
-
-                        #endregion
-                    }
-                    else
-                    {
-                        #region Without-Data
-
-                        resp = await req.SendAsync();
-
-                        #endregion
-                    }
-
-                    if (resp != null)
-                    {
-                        #region Log-Response-Body
-
-                        if (endpoint.Endpoint.LogResponseBody || origin.LogResponseBody)
-                        {
-                            if (resp.DataAsBytes != null && resp.DataAsBytes.Length > 0)
-                            {
-                                _Logging.Debug(
-                                    _Header
-                                    + "response body (" + resp.DataAsBytes.Length + " bytes) status " + resp.StatusCode + ": "
-                                    + Environment.NewLine
-                                    + Encoding.UTF8.GetString(resp.DataAsBytes));
-                            }
-                            else
-                            {
-                                _Logging.Debug(
-                                    _Header
-                                    + "response body (0 bytes) status " + resp.StatusCode);
-                            }
-                        }
-
-                        #endregion
-
-                        #region Set-Headers
-
-                        ctx.Response.StatusCode = resp.StatusCode;
-                        ctx.Response.ContentType = resp.ContentType;
-
-                        foreach (string key in resp.Headers)
-                        {
-                            // global blocked headers
-                            if (_Settings.BlockedHeaders.Any(h => h.Equals(key.ToLower()))) continue;
-
-                            // local blocked headers
-                            if (endpoint.Endpoint.BlockedHeaders != null && endpoint.Endpoint.BlockedHeaders.Any(h => h.Equals(key))) continue;
-
-                            string val = resp.Headers.Get(key);
-                            ctx.Response.Headers.Add(key, val);
-                        }
-
-                        #endregion
-
-                        #region Send-Response
-
-                        if (!resp.ServerSentEvents)
-                        {
-                            long contentLength = (resp.ContentLength != null ? resp.ContentLength.Value : 0);
-                            await ctx.Response.Send(contentLength, resp.Data);
-                        }
-                        else
-                        {
-                            ctx.Response.ProtocolVersion = "HTTP/1.1";
-                            ctx.Response.ServerSentEvents = true;
-
-                            while (true)
-                            {
-                                ServerSentEvent sse = await resp.ReadEventAsync();
-
-                                if (sse == null)
+                                if (!req.Headers.AllKeys.Contains(key))
                                 {
-                                    break;
+                                    string val = ctx.Request.Headers.Get(key);
+                                    req.Headers.Add(key, val);
+                                }
+                            }
+                        }
+
+                        foreach (string key in req.Headers.AllKeys)
+                        {
+                            if (key.ToLower().Equals("host"))
+                            {
+                                req.Headers.Remove(key);
+                                req.Headers.Add("Host", origin.Hostname + ":" + origin.Port.ToString());
+                            }
+                        }
+
+                        #region Log-Request-Body
+
+                        if (endpoint.Endpoint.LogRequestBody || origin.LogRequestBody)
+                        {
+                            _Logging.Debug(
+                                _Header
+                                + "request body (" + ctx.Request.DataAsBytes.Length + " bytes): "
+                                + Environment.NewLine
+                                + Encoding.UTF8.GetString(ctx.Request.DataAsBytes));
+
+                            _Logging.Debug(_Header + "using content-type: " + req.ContentType);
+                        }
+
+                        #endregion
+
+                        #region Send-Request
+
+                        if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
+                        {
+                            #region With-Data
+
+                            if (!String.IsNullOrEmpty(ctx.Request.ContentType))
+                                req.ContentType = ctx.Request.ContentType;
+                            else
+                                req.ContentType = Constants.BinaryContentType;
+
+                            resp = await req.SendAsync(ctx.Request.DataAsBytes);
+
+                            #endregion
+                        }
+                        else
+                        {
+                            #region Without-Data
+
+                            resp = await req.SendAsync();
+
+                            #endregion
+                        }
+
+                        if (resp != null)
+                        {
+                            #region Log-Response-Body
+
+                            if (endpoint.Endpoint.LogResponseBody || origin.LogResponseBody)
+                            {
+                                if (resp.DataAsBytes != null && resp.DataAsBytes.Length > 0)
+                                {
+                                    _Logging.Debug(
+                                        _Header
+                                        + "response body (" + resp.DataAsBytes.Length + " bytes) status " + resp.StatusCode + ": "
+                                        + Environment.NewLine
+                                        + Encoding.UTF8.GetString(resp.DataAsBytes));
                                 }
                                 else
                                 {
-                                    if (!String.IsNullOrEmpty(sse.Data))
-                                    {
-                                        await ctx.Response.SendEvent(sse.Data, false);
-                                    }
-                                    else
-                                    {
-                                        break;
-                                    }
+                                    _Logging.Debug(
+                                        _Header
+                                        + "response body (0 bytes) status " + resp.StatusCode);
                                 }
                             }
 
-                            await ctx.Response.SendEvent(null, true);
+                            #endregion
+
+                            #region Set-Headers
+
+                            ctx.Response.StatusCode = resp.StatusCode;
+                            ctx.Response.ContentType = resp.ContentType;
+                            ctx.Response.Headers = resp.Headers;
+                            ctx.Response.Headers.Add(Constants.OriginServerHeader, origin.Identifier);
+                            ctx.Response.Headers.Add(Constants.RequestIdHeader, requestGuid.ToString());
+                            ctx.Response.ChunkedTransfer = resp.ChunkedTransferEncoding;
+
+                            #endregion
+
+                            #region Send-Response
+
+                            if (!resp.ServerSentEvents)
+                            {
+                                if (!ctx.Response.ChunkedTransfer)
+                                {
+                                    await ctx.Response.Send(resp.DataAsBytes);
+                                }
+                                else
+                                {
+                                    if (resp.DataAsBytes.Length > 0)
+                                    {
+                                        for (int i = 0; i < resp.DataAsBytes.Length; i += BUFFER_SIZE)
+                                        {
+                                            int currentChunkSize = Math.Min(BUFFER_SIZE, resp.DataAsBytes.Length - i);
+
+                                            byte[] chunk = new byte[currentChunkSize];
+                                            Array.Copy(resp.DataAsBytes, i, chunk, 0, currentChunkSize);
+
+                                            if (chunk.Length == BUFFER_SIZE) await ctx.Response.SendChunk(chunk, false).ConfigureAwait(false);
+                                            else await ctx.Response.SendChunk(chunk, true).ConfigureAwait(false);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        await ctx.Response.SendChunk(Array.Empty<byte>(), true).ConfigureAwait(false);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                ctx.Response.ProtocolVersion = "HTTP/1.1";
+                                ctx.Response.ServerSentEvents = true;
+
+                                while (true)
+                                {
+                                    ServerSentEvent sse = await resp.ReadEventAsync();
+
+                                    if (sse == null)
+                                    {
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        if (!String.IsNullOrEmpty(sse.Data))
+                                        {
+                                            await ctx.Response.SendEvent(sse.Data, false);
+                                        }
+                                        else
+                                        {
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                await ctx.Response.SendEvent(null, true);
+                            }
+
+                            #endregion
+
+                            return true;
+                        }
+                        else
+                        {
+                            _Logging.Warn(_Header + "no response from origin " + url);
+                            return false;
                         }
 
                         #endregion
-
-                        return true;
                     }
-                    else
-                    {
-                        _Logging.Warn(_Header + "no response from origin " + url);
-                        return false;
-                    }
+                }
+                catch (System.Net.Http.HttpRequestException hre)
+                {
+                    _Logging.Warn(
+                        _Header
+                        + "exception proxying request to origin " + origin.Identifier
+                        + " for endpoint " + endpoint.Endpoint.Identifier
+                        + " for request " + requestGuid.ToString()
+                        + ": " + hre.Message);
 
-                    #endregion
+                    return false;
+                }
+                catch (SocketException se)
+                {
+                    _Logging.Warn(
+                        _Header
+                        + "exception proxying request to origin " + origin.Identifier
+                        + " for endpoint " + endpoint.Endpoint.Identifier
+                        + " for request " + requestGuid.ToString()
+                        + ": " + se.Message);
+
+                    return false;
                 }
                 catch (Exception e)
                 {
                     _Logging.Warn(
                         _Header
-                        + "exception proxying request to " + origin.Identifier
-                        + " for API endpoint " + endpoint.Endpoint.Identifier
+                        + "exception proxying request to origin " + origin.Identifier
+                        + " for endpoint " + endpoint.Endpoint.Identifier
                         + " for request " + requestGuid.ToString()
                         + Environment.NewLine
                         + e.ToString());
@@ -675,9 +732,13 @@
                         + (resp != null ? resp.StatusCode : "0") + " "
                         + "(" + ts.TotalMs + "ms)");
 
-                    if (req != null) req.Dispose();
                     if (resp != null) resp.Dispose();
+
+                    origin.Semaphore.Release();
+                    Interlocked.Decrement(ref origin.ActiveRequests);
                 }
+
+                #endregion
             }
         }
 

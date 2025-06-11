@@ -3,6 +3,8 @@
     using System;
     using System.IO;
     using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
     using RestWrapper;
     using SerializationHelper;
     using Switchboard.Core;
@@ -59,6 +61,20 @@
                                 _Server2.Start();
                                 _Server3.Start();
                                 _Server4.Start();
+
+                                #region Wait-for-Healthy-Origins
+
+                                Console.WriteLine("-----------------------------------");
+                                Console.WriteLine("Waiting for origin servers to start");
+                                Console.WriteLine("-----------------------------------");
+
+                                while (_Settings.Origins.Any(o => !o.Healthy))
+                                {
+                                    Console.WriteLine("At least one origin is unhealthy, waiting 1000ms");
+                                    await Task.Delay(1000);
+                                }
+
+                                #endregion
 
                                 #region Should-Succeed
 
@@ -135,6 +151,278 @@
                                         }
                                     }
                                 }
+
+                                #endregion
+
+                                #region Stop-All-Servers
+
+                                Console.WriteLine("");
+                                Console.WriteLine("------------------------------------------------");
+                                Console.WriteLine("Health Check Test: All servers down (502 errors)");
+                                Console.WriteLine("------------------------------------------------");
+
+                                // Stop all servers
+                                Console.WriteLine("");
+                                Console.WriteLine("Stopping all origin servers...");
+                                _Server1.Stop();
+                                _Server2.Stop();
+                                _Server3.Stop();
+                                _Server4.Stop();
+
+                                Console.WriteLine("----------------------------------");
+                                Console.WriteLine("Waiting for origin servers to stop");
+                                Console.WriteLine("----------------------------------");
+
+                                while (_Settings.Origins.Any(o => o.Healthy))
+                                {
+                                    Console.WriteLine("At least one origin is healthy, waiting 1000ms");
+                                    await Task.Delay(1000);
+                                }
+
+                                #endregion
+
+                                #region Validate-502s
+
+                                // Test that we get 502 errors
+                                Console.WriteLine("");
+                                Console.WriteLine("Testing requests while all servers are down (expecting 502 errors):");
+
+                                for (int i = 0; i < 3; i++)
+                                {
+                                    Console.WriteLine("");
+                                    Console.WriteLine("Request " + i + " (expecting 502):");
+
+                                    url = "http://localhost:8000/unauthenticated";
+                                    Console.WriteLine("| URL: " + url);
+
+                                    using (RestRequest req = new RestRequest(url))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
+
+                                            if (resp.StatusCode != 502)
+                                            {
+                                                Console.WriteLine("| ERROR: Expected 502 but got " + resp.StatusCode);
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("| SUCCESS: Received expected 502 error");
+                                            }
+                                        }
+                                    }
+                                }
+
+                                #endregion
+
+                                #region Health-Check-Server-Recovery
+
+                                Console.WriteLine("");
+                                Console.WriteLine("-------------------------------------------");
+                                Console.WriteLine("Health Check Test: Server recovery");
+                                Console.WriteLine("-------------------------------------------");
+
+                                // Start server 1 and 2
+                                Console.WriteLine("");
+                                Console.WriteLine("Starting servers 1 and 2...");
+                                _Server1.Start();
+                                _Server2.Start();
+
+                                // Wait for health checks to detect recovery
+                                // With HealthyThreshold=2 and HealthCheckIntervalMs=1000, we need at least 2 seconds
+
+                                Console.WriteLine("-----------------------------------");
+                                Console.WriteLine("Waiting for origin servers to start");
+                                Console.WriteLine("-----------------------------------");
+
+                                while (_Settings.Origins.All(o => !o.Healthy))
+                                {
+                                    Console.WriteLine("All origin servers are unhealthy, waiting 1000ms");
+                                    await Task.Delay(1000);
+                                }
+
+                                // Test that requests now succeed
+                                Console.WriteLine("");
+                                Console.WriteLine("Testing requests after server recovery:");
+
+                                for (int i = 0; i < 4; i++)
+                                {
+                                    Console.WriteLine("");
+                                    Console.WriteLine("Request " + i + " (expecting success):");
+
+                                    url = "http://localhost:8000/unauthenticated";
+                                    Console.WriteLine("| URL: " + url);
+
+                                    using (RestRequest req = new RestRequest(url))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            Console.WriteLine("| Response (" + resp.StatusCode + "): " + resp.DataAsString);
+
+                                            if (resp.StatusCode != 200)
+                                            {
+                                                Console.WriteLine("| ERROR: Expected 200 but got " + resp.StatusCode);
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("| SUCCESS: Request succeeded after recovery");
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Start remaining servers
+                                Console.WriteLine("");
+                                Console.WriteLine("Starting remaining servers...");
+                                _Server3.Start();
+                                _Server4.Start();
+
+                                Console.WriteLine("-----------------------------------");
+                                Console.WriteLine("Waiting for origin servers to start");
+                                Console.WriteLine("-----------------------------------");
+
+                                while (_Settings.Origins.Any(o => !o.Healthy))
+                                {
+                                    Console.WriteLine("At least one origin server is unhealthy, waiting 1000ms");
+                                    await Task.Delay(1000);
+                                }
+
+                                await Task.Delay(3000);
+
+                                #endregion
+
+                                #region Rate-Limiting-Test
+
+                                Console.WriteLine("");
+                                Console.WriteLine("-------------------------------------------");
+                                Console.WriteLine("Rate Limiting Test");
+                                Console.WriteLine("-------------------------------------------");
+
+                                // First, let's ensure all servers are healthy
+                                Console.WriteLine("Ensuring all servers are healthy...");
+                                await Task.Delay(2000);
+
+                                // Send many concurrent requests to trigger rate limiting
+                                Console.WriteLine("");
+                                Console.WriteLine("Sending burst of requests to trigger rate limiting...");
+
+                                Task<(int statusCode, string response)>[] tasks = new Task<(int, string)>[20];
+
+                                for (int i = 0; i < tasks.Length; i++)
+                                {
+                                    int index = i;
+                                    tasks[i] = Task.Run(async () =>
+                                    {
+                                        using (RestRequest req = new RestRequest("http://localhost:8000/unauthenticated"))
+                                        {
+                                            // Add a small delay to simulate more realistic concurrent requests
+                                            if (index > 0) await Task.Delay(10);
+
+                                            using (RestResponse resp = await req.SendAsync())
+                                            {
+                                                return (resp.StatusCode, resp.DataAsString);
+                                            }
+                                        }
+                                    });
+                                }
+
+                                var results = await Task.WhenAll(tasks);
+
+                                int successCount = 0;
+                                int rateLimitCount = 0;
+
+                                Console.WriteLine("");
+                                Console.WriteLine("Rate limiting results:");
+                                for (int i = 0; i < results.Length; i++)
+                                {
+                                    Console.WriteLine($"| Request {i}: Status {results[i].statusCode}");
+
+                                    if (results[i].statusCode == 200)
+                                        successCount++;
+                                    else if (results[i].statusCode == 429)
+                                        rateLimitCount++;
+                                }
+
+                                Console.WriteLine("");
+                                Console.WriteLine($"| Summary: {successCount} successful, {rateLimitCount} rate limited");
+
+                                if (rateLimitCount > 0)
+                                {
+                                    Console.WriteLine("| SUCCESS: Rate limiting is working correctly");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("| WARNING: No rate limiting observed (might need to adjust thresholds)");
+                                }
+
+                                // Wait for rate limit to clear
+                                Console.WriteLine("");
+                                Console.WriteLine("Waiting for rate limit to clear...");
+                                await Task.Delay(3000);
+
+                                #endregion
+
+                                #region Health-Check-During-Active-Requests
+
+                                Console.WriteLine("");
+                                Console.WriteLine("-------------------------------------------");
+                                Console.WriteLine("Health Check Test: Server failure during active requests");
+                                Console.WriteLine("-------------------------------------------");
+
+                                // Start a long-running request task
+                                Console.WriteLine("");
+                                Console.WriteLine("Starting requests while servers will be stopped...");
+
+                                Task<(int count, int failures)> requestTask = Task.Run(async () =>
+                                {
+                                    int requestCount = 0;
+                                    int failureCount = 0;
+
+                                    for (int i = 0; i < 10; i++)
+                                    {
+                                        requestCount++;
+
+                                        using (RestRequest req = new RestRequest("http://localhost:8000/unauthenticated"))
+                                        {
+                                            using (RestResponse resp = await req.SendAsync())
+                                            {
+                                                if (resp.StatusCode != 200)
+                                                {
+                                                    failureCount++;
+                                                    Console.WriteLine($"| Request {i}: Failed with status {resp.StatusCode}");
+                                                }
+                                                else
+                                                {
+                                                    Console.WriteLine($"| Request {i}: Success from {resp.Headers.Get("X-Origin-Server")}");
+                                                }
+                                            }
+                                        }
+
+                                        await Task.Delay(500);
+                                    }
+
+                                    return (requestCount, failureCount);
+                                });
+
+                                // Wait a bit then stop some servers
+                                await Task.Delay(1000);
+                                Console.WriteLine("");
+                                Console.WriteLine("Stopping servers 3 and 4 during active requests...");
+                                _Server3.Stop();
+                                _Server4.Stop();
+
+                                var (totalRequests, failures) = await requestTask;
+
+                                Console.WriteLine("");
+                                Console.WriteLine($"| Results: {totalRequests} total requests, {failures} failures");
+                                Console.WriteLine("| Remaining healthy servers should have handled the load");
+
+                                // Restart servers
+                                Console.WriteLine("");
+                                Console.WriteLine("Restarting servers 3 and 4...");
+                                _Server3.Start();
+                                _Server4.Start();
+                                await Task.Delay(3000);
 
                                 #endregion
 
@@ -251,7 +539,12 @@
                 Name = "Server 1",
                 Hostname = "localhost",
                 Port = 8001,
-                Ssl = false
+                Ssl = false,
+                HealthCheckIntervalMs = 1000,  // Check every second for faster testing
+                UnhealthyThreshold = 2,        // 2 failures = unhealthy
+                HealthyThreshold = 2,          // 2 successes = healthy
+                MaxParallelRequests = 2,       // Low limit for rate limiting tests
+                RateLimitRequestsThreshold = 3 // Very low threshold for testing
             });
 
             _Settings.Origins.Add(new OriginServer
@@ -260,7 +553,12 @@
                 Name = "Server 2",
                 Hostname = "localhost",
                 Port = 8002,
-                Ssl = false
+                Ssl = false,
+                HealthCheckIntervalMs = 1000,
+                UnhealthyThreshold = 2,
+                HealthyThreshold = 2,
+                MaxParallelRequests = 2,
+                RateLimitRequestsThreshold = 3
             });
 
             _Settings.Origins.Add(new OriginServer
@@ -269,7 +567,12 @@
                 Name = "Server 3",
                 Hostname = "localhost",
                 Port = 8003,
-                Ssl = false
+                Ssl = false,
+                HealthCheckIntervalMs = 1000,
+                UnhealthyThreshold = 2,
+                HealthyThreshold = 2,
+                MaxParallelRequests = 2,
+                RateLimitRequestsThreshold = 3
             });
 
             _Settings.Origins.Add(new OriginServer
@@ -278,7 +581,12 @@
                 Name = "Server 4",
                 Hostname = "localhost",
                 Port = 8004,
-                Ssl = false
+                Ssl = false,
+                HealthCheckIntervalMs = 1000,
+                UnhealthyThreshold = 2,
+                HealthyThreshold = 2,
+                MaxParallelRequests = 2,
+                RateLimitRequestsThreshold = 3
             });
 
             File.WriteAllBytes("./sb.json", Encoding.UTF8.GetBytes(_Serializer.SerializeJson(_Settings, true)));
@@ -305,9 +613,16 @@
 
         private static async Task Server1Route(HttpContextBase ctx)
         {
+            if (IsHealthCheck(ctx))
+            {
+                ctx.Response.StatusCode = 200;
+                await ctx.Response.Send();
+                return;
+            }
+
             Console.WriteLine("| Server 1");
             Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
-            if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring)) 
+            if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
                 Console.WriteLine("| Querystring: " + ctx.Request.Query.Querystring);
             if (ctx.Request.Headers.Count > 0)
             {
@@ -322,7 +637,7 @@
                     Console.WriteLine(
                         "| Auth context: " + Environment.NewLine
                         + _Serializer.SerializeJson(
-                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader)), 
+                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader)),
                             true));
                 }
             }
@@ -334,6 +649,13 @@
 
         private static async Task Server2Route(HttpContextBase ctx)
         {
+            if (IsHealthCheck(ctx))
+            {
+                ctx.Response.StatusCode = 200;
+                await ctx.Response.Send();
+                return;
+            }
+
             Console.WriteLine("| Server 2");
             Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
             if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
@@ -363,6 +685,13 @@
 
         private static async Task Server3Route(HttpContextBase ctx)
         {
+            if (IsHealthCheck(ctx))
+            {
+                ctx.Response.StatusCode = 200;
+                await ctx.Response.Send();
+                return;
+            }
+
             Console.WriteLine("| Server 3");
             Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
             if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
@@ -392,6 +721,13 @@
 
         private static async Task Server4Route(HttpContextBase ctx)
         {
+            if (IsHealthCheck(ctx))
+            {
+                ctx.Response.StatusCode = 200;
+                await ctx.Response.Send();
+                return;
+            }
+
             Console.WriteLine("| Server 4");
             Console.WriteLine("| Received URL: " + ctx.Request.Url.Full);
             if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
@@ -417,6 +753,11 @@
             ctx.Response.ContentType = "text/plain";
             await ctx.Response.Send("Hello from server 4: " + ctx.Request.Method + " " + ctx.Request.Url.RawWithQuery);
             return;
+        }
+
+        private static bool IsHealthCheck(HttpContextBase ctx)
+        {
+            return (ctx.Request.Method == HttpMethod.GET && ctx.Request.Url.RawWithoutQuery.Equals("/"));
         }
 
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.

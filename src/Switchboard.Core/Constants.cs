@@ -138,6 +138,11 @@ namespace Switchboard.Core
         /// </summary>
         public static string AuthContextHeader = "x-sb-auth-context";
 
+        /// <summary>
+        /// Origin server ID header.
+        /// </summary>
+        public static string OriginServerHeader = "x-sb-origin-id";
+
         #endregion
     }
 }

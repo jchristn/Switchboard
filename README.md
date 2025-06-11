@@ -8,18 +8,27 @@ Switchboard is a lightweight application proxy combining reverse proxy and API g
 
 If you have any issues or feedback, please file an issue here in Github. We'd love to have you help by contributing code for new features, optimization to the existing codebase, ideas for future releases, or fixes!
 
-## New in v2.0.x
+## New in v3.0.x
 
-- Added authentication support
-- Reorganized API endpoints into groups (`ApiEndpointGroup`) for authenticated `Authenticated` and unauthenticated `Unauthenticated`
+- Added origin server healthchecks and ratelimiting
 
 ## Default Configuration
 
 By default, Switchboard server will listen on `http://localhost:8000/` and is not configured with API endpoints or origin servers (see below for an example).  If you point your browser to `http://localhost:8000/` you will see a default page indicating that the node is operational.  `HEAD` requests to this URL will also return a `200/OK`.
 
+If not explicitly set, origin servers will have their health checked along the following parameters:
+- Using `GET /`
+- Checked every five seconds (see `HealthCheckIntervalMs`)
+- Two consecutive failures (see `UnhealthyThreshold`) marks an origin server as unhealthy
+- Two consecutive successes (see `HealthyThreshold`) marks an origin server as healthy
+
+If not explicitly set, origin server rate limiting will be enforced along the following parameters:
+- Up to 10 parallel requests can be handled at a time (see `MaxParallelRequests`) per origin server
+- Up to 30 requests can be in process and pending at a time (see `RateLimitRequestsThreshold`) per origin server
+
 ## Example (Integrated)
 
-Refer to the `Test` project for a working example with one API endpoint and two origin servers.
+Refer to the `Test` project for a working example with one API endpoint and four origin servers.
 
 ```csharp
 using Switchboard.Core;
@@ -124,7 +133,7 @@ $ dotnet Switchboard.Server.dll
  /__/\_/\_/|_|\__\__|_||_|_.__/\___/\__,_|_| \__,_|
 
 
-Switchboard Server v1.0.0
+Switchboard Server v3.0.0
 
 Loading from settings file ./sb.json
 2024-12-05 03:30:01 INSPIRON-14 Info [SwitchboardDaemon] webserver started on http://localhost:8000

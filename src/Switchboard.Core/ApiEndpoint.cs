@@ -2,10 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using WatsonWebserver.Core;
+    using System.Text.Json.Serialization;
 
     /// <summary>
     /// API endpoint.
@@ -101,6 +98,7 @@
         /// <summary>
         /// Last-used index.
         /// </summary>
+        [JsonIgnore]
         public int LastIndex
         {
             get
@@ -189,6 +187,12 @@
                 _RewriteUrls = value;
             }
         }
+
+        #endregion
+
+        #region Internal-Members
+
+        internal readonly object Lock = new object();
 
         #endregion
 
