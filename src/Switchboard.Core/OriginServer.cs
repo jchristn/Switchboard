@@ -1,10 +1,10 @@
 ﻿namespace Switchboard.Core
 {
     using System;
-    using System.Net.Http;
     using System.Text.Json;
     using System.Text.Json.Serialization;
     using System.Threading;
+    using WatsonWebserver.Core;
 
     /// <summary>
     /// Origin server.
@@ -113,18 +113,7 @@
         /// HTTP method to use when performing a healthcheck.
         /// Default is GET.
         /// </summary>
-        public HttpMethod HealthCheckMethod
-        {
-            get
-            {
-                return _HealthCheckMethod;
-            }
-            set
-            {
-                if (value == null) throw new ArgumentNullException(nameof(HealthCheckMethod));
-                _HealthCheckMethod = value;
-            }
-        }
+        public HttpMethod HealthCheckMethod { get; set; } = HttpMethod.GET;
 
         /// <summary>
         /// URL to use when performing a healthcheck.
@@ -239,7 +228,6 @@
         private int _HealthyThreshold = 2;
         private int _MaxParallelRequests = 10;
         private int _RateLimitRequestsThreshold = 30;
-        private HttpMethod _HealthCheckMethod = HttpMethod.Get;
         private string _HealthCheckUrl = "/";
         private SemaphoreSlim _Semaphore = null;
 

@@ -128,7 +128,7 @@
                         if (!firstRun) await Task.Delay(origin.HealthCheckIntervalMs, token);
                         else firstRun = false;
 
-                        HttpRequestMessage request = new HttpRequestMessage(origin.HealthCheckMethod, healthCheckUrl);
+                        HttpRequestMessage request = new HttpRequestMessage(HttpMethodConverter(origin.HealthCheckMethod), healthCheckUrl);
                         HttpResponseMessage response = await client.SendAsync(request, token);
 
                         if (response.IsSuccessStatusCode)
@@ -274,6 +274,31 @@
             }
 
             _Logging.Debug(_Header + "stopping healthcheck task for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl);
+        }
+
+        private System.Net.Http.HttpMethod HttpMethodConverter(WatsonWebserver.Core.HttpMethod method)
+        {
+            switch (method)
+            {
+                case WatsonWebserver.Core.HttpMethod.GET:
+                    return System.Net.Http.HttpMethod.Get;
+                case WatsonWebserver.Core.HttpMethod.HEAD:
+                    return System.Net.Http.HttpMethod.Head;
+                case WatsonWebserver.Core.HttpMethod.PUT:
+                    return System.Net.Http.HttpMethod.Put;
+                case WatsonWebserver.Core.HttpMethod.POST:
+                    return System.Net.Http.HttpMethod.Post;
+                case WatsonWebserver.Core.HttpMethod.DELETE:
+                    return System.Net.Http.HttpMethod.Delete;
+                case WatsonWebserver.Core.HttpMethod.PATCH:
+                    return System.Net.Http.HttpMethod.Patch;
+                case WatsonWebserver.Core.HttpMethod.OPTIONS:
+                    return System.Net.Http.HttpMethod.Options;
+                case WatsonWebserver.Core.HttpMethod.TRACE:
+                    return System.Net.Http.HttpMethod.Trace;
+                default:
+                    throw new ArgumentException($"Unsupported HTTP method: {method}");
+            }
         }
 
         #endregion
