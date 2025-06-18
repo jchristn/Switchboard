@@ -500,10 +500,22 @@
 
             using (Timestamp ts = new Timestamp())
             {
-                string url = origin.UrlPrefix + ctx.Request.Url.RawWithQuery;
-
                 try
                 {
+                    #region Rewrite-URL
+
+                    string url = UrlTools.RewriteUrl(
+                        ctx.Request.Method.ToString(),
+                        ctx.Request.Url.RawWithoutQuery,
+                        endpoint.Endpoint);
+
+                    if (ctx.Request.Query != null && !String.IsNullOrEmpty(ctx.Request.Query.Querystring))
+                        url += "?" + ctx.Request.Query.Querystring;
+
+                    url = origin.UrlPrefix + url;
+
+                    #endregion
+
                     #region Enter-Semaphore
 
                     await origin.Semaphore.WaitAsync().ConfigureAwait(false);
