@@ -571,7 +571,45 @@
 
                         #region Send-Request
 
-                        if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
+                        _Logging.Debug(_Header + "request transfer encoding: " + ctx.Request.Headers.Get("Transfer-Encoding") + ", chunked: " + ctx.Request.ChunkedTransfer);
+
+                        if (ctx.Request.ChunkedTransfer)
+                        {
+                            #region Chunked-Transfer-Request
+
+                            if (!String.IsNullOrEmpty(ctx.Request.ContentType))
+                                req.ContentType = ctx.Request.ContentType;
+                            else
+                                req.ContentType = Constants.BinaryContentType;
+
+                            req.ChunkedTransfer = true;
+
+                            _Logging.Debug(_Header + "forwarding chunked request to " + origin.Identifier);
+
+                            // Read and forward chunks
+                            bool finalChunk = false;
+                            while (!finalChunk)
+                            {
+                                var chunk = await ctx.Request.ReadChunk();
+                                finalChunk = (chunk.Length == 0); // Zero-length chunk indicates end
+
+                                _Logging.Debug(_Header + "forwarding chunk: " + chunk.Length + " bytes, final: " + finalChunk);
+
+                                if (chunk.Length > 0)
+                                {
+                                    resp = await req.SendChunkAsync(chunk.Data, false);
+                                }
+                                else
+                                {
+                                    // Send final chunk
+                                    resp = await req.SendChunkAsync(Array.Empty<byte>(), true);
+                                    finalChunk = true;
+                                }
+                            }
+
+                            #endregion
+                        }
+                        else if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
                         {
                             #region With-Data
 

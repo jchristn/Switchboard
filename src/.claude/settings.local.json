@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir)",
+      "Read(//c/Code/Switchboard/Switchboard-3.0/**)",
+      "Bash(dotnet build)",
+      "Bash(dotnet clean:*)",
+      "Bash(taskkill:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet run:*)",
+      "Bash(timeout:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(findstr:*)",
+      "Bash(dir:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

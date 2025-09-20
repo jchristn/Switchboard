@@ -1,0 +1,655 @@
+2025-09-20 01:26:23 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 01:26:23 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 93692
+2025-09-20 01:26:24 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 01:26:24 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 01:26:24 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:26:24 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:26:25 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 01:26:25 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:26:25 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:26:25 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:26:25 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:26:35 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 01:26:35 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 01:26:35 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 01:26:35 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:35 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:26:36 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:26:38 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 01:26:38 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 01:26:40 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:26:40 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:26:45 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 01:26:45 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 01:26:45 joel-laptop Warn [GatewayService] too many active requests for origin server2, sending 429 response to request from ::1
+2025-09-20 01:26:48 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 01cb2331-3a32-4fd8-9629-fcfeb96fe14b: An error occurred while sending the request.
+2025-09-20 01:26:48 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 01:26:48 joel-laptop Warn [GatewayService] exception proxying request to origin server1 for endpoint test-endpoint for request 2dffdddd-d0a5-4519-97ab-169c70af4ec0: An error occurred while sending the request.
+2025-09-20 01:26:48 joel-laptop Warn [GatewayService] no response or exception from server1 for API endpoint test-endpoint
+2025-09-20 01:26:53 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 5600d915-7875-4bc6-b9ca-1927b90c024a: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 01:26:53 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 01:26:58 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 01:26:58 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 01:26:58 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 6be51bfe-553c-4139-b993-f6633cdd4e4d: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 01:26:58 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 01:27:02 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:27:02 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:28:38 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 01:28:38 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 46760
+2025-09-20 01:28:40 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 01:28:40 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:28:40 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:28:40 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 01:28:40 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 01:28:40 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:28:40 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:28:40 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:28:40 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:28:50 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 01:28:50 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 01:28:50 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 01:28:50 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 01:28:50 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:28:50 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:28:51 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:28:51 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:28:51 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:28:51 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:28:51 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 01:28:51 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 01:28:51 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 01:28:52 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 01:28:52 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 01:28:54 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:28:54 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:28:59 joel-laptop Warn [GatewayService] too many active requests for origin server3, sending 429 response to request from ::1
+2025-09-20 01:28:59 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 01:29:02 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 15d37cbd-b18b-44b0-b17e-a7351c91e3d6: An error occurred while sending the request.
+2025-09-20 01:29:02 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 01:29:07 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 31a06199-2133-4ee6-a822-a093fc25a470: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 01:29:07 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 01:29:12 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request f81d889c-8c0c-4876-aa86-e4c4ff490680: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 01:29:12 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 01:29:13 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 01:29:13 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 01:29:17 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:29:17 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:34:57 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 01:34:57 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 51744
+2025-09-20 01:34:59 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 01:34:59 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 01:34:59 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:34:59 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:35:00 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 01:35:00 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:35:00 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:35:00 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:35:00 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:35:09 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 01:35:09 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 01:35:09 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 01:35:09 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 01:35:10 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:35:10 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:35:10 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:35:10 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:35:10 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:35:10 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:35:10 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 01:35:10 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 01:35:10 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 01:35:11 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 01:35:11 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 01:35:13 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:35:13 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:35:18 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 01:35:21 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request c9eac049-ce8c-4b03-bce7-78296989ebee: An error occurred while sending the request.
+2025-09-20 01:35:21 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 01:35:29 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 90dbe20b-00bd-42cb-b7ad-1cd026deeab4: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 01:35:29 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 01:35:34 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 01:35:34 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 01:35:34 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request e394031f-84cc-44ac-925e-0e9ba3301e48: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 01:35:34 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 01:35:38 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:35:38 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:38:07 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 01:38:07 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 74500
+2025-09-20 01:38:09 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 01:38:09 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:38:09 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 01:38:09 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:38:10 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 01:38:10 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:38:10 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:38:10 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:38:10 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 01:38:19 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 01:38:19 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 01:38:19 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 01:38:19 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 01:38:20 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:38:20 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:38:20 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:38:20 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:38:20 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 01:38:20 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 01:38:20 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 01:38:20 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 01:38:20 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 01:38:21 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 01:38:21 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 01:38:23 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:38:23 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 01:38:28 joel-laptop Warn [GatewayService] too many active requests for origin server3, sending 429 response to request from ::1
+2025-09-20 01:38:28 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 01:38:28 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 01:38:31 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request aef19d4a-d297-4227-afd7-bf30f0dad324: An error occurred while sending the request.
+2025-09-20 01:38:31 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 01:38:38 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 9aacfdc7-3591-4f12-bf71-c3fbe4b7ee7e: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 01:38:38 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 01:38:44 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 01:38:44 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request b29f3bca-ddfd-4da1-9f81-7fbb1a66df01: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 01:38:44 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 01:38:44 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 01:38:48 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 01:38:48 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:00:27 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 02:00:27 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 42692
+2025-09-20 02:00:28 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:00:28 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:00:28 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:00:28 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:00:29 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 02:00:29 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:00:29 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:00:29 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:00:29 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:00:39 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:00:39 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:00:39 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 02:00:39 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 02:00:40 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:00:40 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:00:40 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:00:40 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:00:40 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:00:40 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:00:40 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 02:00:40 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 02:00:40 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 02:00:41 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:00:41 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:00:43 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:00:43 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:00:48 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 02:00:48 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 02:00:48 joel-laptop Warn [GatewayService] too many active requests for origin server2, sending 429 response to request from ::1
+2025-09-20 02:00:53 joel-laptop Warn [GatewayService] exception proxying request to origin server1 for endpoint test-endpoint for request c0e56107-778f-4a39-8100-0b2029cd8894: An error occurred while sending the request.
+2025-09-20 02:00:53 joel-laptop Warn [GatewayService] no response or exception from server1 for API endpoint test-endpoint
+2025-09-20 02:01:01 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 0db38df8-124a-4115-bf9b-7eacc7af793e: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 02:01:01 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:01:05 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request b75cbc95-ba73-464c-85f9-2983ffe4d6aa: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 02:01:05 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:01:06 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:01:06 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:01:12 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:01:12 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:04:21 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 02:04:21 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 56644
+2025-09-20 02:04:22 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:04:22 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:04:22 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:04:22 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:04:23 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 02:04:23 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:04:23 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:04:23 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:04:23 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:04:33 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:04:33 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:04:33 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 02:04:33 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 02:04:33 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:04:33 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:04:33 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:04:33 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:04:33 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:04:33 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:04:33 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 02:04:33 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 02:04:33 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 02:04:35 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:04:35 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:04:37 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:04:37 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:04:42 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 02:04:42 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 02:04:47 joel-laptop Warn [GatewayService] exception proxying request to origin server1 for endpoint test-endpoint for request e403a6dc-239e-452d-b99c-a114573ad40c: An error occurred while sending the request.
+2025-09-20 02:04:47 joel-laptop Warn [GatewayService] no response or exception from server1 for API endpoint test-endpoint
+2025-09-20 02:06:56 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 02:06:56 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 81932
+2025-09-20 02:06:57 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:06:57 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:06:57 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:06:57 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:06:58 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 02:06:58 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:06:58 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:06:58 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:06:58 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:07:08 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:07:08 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 02:07:08 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:07:08 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 02:07:09 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:07:09 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:07:09 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:07:09 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:07:09 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:07:09 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:07:09 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 02:07:09 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 02:07:09 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 02:07:10 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:07:11 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:07:13 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:07:13 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:07:17 joel-laptop Warn [GatewayService] too many active requests for origin server3, sending 429 response to request from ::1
+2025-09-20 02:07:17 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 02:07:17 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 02:07:22 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 7c48a991-c486-4fb7-a4c6-ed5ceaec5e6e: An error occurred while sending the request.
+2025-09-20 02:07:22 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:07:31 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 1cee27e0-12bf-4436-bd96-ddd07f3d29eb: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 02:07:31 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:07:35 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:07:35 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:07:35 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request cc89c26a-1ede-47ff-be86-978ffc0fccea: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 02:07:35 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:08:03 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 02:08:03 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 85156
+2025-09-20 02:08:04 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:08:04 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:08:04 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:08:04 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:08:05 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 02:08:05 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:08:05 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:08:05 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:08:05 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:08:14 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:08:14 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 02:08:14 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:08:14 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 02:08:15 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:08:15 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:08:15 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:08:15 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:08:15 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:08:15 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:08:15 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 02:08:15 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 02:08:15 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 02:08:17 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:08:17 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:08:19 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:08:19 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:08:24 joel-laptop Warn [GatewayService] too many active requests for origin server3, sending 429 response to request from ::1
+2025-09-20 02:08:24 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 02:08:24 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 02:08:29 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 1893336b-fa4a-44a1-9e7a-eb5bc813d600: An error occurred while sending the request.
+2025-09-20 02:08:29 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:08:37 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 6b483b41-7ccb-4f09-9aa6-ffd32e5a66a7: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 02:08:37 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:08:41 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 2cdb766f-ce4f-46e2-a40d-8b6476b833dc: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 02:08:41 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:08:42 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:08:42 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:08:45 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:08:45 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:14:04 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 02:14:04 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 38388
+2025-09-20 02:14:05 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:14:05 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:14:05 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:14:05 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:14:06 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 02:14:06 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:14:06 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:14:06 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:14:06 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:14:16 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 02:14:16 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:14:16 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:14:16 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 02:14:17 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:14:17 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:14:17 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:14:17 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:14:17 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:14:17 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:14:17 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 02:14:17 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 02:14:17 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 02:14:18 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:14:18 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:14:20 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:14:20 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:14:25 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 02:14:25 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 02:14:25 joel-laptop Warn [GatewayService] too many active requests for origin server2, sending 429 response to request from ::1
+2025-09-20 02:14:30 joel-laptop Warn [GatewayService] exception proxying request to origin server1 for endpoint test-endpoint for request f218fb44-a484-4fe7-9802-29d53fe887c8: An error occurred while sending the request.
+2025-09-20 02:14:30 joel-laptop Warn [GatewayService] no response or exception from server1 for API endpoint test-endpoint
+2025-09-20 02:14:38 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 56996a9c-7ae9-4c02-81f2-e92ab542b2a2: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 02:14:38 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:14:43 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 410080db-a177-46ed-bdc8-aba543beecd6: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 02:14:43 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:14:44 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:14:44 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:14:48 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:14:48 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:15:42 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 02:15:42 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 13932
+2025-09-20 02:15:43 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:15:43 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:15:43 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:15:43 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:15:44 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 02:15:44 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:15:44 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:15:44 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:15:44 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:15:54 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:15:54 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:15:54 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 02:15:54 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 02:15:55 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:15:55 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:15:55 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:15:55 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:15:55 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:15:55 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:15:55 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 02:15:55 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 02:15:55 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 02:15:56 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:15:56 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:15:58 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:15:58 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:16:03 joel-laptop Warn [GatewayService] too many active requests for origin server3, sending 429 response to request from ::1
+2025-09-20 02:16:03 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 02:16:03 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 02:16:08 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 613a7462-14e5-4afb-911b-11b409f11ec7: An error occurred while sending the request.
+2025-09-20 02:16:08 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:16:09 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request b0a4eaad-223d-489b-85fe-474dbd76408f: An error occurred while sending the request.
+2025-09-20 02:16:09 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:16:16 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 00c7eebf-3b0f-49e5-99ea-f0b719731c5f: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 02:16:16 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:16:21 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 881450c8-6dbc-4d80-bb6d-72e7acb0889c: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 02:16:21 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:16:22 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:16:22 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:16:26 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:16:26 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:18:29 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 02:18:29 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 74196
+2025-09-20 02:18:30 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:18:30 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:18:30 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:18:30 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:18:31 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 02:18:31 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:18:31 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:18:31 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:18:31 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:18:41 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:18:41 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 02:18:41 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:18:41 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 02:18:42 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:18:42 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:18:42 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:18:42 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:18:42 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:18:42 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:18:42 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 02:18:42 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 02:18:42 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 02:18:44 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:18:44 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:18:46 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:18:46 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:18:50 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 02:18:50 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 02:18:50 joel-laptop Warn [GatewayService] too many active requests for origin server2, sending 429 response to request from ::1
+2025-09-20 02:18:56 joel-laptop Warn [GatewayService] exception proxying request to origin server1 for endpoint test-endpoint for request 0dcdd494-f239-44f0-9d62-f9a180cf78ea: An error occurred while sending the request.
+2025-09-20 02:18:56 joel-laptop Warn [GatewayService] no response or exception from server1 for API endpoint test-endpoint
+2025-09-20 02:18:57 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 2189a5d2-ab0b-42e0-beb0-eaf30ee9e6c3: An error occurred while sending the request.
+2025-09-20 02:18:57 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:19:04 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request c551c9da-2290-4328-a280-2ac393ba3c52: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 02:19:04 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:19:09 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:19:09 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:19:09 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request b915fbb4-8481-42cd-8d39-880836fa27dc: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 02:19:09 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:19:13 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:19:13 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:19:45 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 02:19:45 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 70812
+2025-09-20 02:19:46 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:19:46 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:19:46 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:19:46 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:19:47 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 02:19:47 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:19:47 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:19:47 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:19:47 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:19:58 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:19:58 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:19:58 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 02:19:58 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 02:19:59 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:19:59 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:19:59 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:19:59 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:19:59 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:19:59 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:19:59 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 02:19:59 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 02:19:59 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 02:20:00 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:20:00 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:20:02 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:20:02 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:20:07 joel-laptop Warn [GatewayService] too many active requests for origin server3, sending 429 response to request from ::1
+2025-09-20 02:20:07 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 02:20:07 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 02:20:12 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 742f019f-0938-40bc-9039-6541a76de2ab: An error occurred while sending the request.
+2025-09-20 02:20:12 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:20:13 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 4285d042-cdde-45aa-8734-e903432d9e74: An error occurred while sending the request.
+2025-09-20 02:20:13 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:20:20 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request b33a29a6-99c1-48ba-8348-979bb73e6943: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 02:20:20 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:20:25 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 8c6bdb43-7116-426e-83cf-270d17507ddc: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 02:20:25 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:20:26 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:20:26 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:20:30 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:20:30 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:25:34 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 02:25:34 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 48452
+2025-09-20 02:25:35 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:25:35 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:25:35 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:25:35 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:25:36 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 02:25:36 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:25:36 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:25:36 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:25:36 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:25:46 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 02:25:46 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:25:46 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 02:25:46 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:25:46 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:25:46 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:25:46 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:25:46 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:25:46 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:25:46 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:25:46 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 02:25:46 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 02:25:46 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 02:25:48 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:25:48 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:25:50 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:25:50 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:25:55 joel-laptop Warn [GatewayService] too many active requests for origin server3, sending 429 response to request from ::1
+2025-09-20 02:25:55 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 02:25:55 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 02:26:01 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 1ae22160-b3f0-4978-a8fb-9c15aa7eb29d
+System.FormatException: The input string 'This is the first chunk of data for testing chunked transfer encoding.' was not in a correct format.
+   at System.Number.ThrowFormatException[TChar](ReadOnlySpan`1 value)
+   at System.Int32.Parse(String s, NumberStyles style)
+   at WatsonWebserver.HttpRequest.ReadChunk(CancellationToken token)
+   at Switchboard.Core.Services.GatewayService.ProxyRequest(Guid requestGuid, HttpContextBase ctx, MatchingApiEndpoint endpoint, OriginServer origin, AuthContext authResult) in C:\Code\Switchboard\Switchboard-3.0\src\Switchboard.Core\Services\GatewayService.cs:line 591
+2025-09-20 02:26:01 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:26:08 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request bc28a007-397f-4e9f-af56-6c9609684c10: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 02:26:08 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:26:12 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request c0dbfd98-4b2b-4680-bb59-5b11b94f201c: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 02:26:12 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:26:13 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:26:13 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:26:19 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:26:19 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:39:49 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 02:39:49 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 96684
+2025-09-20 02:39:50 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:39:50 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:39:50 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:39:50 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:39:51 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 02:39:51 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:39:51 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:39:51 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:39:51 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 02:40:01 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:40:01 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 02:40:01 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:40:01 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 02:40:02 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:40:02 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:40:02 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:40:02 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:40:02 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 02:40:02 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 02:40:02 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 02:40:02 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 02:40:02 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 02:40:03 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 02:40:04 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 02:40:06 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:40:06 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 02:40:10 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 02:40:10 joel-laptop Warn [GatewayService] too many active requests for origin server4, sending 429 response to request from ::1
+2025-09-20 02:40:17 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request a5c3b8a7-5b2a-4760-889b-372bb30eac43
+System.FormatException: The input string 'This is the first chunk of data for testing chunked transfer encoding.' was not in a correct format.
+   at System.Number.ThrowFormatException[TChar](ReadOnlySpan`1 value)
+   at System.Int32.Parse(String s, NumberStyles style)
+   at WatsonWebserver.HttpRequest.ReadChunk(CancellationToken token)
+   at Switchboard.Core.Services.GatewayService.ProxyRequest(Guid requestGuid, HttpContextBase ctx, MatchingApiEndpoint endpoint, OriginServer origin, AuthContext authResult) in C:\Code\Switchboard\Switchboard-3.0\src\Switchboard.Core\Services\GatewayService.cs:line 591
+2025-09-20 02:40:17 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:40:24 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request b9146689-0cf7-4a5f-97bf-98d49189fb3b: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 02:40:24 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 02:40:29 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 02:40:29 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 02:40:29 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request de2b898e-e8b9-4ac8-9223-543b11c93c65: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 02:40:29 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 02:40:33 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 02:40:33 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 03:04:57 joel-laptop Info [SwitchboardDaemon] webserver started on http://localhost:8000
+2025-09-20 03:04:57 joel-laptop Info [SwitchboardDaemon] Switchboard Server started using process ID 100288
+2025-09-20 03:04:58 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 03:04:58 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 03:04:58 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 03:04:58 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 03:05:00 joel-laptop Warn [GatewayService] no API endpoint found for GET /undefined
+2025-09-20 03:05:00 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 03:05:00 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 03:05:00 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 03:05:00 joel-laptop Warn [GatewayService] auth failure reported for GET /authenticated (Denied/Denied): Supply an Authorization header in your request
+2025-09-20 03:05:10 joel-laptop Warn [HealthCheckService] origin server1 is now unhealthy (timeout)
+2025-09-20 03:05:10 joel-laptop Warn [HealthCheckService] origin server2 is now unhealthy (timeout)
+2025-09-20 03:05:10 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 03:05:10 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 03:05:10 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 03:05:10 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 03:05:10 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 03:05:10 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 03:05:10 joel-laptop Warn [GatewayService] no healthy origins found for endpoint test-endpoint
+2025-09-20 03:05:10 joel-laptop Warn [GatewayService] no origin server found for GET /unauthenticated
+2025-09-20 03:05:10 joel-laptop Warn [GatewayService] no API endpoint found for PUT /unauthenticated
+2025-09-20 03:05:10 joel-laptop Warn [GatewayService] no API endpoint found for DELETE /unauthenticated
+2025-09-20 03:05:10 joel-laptop Warn [GatewayService] no API endpoint found for PATCH /unauthenticated
+2025-09-20 03:05:12 joel-laptop Info [HealthCheckService] origin server2 is now healthy
+2025-09-20 03:05:12 joel-laptop Info [HealthCheckService] origin server1 is now healthy
+2025-09-20 03:05:13 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 03:05:13 joel-laptop Info [HealthCheckService] origin server4 is now healthy
+2025-09-20 03:05:18 joel-laptop Warn [GatewayService] too many active requests for origin server1, sending 429 response to request from ::1
+2025-09-20 03:05:24 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request 102a3a10-3a13-4af3-8c62-d1c5ebc8ad0f
+System.FormatException: The input string 'This is the first chunk of data for testing chunked transfer encoding.' was not in a correct format.
+   at System.Number.ThrowFormatException[TChar](ReadOnlySpan`1 value)
+   at System.Int32.Parse(String s, NumberStyles style)
+   at WatsonWebserver.HttpRequest.ReadChunk(CancellationToken token)
+   at Switchboard.Core.Services.GatewayService.ProxyRequest(Guid requestGuid, HttpContextBase ctx, MatchingApiEndpoint endpoint, OriginServer origin, AuthContext authResult) in C:\Code\Switchboard\Switchboard-3.0\src\Switchboard.Core\Services\GatewayService.cs:line 593
+2025-09-20 03:05:24 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 03:05:36 joel-laptop Warn [GatewayService] exception proxying request to origin server4 for endpoint test-endpoint for request b7e18ec2-c2fc-4d84-b882-9769e745e6af: No connection could be made because the target machine actively refused it. (localhost:8004)
+2025-09-20 03:05:36 joel-laptop Warn [GatewayService] no response or exception from server4 for API endpoint test-endpoint
+2025-09-20 03:05:41 joel-laptop Warn [GatewayService] exception proxying request to origin server3 for endpoint test-endpoint for request 73675a81-e337-4b4e-bad2-637761cbc15c: No connection could be made because the target machine actively refused it. (localhost:8003)
+2025-09-20 03:05:41 joel-laptop Warn [GatewayService] no response or exception from server3 for API endpoint test-endpoint
+2025-09-20 03:05:42 joel-laptop Warn [HealthCheckService] origin server3 is now unhealthy (timeout)
+2025-09-20 03:05:42 joel-laptop Warn [HealthCheckService] origin server4 is now unhealthy (timeout)
+2025-09-20 03:05:46 joel-laptop Info [HealthCheckService] origin server3 is now healthy
+2025-09-20 03:05:46 joel-laptop Info [HealthCheckService] origin server4 is now healthy

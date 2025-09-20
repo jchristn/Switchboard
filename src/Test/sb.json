@@ -1,0 +1,209 @@
+{
+  "Logging": {
+    "Servers": [
+      {
+        "Hostname": "127.0.0.1",
+        "Port": 514,
+        "RandomizePorts": false,
+        "MinimumPort": 65000,
+        "MaximumPort": 65535
+      }
+    ],
+    "LogDirectory": "./logs/",
+    "LogFilename": "./switchboard.log",
+    "ConsoleLogging": true,
+    "EnableColors": false,
+    "MinimumSeverity": 1
+  },
+  "Endpoints": [
+    {
+      "Identifier": "test-endpoint",
+      "Name": "Test Endpoint",
+      "TimeoutMs": 60000,
+      "LoadBalancing": "RoundRobin",
+      "BlockHttp10": false,
+      "LogRequestFull": false,
+      "LogRequestBody": false,
+      "LogResponseBody": false,
+      "MaxRequestBodySize": 536870912,
+      "OriginServers": [
+        "server1",
+        "server2",
+        "server3",
+        "server4"
+      ],
+      "UseGlobalBlockedHeaders": true,
+      "AuthContextHeader": "x-sb-auth-context",
+      "BlockedHeaders": [],
+      "Unauthenticated": {
+        "ParameterizedUrls": {
+          "GET": [
+            "/unauthenticated",
+            "/api/users",
+            "/api/data",
+            "/events"
+          ],
+          "POST": [
+            "/api/users",
+            "/api/data",
+            "/api/upload"
+          ],
+          "PUT": [
+            "/api/users/{id}",
+            "/api/data/{id}"
+          ],
+          "DELETE": [
+            "/api/users/{id}",
+            "/api/data/{id}"
+          ],
+          "PATCH": [
+            "/api/users/{id}"
+          ]
+        }
+      },
+      "Authenticated": {
+        "ParameterizedUrls": {
+          "GET": [
+            "/authenticated",
+            "/api/secure"
+          ],
+          "POST": [
+            "/api/secure"
+          ],
+          "PUT": [
+            "/api/secure/{id}"
+          ],
+          "DELETE": [
+            "/api/secure/{id}"
+          ]
+        }
+      },
+      "RewriteUrls": {}
+    }
+  ],
+  "Origins": [
+    {
+      "Identifier": "server1",
+      "Name": "Server 1",
+      "Hostname": "localhost",
+      "Port": 8001,
+      "Ssl": false,
+      "HealthCheckIntervalMs": 1000,
+      "UnhealthyThreshold": 2,
+      "HealthyThreshold": 2,
+      "HealthCheckMethod": "GET",
+      "HealthCheckUrl": "/",
+      "MaxParallelRequests": 2,
+      "RateLimitRequestsThreshold": 3,
+      "LogRequestBody": false,
+      "LogResponseBody": false
+    },
+    {
+      "Identifier": "server2",
+      "Name": "Server 2",
+      "Hostname": "localhost",
+      "Port": 8002,
+      "Ssl": false,
+      "HealthCheckIntervalMs": 1000,
+      "UnhealthyThreshold": 2,
+      "HealthyThreshold": 2,
+      "HealthCheckMethod": "GET",
+      "HealthCheckUrl": "/",
+      "MaxParallelRequests": 2,
+      "RateLimitRequestsThreshold": 3,
+      "LogRequestBody": false,
+      "LogResponseBody": false
+    },
+    {
+      "Identifier": "server3",
+      "Name": "Server 3",
+      "Hostname": "localhost",
+      "Port": 8003,
+      "Ssl": false,
+      "HealthCheckIntervalMs": 1000,
+      "UnhealthyThreshold": 2,
+      "HealthyThreshold": 2,
+      "HealthCheckMethod": "GET",
+      "HealthCheckUrl": "/",
+      "MaxParallelRequests": 2,
+      "RateLimitRequestsThreshold": 3,
+      "LogRequestBody": false,
+      "LogResponseBody": false
+    },
+    {
+      "Identifier": "server4",
+      "Name": "Server 4",
+      "Hostname": "localhost",
+      "Port": 8004,
+      "Ssl": false,
+      "HealthCheckIntervalMs": 1000,
+      "UnhealthyThreshold": 2,
+      "HealthyThreshold": 2,
+      "HealthCheckMethod": "GET",
+      "HealthCheckUrl": "/",
+      "MaxParallelRequests": 2,
+      "RateLimitRequestsThreshold": 3,
+      "LogRequestBody": false,
+      "LogResponseBody": false
+    }
+  ],
+  "BlockedHeaders": [
+    "alt-svc",
+    "connection",
+    "date",
+    "host",
+    "keep-alive",
+    "proxy-authorization",
+    "proxy-connection",
+    "set-cookie",
+    "transfer-encoding",
+    "upgrade",
+    "via",
+    "x-forwarded-for",
+    "x-request-id"
+  ],
+  "Webserver": {
+    "Hostname": "localhost",
+    "Port": 8000,
+    "Prefix": "http://localhost:8000/",
+    "IO": {
+      "StreamBufferSize": 65536,
+      "MaxRequests": 1024,
+      "ReadTimeoutMs": 10000,
+      "MaxIncomingHeadersSize": 65536,
+      "EnableKeepAlive": false
+    },
+    "Ssl": {
+      "Enable": false,
+      "MutuallyAuthenticate": false,
+      "AcceptInvalidAcertificates": true
+    },
+    "Headers": {
+      "IncludeContentLength": true,
+      "DefaultHeaders": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "OPTIONS, HEAD, GET, PUT, POST, DELETE, PATCH",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Expose-Headers": "",
+        "Accept": "*/*",
+        "Accept-Language": "en-US, en",
+        "Accept-Charset": "ISO-8859-1, utf-8",
+        "Cache-Control": "no-cache",
+        "Connection": "close",
+        "Host": "localhost:8000"
+      }
+    },
+    "AccessControl": {
+      "DenyList": {},
+      "PermitList": {},
+      "Mode": "DefaultPermit"
+    },
+    "Debug": {
+      "AccessControl": false,
+      "Routing": false,
+      "Requests": false,
+      "Responses": false
+    },
+    "UseMachineHostname": false
+  }
+}
