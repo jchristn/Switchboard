@@ -533,6 +533,9 @@
                         req.Headers.Add(Constants.ForwardedForHeader, ctx.Request.Source.IpAddress);
                         req.Headers.Add(Constants.RequestIdHeader, requestGuid.ToString());
 
+                        if (authResult != null && endpoint.Endpoint.IncludeAuthContextHeader)
+                            req.Headers.Add(Constants.AuthContextHeader, authResult.ToBase64String());
+
                         if (ctx.Request.Headers != null && ctx.Request.Headers.Count > 0)
                         {
                             foreach (string key in ctx.Request.Headers.Keys)

@@ -44,6 +44,11 @@
         public LoadBalancingMode LoadBalancing { get; set; } = LoadBalancingMode.RoundRobin;
 
         /// <summary>
+        /// Boolean indicating whether or not the auth context header should be included for authenticated requests.
+        /// </summary>
+        public bool IncludeAuthContextHeader { get; set; } = true;
+
+        /// <summary>
         /// True to terminate HTTP/1.0 requests.
         /// </summary>
         public bool BlockHttp10 { get; set; } = false;

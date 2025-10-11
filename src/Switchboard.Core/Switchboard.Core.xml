@@ -30,6 +30,11 @@
             Load-balancing mode.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.IncludeAuthContextHeader">
+            <summary>
+            Boolean indicating whether or not the auth context header should be included for authenticated requests.
+            </summary>
+        </member>
         <member name="P:Switchboard.Core.ApiEndpoint.BlockHttp10">
             <summary>
             True to terminate HTTP/1.0 requests.
@@ -293,7 +298,7 @@
             <param name="authContext">Auth context.</param>
             <returns>True if successful.</returns>
         </member>
-        <member name="M:Switchboard.Core.AuthContext.ToBase64String(SerializationHelper.Serializer)">
+        <member name="M:Switchboard.Core.AuthContext.ToBase64String">
             <summary>
             Create a base64 representation of the authentication context.
             </summary>

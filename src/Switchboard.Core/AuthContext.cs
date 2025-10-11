@@ -122,10 +122,9 @@
         /// Create a base64 representation of the authentication context.
         /// </summary>
         /// <returns>Base64 string.</returns>
-        public string ToBase64String(Serializer serializer)
+        public string ToBase64String()
         {
-            if (serializer == null) throw new ArgumentNullException(nameof(serializer));
-            string json = serializer.SerializeJson(this, false);
+            string json = _Serializer.SerializeJson(this, false);
             byte[] bytes = Encoding.UTF8.GetBytes(json);
             string base64 = Convert.ToBase64String(bytes);
             return base64;
