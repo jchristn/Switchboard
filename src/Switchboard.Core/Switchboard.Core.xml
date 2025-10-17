@@ -882,6 +882,11 @@
             Switchboard callbacks.  Attach handlers to these methods to integrate your application logic into Switchboard.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.SwitchboardDaemon.Webserver">
+            <summary>
+            Webserver.
+            </summary>
+        </member>
         <member name="M:Switchboard.Core.SwitchboardDaemon.#ctor(Switchboard.Core.SwitchboardSettings)">
             <summary>
             Instantiate.

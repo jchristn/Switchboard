@@ -36,6 +36,14 @@
             }
         }
 
+        /// <summary>
+        /// Webserver.
+        /// </summary>
+        public Webserver Webserver
+        {
+            get => _Webserver;
+        }
+
         #endregion
 
         #region Private-Members
