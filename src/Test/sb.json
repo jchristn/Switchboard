@@ -19,13 +19,14 @@
     {
       "Identifier": "test-endpoint",
       "Name": "Test Endpoint",
-      "TimeoutMs": 60000,
+      "TimeoutMs": 30000,
       "LoadBalancing": "RoundRobin",
+      "IncludeAuthContextHeader": true,
       "BlockHttp10": false,
       "LogRequestFull": false,
       "LogRequestBody": false,
       "LogResponseBody": false,
-      "MaxRequestBodySize": 536870912,
+      "MaxRequestBodySize": 10485760,
       "OriginServers": [
         "server1",
         "server2",
@@ -41,12 +42,18 @@
             "/unauthenticated",
             "/api/users",
             "/api/data",
-            "/events"
+            "/events",
+            "/api/v2/users/{userId}",
+            "/api/headers-test",
+            "/api/query-test",
+            "/api/timeout-test",
+            "/api/large-body-test"
           ],
           "POST": [
             "/api/users",
             "/api/data",
-            "/api/upload"
+            "/api/upload",
+            "/api/large-body-test"
           ],
           "PUT": [
             "/api/users/{id}",
@@ -58,6 +65,9 @@
           ],
           "PATCH": [
             "/api/users/{id}"
+          ],
+          "OPTIONS": [
+            "/api/cors-test"
           ]
         }
       },
@@ -78,7 +88,11 @@
           ]
         }
       },
-      "RewriteUrls": {}
+      "RewriteUrls": {
+        "GET": {
+          "/api/v2/users/{userId}": "/v1/users/{userId}"
+        }
+      }
     }
   ],
   "Origins": [

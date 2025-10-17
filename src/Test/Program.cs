@@ -199,6 +199,35 @@
 
                                 #endregion
 
+                                #region URL-Rewrite-Test
+
+                                await RunTest("URL Rewriting - Path Parameter Transformation", async () =>
+                                {
+                                    // Request to /api/v2/users/12345 should be rewritten to /v1/users/12345 at origin
+                                    url = "http://localhost:8000/api/v2/users/12345";
+                                    Console.WriteLine($"  Requesting: {url}");
+                                    Console.WriteLine($"  Expected origin to receive: /v1/users/12345");
+
+                                    using (RestRequest req = new RestRequest(url))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            Console.WriteLine($"  Response ({resp.StatusCode}): {resp.DataAsString}");
+
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+
+                                            // Parse response to verify the origin received the rewritten URL
+                                            if (!resp.DataAsString.Contains("/v1/users/12345"))
+                                                throw new Exception($"Origin did not receive rewritten URL. Response: {resp.DataAsString}");
+
+                                            return "URL successfully rewritten from /api/v2/users/12345 to /v1/users/12345";
+                                        }
+                                    }
+                                });
+
+                                #endregion
+
                                 #region Stop-All-Servers
 
                                 await RunTest("Health Check - All Servers Down", async () =>
@@ -277,16 +306,16 @@
 
                                 #region Additional-Negative-Tests
 
-                                await RunTest("HTTP Method Validation - Unsupported Methods", async () =>
+                                await RunTest("HTTP Method Routing - PUT, DELETE, PATCH", async () =>
                                 {
                                     string[] methods = { "PUT", "DELETE", "PATCH" };
-                                    int expectedErrorCount = 0;
-                                    int actualErrorCount = 0;
+                                    int expectedErrors = 0;
+                                    int actualErrors = 0;
 
                                     foreach (string method in methods)
                                     {
-                                        expectedErrorCount++;
-                                        Console.WriteLine($"  Testing {method} method (expecting error)");
+                                        expectedErrors++;
+                                        Console.WriteLine($"  Testing {method} method (expecting 400 - no endpoint match)");
 
                                         using (RestRequest req = new RestRequest("http://localhost:8000/unauthenticated", new System.Net.Http.HttpMethod(method)))
                                         {
@@ -296,13 +325,13 @@
 
                                                 if (resp.StatusCode != 200)
                                                 {
-                                                    actualErrorCount++;
+                                                    actualErrors++;
                                                 }
                                             }
                                         }
                                     }
 
-                                    return $"{actualErrorCount}/{expectedErrorCount} unsupported methods correctly handled";
+                                    return $"{actualErrors}/{expectedErrors} methods correctly returned errors (no matching endpoint)";
                                 });
 
                                 // Skip early load balancing test - will run after server recovery
@@ -638,8 +667,29 @@
                                         if (!resp.DataAsString.Contains("completed") || !resp.DataAsString.Contains("received"))
                                             throw new Exception("Upload response not properly received");
 
+                                        // Parse response to verify bytes received
                                         int totalBytes = chunks.Sum(c => Encoding.UTF8.GetByteCount(c));
-                                        return $"Chunked upload successful: {totalBytes} bytes sent in {chunks.Length} chunks";
+
+                                        // Extract received bytes from JSON response
+                                        if (!resp.DataAsString.Contains("\"received\""))
+                                            throw new Exception("Response does not contain 'received' field");
+
+                                        // Parse the received value from JSON
+                                        int startIndex = resp.DataAsString.IndexOf("\"received\"") + "\"received\"".Length;
+                                        string afterReceived = resp.DataAsString.Substring(startIndex);
+                                        int colonIndex = afterReceived.IndexOf(":");
+                                        int commaIndex = afterReceived.IndexOf(",", colonIndex);
+                                        if (commaIndex == -1) commaIndex = afterReceived.IndexOf("}", colonIndex);
+                                        string receivedValueStr = afterReceived.Substring(colonIndex + 1, commaIndex - colonIndex - 1).Trim();
+                                        int bytesReceived = int.Parse(receivedValueStr);
+
+                                        if (bytesReceived == 0)
+                                            throw new Exception($"Origin server received 0 bytes, expected {totalBytes} bytes");
+
+                                        if (bytesReceived != totalBytes)
+                                            throw new Exception($"Origin server received {bytesReceived} bytes, expected {totalBytes} bytes");
+
+                                        return $"Chunked upload successful: {totalBytes} bytes sent and received in {chunks.Length} chunks";
                                     }
                                     finally
                                     {
@@ -681,188 +731,129 @@
 
                                 #endregion
 
-                                #region Chunked-Transfer-HttpClient-Test
-
-                                await RunTest("Chunked Transfer Encoding - HttpClient Implementation", async () =>
-                                {
-                                    // Ensure all servers are healthy first
-                                    Console.WriteLine("  Ensuring all servers are healthy for HttpClient chunked test...");
-                                    if (_Settings.Origins.Any(o => !o.Healthy))
-                                    {
-                                        throw new Exception("Cannot test HttpClient chunked - some servers are unhealthy");
-                                    }
-
-                                    await Task.Delay(1000); // Wait for servers to fully stabilize
-
-                                    // Test basic connectivity first
-                                    Console.WriteLine("  Testing basic HttpClient connectivity to /api/upload endpoint...");
-                                    using (var testClient = new System.Net.Http.HttpClient())
-                                    {
-                                        var testContent = new System.Net.Http.StringContent("Basic connectivity test", System.Text.Encoding.UTF8, "text/plain");
-                                        var testResponse = await testClient.PostAsync("http://localhost:8000/api/upload", testContent);
-                                        Console.WriteLine($"  Basic HttpClient connectivity ({testResponse.StatusCode})");
-                                        if (testResponse.StatusCode != System.Net.HttpStatusCode.OK)
-                                            throw new Exception($"Basic connectivity failed: {testResponse.StatusCode}");
-                                    }
-
-                                    // Now test HttpClient with Transfer-Encoding: chunked header
-                                    Console.WriteLine("  Testing HttpClient with Transfer-Encoding: chunked header...");
-                                    using (var client = new System.Net.Http.HttpClient())
-                                    {
-                                        var chunks = new string[]
-                                        {
-                                            "This is the first chunk of data for testing chunked transfer encoding.\n",
-                                            "Here comes the second chunk with more test data to verify the chunked upload.\n",
-                                            "Third chunk contains additional content for comprehensive testing.\n",
-                                            "Final chunk to complete the chunked transfer encoding test.\n"
-                                        };
-
-                                        // Combine all chunks into a single payload and let HttpClient handle chunking
-                                        var combinedData = string.Join("", chunks);
-                                        var content = new System.Net.Http.StringContent(combinedData, System.Text.Encoding.UTF8, "text/plain");
-
-                                        Console.WriteLine($"  Sending {combinedData.Length} bytes using HttpClient with Transfer-Encoding: chunked");
-
-                                        // Create request message and set Transfer-Encoding header properly
-                                        var requestMessage = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, "http://localhost:8000/api/upload");
-                                        requestMessage.Content = content;
-                                        requestMessage.Headers.TransferEncodingChunked = true;
-
-                                        try
-                                        {
-                                            var response = await client.SendAsync(requestMessage);
-                                            var responseContent = await response.Content.ReadAsStringAsync();
-
-                                            Console.WriteLine($"  HttpClient Transfer-Encoding Response ({response.StatusCode})");
-                                            Console.WriteLine($"  Response: {responseContent}");
-
-                                            // HttpClient with TransferEncodingChunked = true sets the header but doesn't do
-                                            // true streaming chunked transfer like RestWrapper's SendChunkAsync().
-                                            // It may be processed as a regular request by the proxy, which is expected behavior.
-                                            if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                                            {
-                                                var totalBytes = System.Text.Encoding.UTF8.GetByteCount(combinedData);
-                                                return $"HttpClient with chunked header successful: {totalBytes} bytes sent (processed as regular request)";
-                                            }
-                                            else if (response.StatusCode == System.Net.HttpStatusCode.BadGateway)
-                                            {
-                                                // This is expected - HttpClient's TransferEncodingChunked differs from RestWrapper's streaming approach
-                                                Console.WriteLine("  Note: HttpClient TransferEncodingChunked behaves differently than RestWrapper's streaming chunks");
-                                                return "HttpClient chunked header test completed - behaves differently than streaming chunks (expected)";
-                                            }
-                                            else
-                                            {
-                                                throw new Exception($"Unexpected response: {response.StatusCode}: {responseContent}");
-                                            }
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            Console.WriteLine($"  HttpClient chunked transfer: {ex.Message}");
-                                            // Don't fail the test - this difference in behavior is expected
-                                            return "HttpClient chunked encoding differs from RestWrapper streaming approach (expected behavior)";
-                                        }
-                                    }
-                                });
-
-                                #endregion
-
                                 #region Server-Sent-Events-Tests
 
-                                await RunTest("Server-Sent Events - Event Stream", async () =>
+                                await RunTest("Server-Sent Events - Event Stream with Data Verification", async () =>
                                 {
                                     // Ensure all servers are healthy first
-                                    Console.WriteLine("  Ensuring all servers are healthy for SSE test...");
                                     if (_Settings.Origins.Any(o => !o.Healthy))
                                     {
                                         throw new Exception("Cannot test SSE - some servers are unhealthy");
                                     }
 
-                                    try
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/events"))
                                     {
-                                        using (RestRequest req = new RestRequest("http://localhost:8000/events"))
+                                        req.Headers.Add("Accept", "text/event-stream");
+                                        req.Headers.Add("Cache-Control", "no-cache");
+
+                                        using (RestResponse resp = await req.SendAsync())
                                         {
-                                            req.Headers.Add("Accept", "text/event-stream");
-                                            req.Headers.Add("Cache-Control", "no-cache");
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
 
-                                            using (RestResponse resp = await req.SendAsync())
+                                            if (!resp.ServerSentEvents)
+                                                throw new Exception("Response not detected as SSE");
+
+                                            // Read and validate SSE events WITH CONTENT VERIFICATION
+                                            int eventCount = 0;
+                                            List<string> eventDataList = new List<string>();
+                                            bool hasConnectedEvent = false;
+                                            bool hasNumberedEvents = false;
+                                            bool hasClosingEvent = false;
+
+                                            while (true)
                                             {
-                                                Console.WriteLine($"  SSE Response ({resp.StatusCode})");
-                                                Console.WriteLine($"  Content-Type: {resp.ContentType}");
-                                                Console.WriteLine($"  Connection: {resp.Headers.Get("Connection")}");
+                                                RestWrapper.ServerSentEvent sse = await resp.ReadEventAsync();
+                                                if (sse == null || String.IsNullOrEmpty(sse.Data))
+                                                    break;
 
-                                                if (resp.StatusCode != 200)
-                                                    throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+                                                eventCount++;
+                                                eventDataList.Add(sse.Data);
 
-                                                if (resp.ContentType != "text/event-stream")
-                                                    throw new Exception($"Expected text/event-stream content type, got {resp.ContentType}");
+                                                // Verify specific event content
+                                                if (sse.Data.Contains("Connected to Server"))
+                                                    hasConnectedEvent = true;
+                                                if (sse.Data.Contains("Event") && sse.Data.Contains("from Server"))
+                                                    hasNumberedEvents = true;
+                                                if (sse.Data.Contains("Connection closing"))
+                                                    hasClosingEvent = true;
 
-                                                return "Server-Sent Events endpoint configured correctly (SSE content-type detected)";
+                                                Console.WriteLine($"  Event {eventCount}: {sse.Data}");
+
+                                                if (eventCount > 10) // Safety limit
+                                                    break;
                                             }
+
+                                            if (eventCount == 0)
+                                                throw new Exception("No SSE events received from origin");
+
+                                            if (eventCount != 5)
+                                                throw new Exception($"Expected exactly 5 events, received {eventCount}");
+
+                                            if (!hasConnectedEvent)
+                                                throw new Exception("Missing 'Connected' event from origin");
+
+                                            if (!hasNumberedEvents)
+                                                throw new Exception("Missing numbered events from origin");
+
+                                            if (!hasClosingEvent)
+                                                throw new Exception("Missing 'closing' event from origin");
+
+                                            return $"SSE validated: 5 events received with correct content (Connected, Event 1-3, Closing)";
                                         }
                                     }
-                                    catch (System.Exception ex) when (ex.Message.Contains("Use ReadEventAsync"))
-                                    {
-                                        // This is expected behavior - RestWrapper detected SSE content and wants us to use the correct method
-                                        Console.WriteLine("  RestWrapper correctly detected SSE content-type");
-                                        return "Server-Sent Events working: RestWrapper detected SSE stream correctly";
-                                    }
-                                });
+                                }, verboseOutput: true);
 
                                 await RunTest("Server-Sent Events - Multiple Concurrent Connections", async () =>
                                 {
                                     // Ensure all servers are healthy first
-                                    Console.WriteLine("  Ensuring all servers are healthy for concurrent SSE test...");
                                     if (_Settings.Origins.Any(o => !o.Healthy))
                                     {
                                         throw new Exception("Cannot test concurrent SSE - some servers are unhealthy");
                                     }
 
-                                    try
-                                    {
-                                        Task<string>[] eventTasks = new Task<string>[3];
+                                    Task<int>[] eventTasks = new Task<int>[3];
 
-                                        for (int i = 0; i < eventTasks.Length; i++)
+                                    for (int i = 0; i < eventTasks.Length; i++)
+                                    {
+                                        int connectionId = i;
+                                        eventTasks[i] = Task.Run(async () =>
                                         {
-                                            int connectionId = i;
-                                            eventTasks[i] = Task.Run(async () =>
+                                            using (RestRequest req = new RestRequest("http://localhost:8000/events"))
                                             {
-                                                try
+                                                req.Headers.Add("Accept", "text/event-stream");
+
+                                                using (RestResponse resp = await req.SendAsync())
                                                 {
-                                                    using (RestRequest req = new RestRequest("http://localhost:8000/events"))
+                                                    if (resp.StatusCode != 200)
+                                                        throw new Exception($"Connection {connectionId} failed with status {resp.StatusCode}");
+
+                                                    if (!resp.ServerSentEvents)
+                                                        throw new Exception($"Connection {connectionId} not SSE");
+
+                                                    int eventCount = 0;
+                                                    while (true)
                                                     {
-                                                        req.Headers.Add("Accept", "text/event-stream");
-                                                        req.Headers.Add("X-Connection-ID", connectionId.ToString());
-
-                                                        using (RestResponse resp = await req.SendAsync())
-                                                        {
-                                                            if (resp.StatusCode != 200)
-                                                                throw new Exception($"Connection {connectionId} failed with status {resp.StatusCode}");
-
-                                                            return $"Connection {connectionId}: SSE stream detected";
-                                                        }
+                                                        RestWrapper.ServerSentEvent sse = await resp.ReadEventAsync();
+                                                        if (sse == null || String.IsNullOrEmpty(sse.Data))
+                                                            break;
+                                                        eventCount++;
+                                                        if (eventCount > 10) break;
                                                     }
+
+                                                    return eventCount;
                                                 }
-                                                catch (System.Exception ex) when (ex.Message.Contains("Use ReadEventAsync"))
-                                                {
-                                                    return $"Connection {connectionId}: SSE stream working (detected by RestWrapper)";
-                                                }
-                                            });
-                                        }
-
-                                        string[] results = await Task.WhenAll(eventTasks);
-
-                                        Console.WriteLine("  Concurrent SSE connections results:");
-                                        foreach (string result in results)
-                                        {
-                                            Console.WriteLine($"    {result}");
-                                        }
-
-                                        return $"All {eventTasks.Length} concurrent SSE connections successful";
+                                            }
+                                        });
                                     }
-                                    catch (System.Exception ex) when (ex.Message.Contains("Use ReadEventAsync"))
-                                    {
-                                        return "Multiple concurrent SSE connections working: RestWrapper detected SSE streams correctly";
-                                    }
+
+                                    int[] results = await Task.WhenAll(eventTasks);
+                                    int totalEvents = results.Sum();
+
+                                    if (totalEvents == 0)
+                                        throw new Exception("No events received from any connection");
+
+                                    return $"All {eventTasks.Length} concurrent SSE streams validated: {totalEvents} total events";
                                 });
 
                                 #endregion
@@ -919,12 +910,12 @@
                                     return $"Load balanced across {serverHits.Count} servers";
                                 });
 
-                                await RunTest("Request Headers Validation (After Recovery)", async () =>
+                                await RunTest("Request Headers Validation - Custom Headers Forwarded", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/unauthenticated"))
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/headers-test"))
                                     {
-                                        req.Headers.Add("X-Custom-Header", "test-value");
-                                        req.Headers.Add("X-Test-Client", "switchboard-test");
+                                        req.Headers.Add("X-Custom-Header", "test-value-123");
+                                        req.Headers.Add("X-Test-Client", "switchboard-test-v2");
 
                                         using (RestResponse resp = await req.SendAsync())
                                         {
@@ -933,42 +924,263 @@
                                             if (resp.StatusCode != 200)
                                                 throw new Exception($"Request with custom headers failed with status {resp.StatusCode}");
 
-                                            return "Custom headers properly forwarded to origin servers";
+                                            // Verify headers were forwarded
+                                            if (!resp.DataAsString.Contains("X-Custom-Header"))
+                                                throw new Exception("Response does not contain X-Custom-Header");
+
+                                            if (!resp.DataAsString.Contains("test-value-123"))
+                                                throw new Exception("X-Custom-Header value not correctly forwarded");
+
+                                            if (!resp.DataAsString.Contains("X-Test-Client"))
+                                                throw new Exception("Response does not contain X-Test-Client");
+
+                                            if (!resp.DataAsString.Contains("switchboard-test-v2"))
+                                                throw new Exception("X-Test-Client value not correctly forwarded");
+
+                                            return "Custom headers verified forwarded: X-Custom-Header, X-Test-Client";
                                         }
                                     }
                                 });
 
-                                await RunTest("Querystring Parameter Handling (After Recovery)", async () =>
+                                await RunTest("Querystring Parameter Handling - Verified Forwarding", async () =>
                                 {
-                                    string[] testCases = {
-                                        "http://localhost:8000/unauthenticated?param1=value1",
-                                        "http://localhost:8000/unauthenticated?param1=value1&param2=value2",
-                                        "http://localhost:8000/unauthenticated?special=%20%21%40%23%24%25",
-                                        "http://localhost:8000/unauthenticated?empty=&multiple=val1&multiple=val2"
-                                    };
-
-                                    int successCount = 0;
-
-                                    foreach (string testUrl in testCases)
+                                    // Test case 1: Simple parameter
+                                    using (RestRequest req1 = new RestRequest("http://localhost:8000/unauthenticated?param1=value1"))
                                     {
-                                        Console.WriteLine($"  Testing: {testUrl}");
-
-                                        using (RestRequest req = new RestRequest(testUrl))
+                                        using (RestResponse resp1 = await req1.SendAsync())
                                         {
-                                            using (RestResponse resp = await req.SendAsync())
-                                            {
-                                                Console.WriteLine($"  Response ({resp.StatusCode})");
-
-                                                if (resp.StatusCode == 200)
-                                                    successCount++;
-                                            }
+                                            Console.WriteLine($"  Test 1 ({resp1.StatusCode}): {resp1.DataAsString}");
+                                            if (resp1.StatusCode != 200)
+                                                throw new Exception($"Test 1 failed with status {resp1.StatusCode}");
+                                            if (!resp1.DataAsString.Contains("param1=value1"))
+                                                throw new Exception("Test 1: param1=value1 not found in response");
                                         }
                                     }
 
-                                    if (successCount != testCases.Length)
-                                        throw new Exception($"Only {successCount}/{testCases.Length} querystring tests passed");
+                                    // Test case 2: Multiple parameters
+                                    using (RestRequest req2 = new RestRequest("http://localhost:8000/api/query-test?param1=value1&param2=value2"))
+                                    {
+                                        using (RestResponse resp2 = await req2.SendAsync())
+                                        {
+                                            Console.WriteLine($"  Test 2 ({resp2.StatusCode}): query in response");
+                                            if (resp2.StatusCode != 200)
+                                                throw new Exception($"Test 2 failed with status {resp2.StatusCode}");
+                                            if (!resp2.DataAsString.Contains("param1=value1"))
+                                                throw new Exception("Test 2: param1=value1 not in query");
+                                            if (!resp2.DataAsString.Contains("param2=value2"))
+                                                throw new Exception("Test 2: param2=value2 not in query");
+                                        }
+                                    }
 
-                                    return $"All {testCases.Length} querystring variations handled correctly";
+                                    // Test case 3: Special characters
+                                    using (RestRequest req3 = new RestRequest("http://localhost:8000/api/query-test?special=%20%21%40%23"))
+                                    {
+                                        using (RestResponse resp3 = await req3.SendAsync())
+                                        {
+                                            Console.WriteLine($"  Test 3 ({resp3.StatusCode}): special chars");
+                                            if (resp3.StatusCode != 200)
+                                                throw new Exception($"Test 3 failed with status {resp3.StatusCode}");
+                                            if (!resp3.DataAsString.Contains("special="))
+                                                throw new Exception("Test 3: special parameter not found");
+                                        }
+                                    }
+
+                                    return "Querystring parameters verified forwarded correctly in all 3 test cases";
+                                });
+
+                                #endregion
+
+                                #region Additional-Comprehensive-Tests
+
+                                await RunTest("CORS - OPTIONS Preflight Request", async () =>
+                                {
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/cors-test", System.Net.Http.HttpMethod.Options))
+                                    {
+                                        req.Headers.Add("Access-Control-Request-Method", "POST");
+                                        req.Headers.Add("Access-Control-Request-Headers", "Content-Type");
+                                        req.Headers.Add("Origin", "http://example.com");
+
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            Console.WriteLine($"  OPTIONS Response ({resp.StatusCode})");
+
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+
+                                            string allowMethods = resp.Headers.Get("Access-Control-Allow-Methods");
+                                            if (String.IsNullOrEmpty(allowMethods))
+                                                throw new Exception("Missing Access-Control-Allow-Methods header");
+
+                                            if (!allowMethods.Contains("POST"))
+                                                throw new Exception("Access-Control-Allow-Methods does not include POST");
+
+                                            return $"CORS preflight successful, allowed methods: {allowMethods}";
+                                        }
+                                    }
+                                });
+
+                                await RunTest("Authentication - Header Forwarding to Origin", async () =>
+                                {
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/secure"))
+                                    {
+                                        req.Authorization.BearerToken = "test-token-12345";
+
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            Console.WriteLine($"  Response ({resp.StatusCode}): {resp.DataAsString}");
+
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+
+                                            // Verify authenticated request succeeded
+                                            if (!resp.DataAsString.Contains("\"server\""))
+                                                throw new Exception("Response does not contain server information");
+
+                                            // Check that origin received the Authorization header (proves forwarding works)
+                                            if (!resp.DataAsString.Contains("Authorization"))
+                                                throw new Exception("Authorization header not forwarded to origin");
+
+                                            if (!resp.DataAsString.Contains("Bearer test-token-12345"))
+                                                throw new Exception("Authorization header value not correctly forwarded");
+
+                                            // Verify response contains receivedHeaders showing Switchboard forwarded headers
+                                            if (!resp.DataAsString.Contains("receivedHeaders"))
+                                                throw new Exception("Origin response does not contain receivedHeaders");
+
+                                            return "Authenticated request successful, Authorization header verified forwarded to origin";
+                                        }
+                                    }
+                                });
+
+                                await RunTest("Chunked Transfer - Large Upload (Multiple Chunks)", async () =>
+                                {
+                                    if (_Settings.Origins.Any(o => !o.Healthy))
+                                        throw new Exception("Cannot test - some servers are unhealthy");
+
+                                    // Create larger chunks to test scalability
+                                    string[] largeChunks = new string[10];
+                                    for (int i = 0; i < largeChunks.Length; i++)
+                                    {
+                                        largeChunks[i] = new string((char)('A' + i), 1000) + $" Chunk {i}\n";
+                                    }
+
+                                    RestRequest req = new RestRequest("http://localhost:8000/api/upload", System.Net.Http.HttpMethod.Post);
+                                    req.ContentType = "text/plain";
+                                    req.ChunkedTransfer = true;
+
+                                    try
+                                    {
+                                        RestResponse resp = null;
+                                        for (int i = 0; i < largeChunks.Length; i++)
+                                        {
+                                            bool isLast = (i == largeChunks.Length - 1);
+                                            resp = await req.SendChunkAsync(largeChunks[i], isLast);
+                                        }
+
+                                        if (resp == null || resp.StatusCode != 200)
+                                            throw new Exception($"Expected 200 OK, got {resp?.StatusCode ?? 0}");
+
+                                        int totalBytes = largeChunks.Sum(c => Encoding.UTF8.GetByteCount(c));
+                                        Console.WriteLine($"  Total bytes sent: {totalBytes}");
+
+                                        return $"Large chunked upload successful: {totalBytes} bytes in {largeChunks.Length} chunks";
+                                    }
+                                    finally
+                                    {
+                                        req?.Dispose();
+                                    }
+                                });
+
+                                await RunTest("Server-Sent Events - Long Running Stream", async () =>
+                                {
+                                    if (_Settings.Origins.Any(o => !o.Healthy))
+                                        throw new Exception("Cannot test SSE - some servers are unhealthy");
+
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/events"))
+                                    {
+                                        req.Headers.Add("Accept", "text/event-stream");
+
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+
+                                            if (!resp.ServerSentEvents)
+                                                throw new Exception("Response not detected as SSE");
+
+                                            // Read events and verify timing
+                                            List<DateTime> eventTimes = new List<DateTime>();
+                                            int eventCount = 0;
+                                            while (eventCount < 5)
+                                            {
+                                                var sse = await resp.ReadEventAsync();
+                                                if (sse == null || String.IsNullOrEmpty(sse.Data))
+                                                    break;
+
+                                                eventTimes.Add(DateTime.Now);
+                                                eventCount++;
+                                                Console.WriteLine($"  Event {eventCount}: {sse.Data.Substring(0, Math.Min(50, sse.Data.Length))}...");
+                                            }
+
+                                            if (eventCount == 0)
+                                                throw new Exception("No SSE events received");
+
+                                            return $"SSE long-running stream: received {eventCount} events over {(eventTimes.Last() - eventTimes.First()).TotalMilliseconds:F0}ms";
+                                        }
+                                    }
+                                });
+
+                                await RunTest("Random Load Balancing - Distribution Check", async () =>
+                                {
+                                    // Temporarily switch to random load balancing
+                                    LoadBalancingMode originalMode = _Settings.Endpoints[0].LoadBalancing;
+                                    _Settings.Endpoints[0].LoadBalancing = LoadBalancingMode.Random;
+
+                                    try
+                                    {
+                                        Dictionary<string, int> serverHits = new Dictionary<string, int>();
+                                        int totalRequests = 20;
+
+                                        for (int i = 0; i < totalRequests; i++)
+                                        {
+                                            using (RestRequest req = new RestRequest("http://localhost:8000/unauthenticated"))
+                                            {
+                                                using (RestResponse resp = await req.SendAsync())
+                                                {
+                                                    if (resp.StatusCode == 200)
+                                                    {
+                                                        string responseText = resp.DataAsString;
+                                                        if (responseText.Contains("Server 1")) serverHits["Server1"] = serverHits.GetValueOrDefault("Server1", 0) + 1;
+                                                        else if (responseText.Contains("Server 2")) serverHits["Server2"] = serverHits.GetValueOrDefault("Server2", 0) + 1;
+                                                        else if (responseText.Contains("Server 3")) serverHits["Server3"] = serverHits.GetValueOrDefault("Server3", 0) + 1;
+                                                        else if (responseText.Contains("Server 4")) serverHits["Server4"] = serverHits.GetValueOrDefault("Server4", 0) + 1;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Console.WriteLine("  Random load balancing distribution:");
+                                        foreach (var kvp in serverHits)
+                                        {
+                                            Console.WriteLine($"    {kvp.Key}: {kvp.Value} requests ({kvp.Value * 100.0 / totalRequests:F1}%)");
+                                        }
+
+                                        // Check that all servers received at least one request
+                                        if (serverHits.Count < 4)
+                                            throw new Exception($"Only {serverHits.Count}/4 servers received requests with random load balancing");
+
+                                        // Check that distribution is somewhat random (not all requests to one server)
+                                        int maxHits = serverHits.Values.Max();
+                                        if (maxHits == totalRequests)
+                                            throw new Exception("All requests went to one server - not random");
+
+                                        return $"Random load balancing verified: all 4 servers received requests";
+                                    }
+                                    finally
+                                    {
+                                        // Restore original mode
+                                        _Settings.Endpoints[0].LoadBalancing = originalMode;
+                                    }
                                 });
 
                                 #endregion
@@ -1157,15 +1369,20 @@
                 Name = "Test Endpoint",
                 LoadBalancing = _LoadBalancingMode,
                 AuthContextHeader = Constants.AuthContextHeader,
+                IncludeAuthContextHeader = true,
+                TimeoutMs = 30000,
+                MaxRequestBodySize = 10485760, // 10MB
+                BlockHttp10 = false,
                 Unauthenticated = new ApiEndpointGroup
                 {
                     ParameterizedUrls = new Dictionary<string, List<string>>
                     {
-                        { "GET", new List<string> { "/unauthenticated", "/api/users", "/api/data", "/events" } },
-                        { "POST", new List<string> { "/api/users", "/api/data", "/api/upload" } },
+                        { "GET", new List<string> { "/unauthenticated", "/api/users", "/api/data", "/events", "/api/v2/users/{userId}", "/api/headers-test", "/api/query-test", "/api/timeout-test", "/api/large-body-test" } },
+                        { "POST", new List<string> { "/api/users", "/api/data", "/api/upload", "/api/large-body-test" } },
                         { "PUT", new List<string> { "/api/users/{id}", "/api/data/{id}" } },
                         { "DELETE", new List<string> { "/api/users/{id}", "/api/data/{id}" } },
-                        { "PATCH", new List<string> { "/api/users/{id}" } }
+                        { "PATCH", new List<string> { "/api/users/{id}" } },
+                        { "OPTIONS", new List<string> { "/api/cors-test" } }
                     }
                 },
                 Authenticated = new ApiEndpointGroup
@@ -1176,6 +1393,15 @@
                         { "POST", new List<string> { "/api/secure" } },
                         { "PUT", new List<string> { "/api/secure/{id}" } },
                         { "DELETE", new List<string> { "/api/secure/{id}" } }
+                    }
+                },
+                RewriteUrls = new Dictionary<string, Dictionary<string, string>>
+                {
+                    {
+                        "GET", new Dictionary<string, string>
+                        {
+                            { "/api/v2/users/{userId}", "/v1/users/{userId}" }
+                        }
                     }
                 },
                 OriginServers = new List<string>
@@ -1315,12 +1541,6 @@
 
         private static async Task HandleAdvancedRequest(HttpContextBase ctx, string serverName)
         {
-            Console.WriteLine("");
-            Console.WriteLine($"  [{serverName}] {ctx.Request.Method} {ctx.Request.Url.Full}");
-
-            if (!String.IsNullOrEmpty(ctx.Request.Query.Querystring))
-                Console.WriteLine($"  └─ Query: {ctx.Request.Query.Querystring}");
-
             // Handle Server-Sent Events
             if (ctx.Request.Url.RawWithoutQuery.EndsWith("/events"))
             {
@@ -1335,55 +1555,77 @@
                 return;
             }
 
-            // Handle normal REST requests
+            // Handle normal REST requests (suppress verbose output)
             await HandleRestRequest(ctx, serverName);
         }
 
         private static async Task HandleServerSentEvents(HttpContextBase ctx, string serverName)
         {
-            Console.WriteLine($"  └─ [{serverName}] Starting Server-Sent Events stream");
-
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = "text/event-stream";
             ctx.Response.Headers.Add("Cache-Control", "no-cache");
             ctx.Response.Headers.Add("Connection", "keep-alive");
             ctx.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            ctx.Response.ServerSentEvents = true;
 
-            // Send complete SSE response as a single send operation instead of chunked
-            StringBuilder sseContent = new StringBuilder();
-            sseContent.AppendLine($"data: Connected to {serverName}");
-            sseContent.AppendLine();
+            // Send initial connection event
+            await ctx.Response.SendEvent(new WatsonWebserver.Core.ServerSentEvent
+            {
+                Data = $"Connected to {serverName}"
+            }, false);
 
+            // Send multiple events
             for (int i = 1; i <= 3; i++)
             {
-                sseContent.AppendLine($"data: Event {i} from {serverName} at {DateTime.Now:HH:mm:ss.fff}");
-                sseContent.AppendLine();
                 await Task.Delay(100); // Small delay for realism
+                await ctx.Response.SendEvent(new WatsonWebserver.Core.ServerSentEvent
+                {
+                    Data = $"Event {i} from {serverName} at {DateTime.Now:HH:mm:ss.fff}"
+                }, false);
             }
 
-            sseContent.AppendLine($"data: Connection closing from {serverName}");
-            sseContent.AppendLine();
-
-            await ctx.Response.Send(sseContent.ToString());
+            // Send closing event
+            await ctx.Response.SendEvent(new WatsonWebserver.Core.ServerSentEvent
+            {
+                Data = $"Connection closing from {serverName}"
+            }, true);
         }
 
         private static async Task HandleChunkedUpload(HttpContextBase ctx, string serverName)
         {
-            Console.WriteLine($"  └─ [{serverName}] Processing chunked upload");
+            byte[] requestData = Array.Empty<byte>();
+            string transferEncoding = ctx.Request.Headers.Get("Transfer-Encoding") ?? "none";
 
-            if (ctx.Request.ContentLength > 0 || ctx.Request.Headers.Get("Transfer-Encoding")?.Contains("chunked") == true)
+            if (ctx.Request.ChunkedTransfer)
             {
-                byte[] requestData = Array.Empty<byte>();
-                if (ctx.Request.Data != null && ctx.Request.DataAsBytes != null)
+                // Handle chunked transfer by reading chunks
+                List<byte> allData = new List<byte>();
+                bool finalChunk = false;
+
+                while (!finalChunk)
                 {
-                    requestData = ctx.Request.DataAsBytes;
+                    var chunk = await ctx.Request.ReadChunk();
+                    if (chunk.Length == 0)
+                    {
+                        finalChunk = true;
+                    }
+                    else
+                    {
+                        allData.AddRange(chunk.Data);
+                    }
                 }
 
-                Console.WriteLine($"| {serverName}: Received {requestData.Length} bytes");
-                Console.WriteLine($"| {serverName}: Transfer-Encoding: {ctx.Request.Headers.Get("Transfer-Encoding")}");
-                Console.WriteLine($"| {serverName}: Content-Length: {ctx.Request.ContentLength}");
+                requestData = allData.ToArray();
+            }
+            else if (ctx.Request.Data != null && ctx.Request.DataAsBytes != null)
+            {
+                // Regular request with body
+                requestData = ctx.Request.DataAsBytes;
+            }
 
-                // Respond with a single JSON response
+            if (requestData.Length > 0 || transferEncoding.Contains("chunked"))
+            {
+                // Respond with completion status
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
 
@@ -1393,7 +1635,7 @@
                     { "status", "completed" },
                     { "received", requestData.Length },
                     { "timestamp", DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
-                    { "transferEncoding", ctx.Request.Headers.Get("Transfer-Encoding") ?? "none" }
+                    { "transferEncoding", transferEncoding }
                 };
 
                 string responseJson = _Serializer.SerializeJson(response, true);
@@ -1409,37 +1651,8 @@
 
         private static async Task HandleRestRequest(HttpContextBase ctx, string serverName)
         {
-            // Log headers
-            if (ctx.Request.Headers.Count > 0)
-            {
-                Console.WriteLine("| Headers:");
-                foreach (string key in ctx.Request.Headers.AllKeys)
-                {
-                    Console.WriteLine($"  | {key}: {ctx.Request.Headers.Get(key)}");
-                }
-
-                if (ctx.Request.Headers.AllKeys.Contains(Constants.AuthContextHeader))
-                {
-                    Console.WriteLine(
-                        "| Auth context: " + Environment.NewLine
-                        + _Serializer.SerializeJson(
-                            AuthContext.FromBase64String(ctx.Request.Headers.Get(Constants.AuthContextHeader)),
-                            true));
-                }
-            }
-
-            // Log request body for POST/PUT/PATCH
-            if (ctx.Request.Method == WatsonWebserver.Core.HttpMethod.POST ||
-                ctx.Request.Method == WatsonWebserver.Core.HttpMethod.PUT ||
-                ctx.Request.Method == WatsonWebserver.Core.HttpMethod.PATCH)
-            {
-                if (ctx.Request.Data != null)
-                {
-                    Console.WriteLine($"| Request Body: {ctx.Request.DataAsString}");
-                    Console.WriteLine($"| Content-Length: {ctx.Request.ContentLength}");
-                    Console.WriteLine($"| Content-Type: {ctx.Request.ContentType}");
-                }
-            }
+            // Suppress verbose logging for successful requests
+            // Headers and details are only shown in test output if tests fail
 
             // Create appropriate response based on method and URL
             string responseContent = CreateRestResponse(ctx, serverName);
@@ -1474,11 +1687,28 @@
                     response["receivedData"] = ctx.Request.DataAsString;
                 }
 
+                // Echo back specific headers for testing
+                Dictionary<string, string> receivedHeaders = new Dictionary<string, string>();
+                if (ctx.Request.Headers != null)
+                {
+                    foreach (string key in ctx.Request.Headers.AllKeys)
+                    {
+                        if (key != null && (key.StartsWith("X-") || key.Equals("Authorization", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            receivedHeaders[key] = ctx.Request.Headers.Get(key);
+                        }
+                    }
+                }
+                if (receivedHeaders.Count > 0)
+                {
+                    response["receivedHeaders"] = receivedHeaders;
+                }
+
                 return _Serializer.SerializeJson(response, true);
             }
             else
             {
-                // Return plain text response
+                // Return plain text response with query string for validation
                 return $"Hello from {serverName}: {method} {ctx.Request.Url.RawWithQuery}";
             }
         }
@@ -1500,10 +1730,10 @@
             return (ctx.Request.Method == WatsonWebserver.Core.HttpMethod.GET && ctx.Request.Url.RawWithoutQuery.Equals("/"));
         }
 
-        private static async Task RunTest(string testName, Func<Task<string>> testAction)
+        private static async Task RunTest(string testName, Func<Task<string>> testAction, bool verboseOutput = false)
         {
             Console.WriteLine("");
-            Console.WriteLine($"=== {testName} ===");
+            Console.Write($"[Testing] {testName}...");
 
             Stopwatch stopwatch = Stopwatch.StartNew();
             TestResult result = new TestResult
@@ -1512,14 +1742,28 @@
                 StartTime = DateTime.Now
             };
 
+            // Capture console output
+            StringWriter outputCapture = new StringWriter();
+            TextWriter originalOutput = Console.Out;
+
             try
             {
+                if (!verboseOutput)
+                {
+                    Console.SetOut(outputCapture);
+                }
+
                 result.ResultMessage = await testAction();
                 result.Passed = true;
                 stopwatch.Stop();
                 result.Duration = stopwatch.Elapsed;
 
-                Console.WriteLine($"✅ PASS ({result.Duration.TotalMilliseconds:F0}ms): {result.ResultMessage}");
+                if (!verboseOutput)
+                {
+                    Console.SetOut(originalOutput);
+                }
+
+                Console.WriteLine($" ✅ PASS ({result.Duration.TotalMilliseconds:F0}ms)");
             }
             catch (Exception ex)
             {
@@ -1528,7 +1772,23 @@
                 stopwatch.Stop();
                 result.Duration = stopwatch.Elapsed;
 
-                Console.WriteLine($"❌ FAIL ({result.Duration.TotalMilliseconds:F0}ms): {ex.Message}");
+                if (!verboseOutput)
+                {
+                    Console.SetOut(originalOutput);
+                }
+
+                Console.WriteLine($" ❌ FAIL ({result.Duration.TotalMilliseconds:F0}ms)");
+                Console.WriteLine("────────────────────────────────────");
+                Console.WriteLine("FAILURE DETAILS:");
+                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine("\nTest Output:");
+                Console.WriteLine(outputCapture.ToString());
+                Console.WriteLine("────────────────────────────────────");
+            }
+            finally
+            {
+                Console.SetOut(originalOutput);
+                outputCapture.Dispose();
             }
 
             _TestResults.Add(result);

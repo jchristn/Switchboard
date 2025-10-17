@@ -443,10 +443,10 @@
                     }
                     else if (endpoint.LoadBalancing == LoadBalancingMode.RoundRobin)
                     {
-                        if (endpoint.LastIndex >= healthyOrigins.Count) endpoint.LastIndex = _Random.Next(0, healthyOrigins.Count);
+                        if (endpoint.LastIndex >= healthyOrigins.Count) endpoint.LastIndex = 0;
                         origin = healthyOrigins[endpoint.LastIndex];
 
-                        if ((endpoint.LastIndex + 1) > (endpoint.OriginServers.Count - 1)) endpoint.LastIndex = 0;
+                        if ((endpoint.LastIndex + 1) >= healthyOrigins.Count) endpoint.LastIndex = 0;
                         else endpoint.LastIndex = endpoint.LastIndex + 1;
 
                         if (origin != default(OriginServer)) return origin;
@@ -634,6 +634,10 @@
                             #endregion
                         }
 
+                        #endregion
+
+                        #region Process-Response
+
                         if (resp != null)
                         {
                             #region Log-Response-Body
@@ -705,7 +709,7 @@
 
                                 while (true)
                                 {
-                                    ServerSentEvent sse = await resp.ReadEventAsync();
+                                    RestWrapper.ServerSentEvent sse = await resp.ReadEventAsync();
 
                                     if (sse == null)
                                     {
@@ -715,7 +719,13 @@
                                     {
                                         if (!String.IsNullOrEmpty(sse.Data))
                                         {
-                                            await ctx.Response.SendEvent(sse.Data, false);
+                                            await ctx.Response.SendEvent(new WatsonWebserver.Core.ServerSentEvent
+                                            { 
+                                                Id = sse.Id,
+                                                Data = sse.Data,
+                                                Event = sse.Event,
+                                                Retry = (sse.Retry != null ? sse.Retry.ToString() : null)
+                                            }, false);
                                         }
                                         else
                                         {
@@ -723,8 +733,6 @@
                                         }
                                     }
                                 }
-
-                                await ctx.Response.SendEvent(null, true);
                             }
 
                             #endregion

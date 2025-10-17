@@ -108,8 +108,6 @@
 
         private async Task HealthCheckTask(OriginServer origin, CancellationToken token = default)
         {
-            bool firstRun = true;
-
             _Logging.Debug(
                 _Header +
                 "starting healthcheck task for origin " +
@@ -125,9 +123,6 @@
                 {
                     try
                     {
-                        if (!firstRun) await Task.Delay(origin.HealthCheckIntervalMs, token);
-                        else firstRun = false;
-
                         HttpRequestMessage request = new HttpRequestMessage(HttpMethodConverter(origin.HealthCheckMethod), healthCheckUrl);
                         HttpResponseMessage response = await client.SendAsync(request, token);
 
@@ -269,6 +264,12 @@
                         }
 
                         _Logging.Debug(_Header + "health check exception for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + Environment.NewLine + e.ToString());
+                    }
+
+                    // Wait before next health check
+                    if (!token.IsCancellationRequested)
+                    {
+                        await Task.Delay(origin.HealthCheckIntervalMs, token);
                     }
                 }
             }
