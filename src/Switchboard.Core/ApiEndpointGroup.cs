@@ -11,8 +11,6 @@
     /// </summary>
     public class ApiEndpointGroup
     {
-        #region Public-Members
-
         /// <summary>
         /// Key is the upper-case HTTP method.
         /// Value is a list of parameterized URLs to match, e.g. /{version}/foo/bar/{id}.
@@ -30,15 +28,7 @@
             }
         }
 
-        #endregion
-
-        #region Private-Members
-
         private Dictionary<string, List<string>> _ParameterizedUrls = new Dictionary<string, List<string>>();
-
-        #endregion
-
-        #region Constructors-and-Factories
 
         /// <summary>
         /// API endpoint group.
@@ -47,15 +37,5 @@
         {
 
         }
-
-        #endregion
-
-        #region Public-Methods
-
-        #endregion
-
-        #region Private-Methods
-
-        #endregion
     }
 }

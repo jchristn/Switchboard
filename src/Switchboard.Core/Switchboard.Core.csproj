@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<Title>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Title>
-		<Version>3.0.9</Version>
+		<Version>3.0.11</Version>
 		<Description>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Description>
 		<Copyright>(c)2025 Joel Christner</Copyright>
 		<PackageReleaseNotes>Add health checks and rate limiting</PackageReleaseNotes>
