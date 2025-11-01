@@ -1,0 +1,42 @@
+2025-11-01 03:45:52 JOEL-LAPTOP Debug [HealthCheckService] starting healthcheck task for origin chunked-origin Chunked Origin Server localhost:9001
+2025-11-01 03:45:52 JOEL-LAPTOP Info [SwitchboardDaemon] webserver started on http://localhost:9000
+2025-11-01 03:45:52 JOEL-LAPTOP Info [SwitchboardDaemon] Switchboard Server started using process ID 57892
+2025-11-01 03:45:52 JOEL-LAPTOP Info [HealthCheckService] origin chunked-origin is now healthy
+2025-11-01 03:45:52 JOEL-LAPTOP Debug [HealthCheckService] health check succeeded for origin chunked-origin Chunked Origin Server http://localhost:9001/
+2025-11-01 03:45:53 JOEL-LAPTOP Debug [GatewayService] proxying request to chunked-origin for endpoint chunked-test-endpoint for request ab9024b6-2c5b-4afe-a03b-379e891ce4ef
+2025-11-01 03:45:53 JOEL-LAPTOP Debug [GatewayService] request transfer encoding: , chunked: False
+2025-11-01 03:45:53 JOEL-LAPTOP Debug [GatewayService] completed request ab9024b6-2c5b-4afe-a03b-379e891ce4ef origin chunked-origin endpoint chunked-test-endpoint 200 (338.62ms)
+2025-11-01 04:27:38 JOEL-LAPTOP Debug [HealthCheckService] starting healthcheck task for origin chunked-origin Chunked Origin Server localhost:9001
+2025-11-01 04:27:38 JOEL-LAPTOP Info [SwitchboardDaemon] webserver started on http://localhost:9000
+2025-11-01 04:27:38 JOEL-LAPTOP Info [SwitchboardDaemon] Switchboard Server started using process ID 50328
+2025-11-01 04:27:38 JOEL-LAPTOP Info [HealthCheckService] origin chunked-origin is now healthy
+2025-11-01 04:27:38 JOEL-LAPTOP Debug [HealthCheckService] health check succeeded for origin chunked-origin Chunked Origin Server http://localhost:9001/
+2025-11-01 04:27:39 JOEL-LAPTOP Debug [GatewayService] proxying request to chunked-origin for endpoint chunked-test-endpoint for request b0238bc1-ee9e-420a-b53b-4e88cd3f8c00
+2025-11-01 04:27:39 JOEL-LAPTOP Debug [GatewayService] request transfer encoding: , chunked: False
+2025-11-01 04:27:39 JOEL-LAPTOP Debug [GatewayService] completed request b0238bc1-ee9e-420a-b53b-4e88cd3f8c00 origin chunked-origin endpoint chunked-test-endpoint 200 (336.43ms)
+2025-11-01 04:44:28 JOEL-LAPTOP Debug [HealthCheckService] starting healthcheck task for origin chunked-origin Chunked Origin Server localhost:9001
+2025-11-01 04:44:28 JOEL-LAPTOP Info [SwitchboardDaemon] webserver started on http://localhost:9000
+2025-11-01 04:44:28 JOEL-LAPTOP Info [SwitchboardDaemon] Switchboard Server started using process ID 632
+2025-11-01 04:44:28 JOEL-LAPTOP Info [HealthCheckService] origin chunked-origin is now healthy
+2025-11-01 04:44:28 JOEL-LAPTOP Debug [HealthCheckService] health check succeeded for origin chunked-origin Chunked Origin Server http://localhost:9001/
+2025-11-01 04:44:28 JOEL-LAPTOP Debug [GatewayService] proxying request to chunked-origin for endpoint chunked-test-endpoint for request 42427090-c1e5-41c9-8171-0ea75122443c
+2025-11-01 04:44:28 JOEL-LAPTOP Debug [GatewayService] request transfer encoding: , chunked: False
+2025-11-01 04:45:13 JOEL-LAPTOP Debug [HealthCheckService] starting healthcheck task for origin chunked-origin Chunked Origin Server localhost:9001
+2025-11-01 04:45:13 JOEL-LAPTOP Info [SwitchboardDaemon] webserver started on http://localhost:9000
+2025-11-01 04:45:13 JOEL-LAPTOP Info [SwitchboardDaemon] Switchboard Server started using process ID 39896
+2025-11-01 04:45:13 JOEL-LAPTOP Info [HealthCheckService] origin chunked-origin is now healthy
+2025-11-01 04:45:13 JOEL-LAPTOP Debug [HealthCheckService] health check succeeded for origin chunked-origin Chunked Origin Server http://localhost:9001/
+2025-11-01 04:45:14 JOEL-LAPTOP Debug [GatewayService] proxying request to chunked-origin for endpoint chunked-test-endpoint for request d7cca265-b99c-4f57-a480-cb16bad6f0bc
+2025-11-01 04:45:14 JOEL-LAPTOP Debug [GatewayService] request transfer encoding: , chunked: False
+2025-11-01 04:45:14 JOEL-LAPTOP Debug [GatewayService] completed request d7cca265-b99c-4f57-a480-cb16bad6f0bc origin chunked-origin endpoint chunked-test-endpoint 200 (337.19ms)
+2025-11-01 04:46:10 JOEL-LAPTOP Debug [HealthCheckService] starting healthcheck task for origin chunked-origin Chunked Origin Server localhost:9001
+2025-11-01 04:46:10 JOEL-LAPTOP Info [SwitchboardDaemon] webserver started on http://localhost:9000
+2025-11-01 04:46:10 JOEL-LAPTOP Info [SwitchboardDaemon] Switchboard Server started using process ID 43208
+2025-11-01 04:46:11 JOEL-LAPTOP Info [HealthCheckService] origin chunked-origin is now healthy
+2025-11-01 04:46:11 JOEL-LAPTOP Debug [HealthCheckService] health check succeeded for origin chunked-origin Chunked Origin Server http://localhost:9001/
+2025-11-01 04:46:11 JOEL-LAPTOP Debug [GatewayService] proxying request to chunked-origin for endpoint chunked-test-endpoint for request f247d1c0-97dd-4ebd-bef3-2340929d69a5
+2025-11-01 04:46:11 JOEL-LAPTOP Debug [GatewayService] request transfer encoding: , chunked: False
+2025-11-01 04:46:11 JOEL-LAPTOP Debug [GatewayService] completed request f247d1c0-97dd-4ebd-bef3-2340929d69a5 origin chunked-origin endpoint chunked-test-endpoint 200 (340.7ms)
+2025-11-01 04:46:11 JOEL-LAPTOP Debug [GatewayService] proxying request to chunked-origin for endpoint chunked-test-endpoint for request cda17c27-88be-4b97-845a-69d7eada49f2
+2025-11-01 04:46:11 JOEL-LAPTOP Debug [GatewayService] request transfer encoding: , chunked: False
+2025-11-01 04:46:12 JOEL-LAPTOP Debug [GatewayService] completed request cda17c27-88be-4b97-845a-69d7eada49f2 origin chunked-origin endpoint chunked-test-endpoint 200 (330.25ms)

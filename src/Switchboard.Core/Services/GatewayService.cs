@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Collections.Specialized;
+    using System.ComponentModel.Design;
     using System.IO;
     using System.Linq;
     using System.Net.Sockets;
@@ -311,6 +312,22 @@
         #endregion
 
         #region Private-Methods
+
+        private byte[] AppendNewLine(byte[] data)
+        {
+            if (data == null) return null;
+
+            // RestWrapper.ReadLineAsync() strips line endings (\n, \r\n, or \r)
+            // We need to restore a line ending so the next ReadLineAsync() call
+            // can properly delimit chunks. Use \n for consistency across platforms.
+            byte[] newLine = new byte[] { 0x0A }; // \n
+            byte[] result = new byte[data.Length + newLine.Length];
+
+            Buffer.BlockCopy(data, 0, result, 0, data.Length);
+            Buffer.BlockCopy(newLine, 0, result, data.Length, newLine.Length);
+
+            return result;
+        }
 
         private async Task GetRootRoute(HttpContextBase ctx)
         {
@@ -644,19 +661,30 @@
 
                             if (endpoint.Endpoint.LogResponseBody || origin.LogResponseBody)
                             {
-                                if (resp.DataAsBytes != null && resp.DataAsBytes.Length > 0)
+                                if (resp.ChunkedTransferEncoding)
                                 {
-                                    _Logging.Debug(
-                                        _Header
-                                        + "response body (" + resp.DataAsBytes.Length + " bytes) status " + resp.StatusCode + ": "
-                                        + Environment.NewLine
-                                        + Encoding.UTF8.GetString(resp.DataAsBytes));
+                                    _Logging.Debug(_Header + "chunked transfer response body received");
+                                }
+                                else if (resp.ServerSentEvents)
+                                {
+                                    _Logging.Debug(_Header + "server-sent events response body received");
                                 }
                                 else
                                 {
-                                    _Logging.Debug(
-                                        _Header
-                                        + "response body (0 bytes) status " + resp.StatusCode);
+                                    if (resp.DataAsBytes != null && resp.DataAsBytes.Length > 0)
+                                    {
+                                        _Logging.Debug(
+                                            _Header
+                                            + "response body (" + resp.DataAsBytes.Length + " bytes) status " + resp.StatusCode + ": "
+                                            + Environment.NewLine
+                                            + Encoding.UTF8.GetString(resp.DataAsBytes));
+                                    }
+                                    else
+                                    {
+                                        _Logging.Debug(
+                                            _Header
+                                            + "response body (0 bytes) status " + resp.StatusCode);
+                                    }
                                 }
                             }
 
@@ -675,64 +703,77 @@
 
                             #region Send-Response
 
-                            if (!resp.ServerSentEvents)
-                            {
-                                if (!ctx.Response.ChunkedTransfer)
-                                {
-                                    await ctx.Response.Send(resp.DataAsBytes);
-                                }
-                                else
-                                {
-                                    if (resp.DataAsBytes.Length > 0)
-                                    {
-                                        for (int i = 0; i < resp.DataAsBytes.Length; i += BUFFER_SIZE)
-                                        {
-                                            int currentChunkSize = Math.Min(BUFFER_SIZE, resp.DataAsBytes.Length - i);
-
-                                            byte[] chunk = new byte[currentChunkSize];
-                                            Array.Copy(resp.DataAsBytes, i, chunk, 0, currentChunkSize);
-
-                                            if (chunk.Length == BUFFER_SIZE) await ctx.Response.SendChunk(chunk, false).ConfigureAwait(false);
-                                            else await ctx.Response.SendChunk(chunk, true).ConfigureAwait(false);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        await ctx.Response.SendChunk(Array.Empty<byte>(), true).ConfigureAwait(false);
-                                    }
-                                }
-                            }
-                            else
+                            if (resp.ServerSentEvents)
                             {
                                 ctx.Response.ProtocolVersion = "HTTP/1.1";
                                 ctx.Response.ServerSentEvents = true;
+
+                                WatsonWebserver.Core.ServerSentEvent nextEvent = null;
 
                                 while (true)
                                 {
                                     RestWrapper.ServerSentEvent sse = await resp.ReadEventAsync();
 
-                                    if (sse == null)
+                                    if (sse == null) break;
+
+                                    if (nextEvent != null)
                                     {
-                                        break;
+                                        await ctx.Response.SendEvent(nextEvent, false).ConfigureAwait(false);
                                     }
-                                    else
+
+                                    // RestWrapper.ReadEventAsync() may leave trailing \r in the data
+                                    // Strip it before forwarding since Watson.SendEvent will add proper line endings
+                                    string eventData = sse.Data;
+                                    if (eventData != null)
                                     {
-                                        if (!String.IsNullOrEmpty(sse.Data))
-                                        {
-                                            await ctx.Response.SendEvent(new WatsonWebserver.Core.ServerSentEvent
-                                            { 
-                                                Id = sse.Id,
-                                                Data = sse.Data,
-                                                Event = sse.Event,
-                                                Retry = (sse.Retry != null ? sse.Retry.ToString() : null)
-                                            }, false);
-                                        }
-                                        else
-                                        {
-                                            break;
-                                        }
+                                        eventData = eventData.TrimEnd('\r', '\n');
                                     }
+
+                                    nextEvent = new WatsonWebserver.Core.ServerSentEvent
+                                    {
+                                        Id = sse.Id,
+                                        Data = eventData,
+                                        Event = sse.Event,
+                                        Retry = (sse.Retry != null ? sse.Retry.ToString() : null)
+                                    };
                                 }
+
+                                if (nextEvent != null)
+                                {
+                                    await ctx.Response.SendEvent(nextEvent, true).ConfigureAwait(false);
+                                }
+                            }
+                            else if (resp.ChunkedTransferEncoding)
+                            {
+                                ChunkData nextChunk = null;
+
+                                while (true)
+                                {
+                                    ChunkData chunk = await resp.ReadChunkAsync().ConfigureAwait(false);
+                                    if (chunk == null) break;
+
+                                    if (nextChunk != null)
+                                    {
+                                        byte[] dataWithNewLine = AppendNewLine(nextChunk.Data);
+                                        await ctx.Response.SendChunk(dataWithNewLine, false).ConfigureAwait(false);
+                                    }
+
+                                    nextChunk = chunk;
+                                }
+
+                                if (nextChunk != null)
+                                {
+                                    byte[] dataWithNewLine = AppendNewLine(nextChunk.Data);
+                                    await ctx.Response.SendChunk(dataWithNewLine, true).ConfigureAwait(false);
+                                }
+                                else
+                                {
+                                    await ctx.Response.SendChunk(Array.Empty<byte>(), true).ConfigureAwait(false);
+                                }
+                            }
+                            else
+                            {
+                                await ctx.Response.Send(resp.DataAsBytes);
                             }
 
                             #endregion
