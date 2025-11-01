@@ -1,0 +1,12 @@
+2025-11-01 05:09:33 JOEL-LAPTOP Debug [HealthCheckService] starting healthcheck task for origin sse-origin SSE Origin Server localhost:9002
+2025-11-01 05:09:33 JOEL-LAPTOP Info [SwitchboardDaemon] webserver started on http://localhost:9000
+2025-11-01 05:09:33 JOEL-LAPTOP Info [SwitchboardDaemon] Switchboard Server started using process ID 51920
+2025-11-01 05:09:33 JOEL-LAPTOP Info [HealthCheckService] origin sse-origin is now healthy
+2025-11-01 05:09:33 JOEL-LAPTOP Debug [HealthCheckService] health check succeeded for origin sse-origin SSE Origin Server http://localhost:9002/
+2025-11-01 05:09:34 JOEL-LAPTOP Debug [HealthCheckService] health check succeeded for origin sse-origin SSE Origin Server http://localhost:9002/
+2025-11-01 05:09:35 JOEL-LAPTOP Debug [GatewayService] proxying request to sse-origin for endpoint sse-test-endpoint for request 8b534517-aab5-4cee-ad04-d9c09f223fb0
+2025-11-01 05:09:35 JOEL-LAPTOP Debug [GatewayService] request transfer encoding: , chunked: False
+2025-11-01 05:09:35 JOEL-LAPTOP Debug [GatewayService] completed request 8b534517-aab5-4cee-ad04-d9c09f223fb0 origin sse-origin endpoint sse-test-endpoint 200 (263.59ms)
+2025-11-01 05:09:35 JOEL-LAPTOP Debug [GatewayService] proxying request to sse-origin for endpoint sse-test-endpoint for request 3bba363b-a169-4aea-82b7-9d8c2c21445d
+2025-11-01 05:09:35 JOEL-LAPTOP Debug [GatewayService] request transfer encoding: , chunked: False
+2025-11-01 05:09:35 JOEL-LAPTOP Debug [GatewayService] completed request 3bba363b-a169-4aea-82b7-9d8c2c21445d origin sse-origin endpoint sse-test-endpoint 200 (251.83ms)
