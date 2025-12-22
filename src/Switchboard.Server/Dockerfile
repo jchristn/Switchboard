@@ -21,7 +21,7 @@ RUN dotnet restore "Switchboard.Server/Switchboard.Server.csproj"
 
 # Build the application
 WORKDIR /src/Switchboard.Server
-RUN dotnet build "Switchboard.Server.csproj" -c Release -o /app/build /p:GeneratePackageOnBuild=false
+RUN dotnet build "Switchboard.Server.csproj" -c Release -f net10.0 -o /app/build /p:GeneratePackageOnBuild=false
 
 
 #
@@ -30,7 +30,7 @@ RUN dotnet build "Switchboard.Server.csproj" -c Release -o /app/build /p:Generat
 #
 #
 FROM build AS publish
-RUN dotnet publish "Switchboard.Server.csproj" -c Release -o /app/publish /p:UseAppHost=false /p:GeneratePackageOnBuild=false /p:ErrorOnDuplicatePublishOutputFiles=false
+RUN dotnet publish "Switchboard.Server.csproj" -c Release -f net10.0 -o /app/publish /p:UseAppHost=false /p:GeneratePackageOnBuild=false /p:ErrorOnDuplicatePublishOutputFiles=false
 
 
 #
