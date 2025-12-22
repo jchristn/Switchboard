@@ -268,11 +268,9 @@ namespace Test.ChunkedTransfer
                     {
                         using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
                         {
-                            while (!reader.EndOfStream)
+                            string? line;
+                            while ((line = await reader.ReadLineAsync()) != null)
                             {
-                                string? line = await reader.ReadLineAsync();
-                                if (line == null) break;
-
                                 byte[] chunkBytes = Encoding.UTF8.GetBytes(line + "\n");
                                 receivedChunks.Add(chunkBytes);
                             }

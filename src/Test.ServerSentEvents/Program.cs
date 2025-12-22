@@ -254,12 +254,10 @@ namespace Test.ServerSentEvents
                         using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
                         {
                             string? currentData = null;
+                            string? line;
 
-                            while (!reader.EndOfStream)
+                            while ((line = await reader.ReadLineAsync()) != null)
                             {
-                                string? line = await reader.ReadLineAsync();
-                                if (line == null) break;
-
                                 // SSE format: "data: <content>" or empty line (event separator)
                                 if (line.StartsWith("data: "))
                                 {

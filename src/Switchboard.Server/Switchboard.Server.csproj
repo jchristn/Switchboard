@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<DocumentationFile>Switchboard.Server.xml</DocumentationFile>
 	</PropertyGroup>
@@ -12,28 +12,28 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="assets\" />
+		<Folder Include="assets\" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="assets\favicon.ico">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	  <None Update="assets\favicon.png">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	  <None Update="clean.bat">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	  <None Update="clean.sh">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	  <None Update="Dockerfile">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	  <None Update="Dockerrun.bat">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
+		<None Update="assets\favicon.ico">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="assets\favicon.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="clean.bat">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="clean.sh">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Dockerfile">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Dockerrun.bat">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 
 </Project>
