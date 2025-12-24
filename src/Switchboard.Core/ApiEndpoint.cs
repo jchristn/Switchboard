@@ -193,6 +193,23 @@
             }
         }
 
+        /// <summary>
+        /// OpenAPI documentation metadata for routes in this endpoint.
+        /// Optional - if not provided, minimal documentation is auto-generated.
+        /// </summary>
+        public OpenApiEndpointMetadata OpenApiDocumentation
+        {
+            get
+            {
+                return _OpenApiDocumentation;
+            }
+            set
+            {
+                if (value == null) value = new OpenApiEndpointMetadata();
+                _OpenApiDocumentation = value;
+            }
+        }
+
         #endregion
 
         #region Internal-Members
@@ -211,6 +228,7 @@
         private ApiEndpointGroup _Unauthenticated = new ApiEndpointGroup();
         private ApiEndpointGroup _Authenticated = new ApiEndpointGroup();
         private Dictionary<string, Dictionary<string, string>> _RewriteUrls = new Dictionary<string, Dictionary<string, string>>();
+        private OpenApiEndpointMetadata _OpenApiDocumentation = new OpenApiEndpointMetadata();
 
         #endregion
 

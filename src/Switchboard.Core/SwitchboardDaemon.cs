@@ -56,6 +56,7 @@
         private LoggingModule _Logging = null;
         private HealthCheckService _HealthCheckService = null;
         private GatewayService _GatewayService = null;
+        private OpenApiService _OpenApiService = null;
         private Webserver _Webserver = null;
 
         private bool _IsDisposed = false;
@@ -91,6 +92,9 @@
             {
                 if (disposing)
                 {
+                    _OpenApiService?.Dispose();
+                    _OpenApiService = null;
+
                     _GatewayService?.Dispose();
                     _GatewayService = null;
 
@@ -174,10 +178,14 @@
                 _Serializer);
 
             _GatewayService = new GatewayService(
-                _Settings, 
-                _Callbacks, 
-                _Logging, 
+                _Settings,
+                _Callbacks,
+                _Logging,
                 _Serializer);
+
+            _OpenApiService = new OpenApiService(
+                _Settings,
+                _Logging);
 
             #endregion
 
@@ -190,6 +198,7 @@
             _Webserver.Routes.AuthenticateRequest = _GatewayService.AuthenticateRequest;
 
             _GatewayService.InitializeRoutes(_Webserver);
+            _OpenApiService.InitializeRoutes(_Webserver);
 
             _Webserver.Start();
 

@@ -95,6 +95,23 @@
             }
         }
 
+        /// <summary>
+        /// OpenAPI documentation settings.
+        /// Set Enable to true to generate OpenAPI documentation.
+        /// </summary>
+        public OpenApiDocumentSettings OpenApi
+        {
+            get
+            {
+                return _OpenApi;
+            }
+            set
+            {
+                if (value == null) value = new OpenApiDocumentSettings();
+                _OpenApi = value;
+            }
+        }
+
         #endregion
 
         #region Private-Members
@@ -103,6 +120,7 @@
         private List<ApiEndpoint> _Endpoints = new List<ApiEndpoint>();
         private List<OriginServer> _Origins = new List<OriginServer>();
         private WebserverSettings _Webserver = new WebserverSettings();
+        private OpenApiDocumentSettings _OpenApi = new OpenApiDocumentSettings();
         private List<string> _BlockedHeaders = new List<string>
         {
             "alt-svc",

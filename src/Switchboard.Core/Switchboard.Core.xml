@@ -102,6 +102,12 @@
             Value is a dictionary where the key is the original URL and the value is the URL to which the request should be directed.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.OpenApiDocumentation">
+            <summary>
+            OpenAPI documentation metadata for routes in this endpoint.
+            Optional - if not provided, minimal documentation is auto-generated.
+            </summary>
+        </member>
         <member name="M:Switchboard.Core.ApiEndpoint.#ctor">
             <summary>
             Instantiate.
@@ -586,6 +592,212 @@
             Matching API endpoint.
             </summary>
         </member>
+        <member name="T:Switchboard.Core.OpenApiEndpointMetadata">
+            <summary>
+            OpenAPI metadata for an API endpoint.
+            Contains route documentation organized by HTTP method and URL pattern.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiEndpointMetadata.Routes">
+            <summary>
+            Route documentation by HTTP method and URL pattern.
+            Key: HTTP method (GET, POST, etc.)
+            Value: Dictionary of URL pattern to route documentation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.OpenApiEndpointMetadata.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.OpenApiEndpointMetadata.GetDocumentation(System.String,System.String)">
+            <summary>
+            Get documentation for a specific route.
+            </summary>
+            <param name="method">HTTP method.</param>
+            <param name="urlPattern">URL pattern.</param>
+            <returns>Route documentation or null if not found.</returns>
+        </member>
+        <member name="T:Switchboard.Core.OpenApiMediaTypeDocumentation">
+            <summary>
+            OpenAPI media type documentation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiMediaTypeDocumentation.SchemaType">
+            <summary>
+            Schema type (string, integer, boolean, array, object).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiMediaTypeDocumentation.SchemaFormat">
+            <summary>
+            Schema format (e.g., int32, int64, date-time, email, uuid).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiMediaTypeDocumentation.Example">
+            <summary>
+            Example value (as JSON string for objects).
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.OpenApiMediaTypeDocumentation.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.OpenApiParameterDocumentation">
+            <summary>
+            OpenAPI parameter documentation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiParameterDocumentation.Name">
+            <summary>
+            Parameter name.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiParameterDocumentation.In">
+            <summary>
+            Parameter location (path, query, header, cookie).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiParameterDocumentation.Description">
+            <summary>
+            Parameter description.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiParameterDocumentation.Required">
+            <summary>
+            Whether the parameter is required.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiParameterDocumentation.Deprecated">
+            <summary>
+            Whether the parameter is deprecated.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiParameterDocumentation.SchemaType">
+            <summary>
+            Schema type (string, integer, boolean, array, object).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiParameterDocumentation.SchemaFormat">
+            <summary>
+            Schema format (e.g., int32, int64, date-time, email).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiParameterDocumentation.Example">
+            <summary>
+            Example value.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.OpenApiParameterDocumentation.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.OpenApiRequestBodyDocumentation">
+            <summary>
+            OpenAPI request body documentation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRequestBodyDocumentation.Description">
+            <summary>
+            Description of the request body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRequestBodyDocumentation.Required">
+            <summary>
+            Whether the request body is required.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRequestBodyDocumentation.Content">
+            <summary>
+            Content types and their schemas.
+            Key: Media type (e.g., "application/json").
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.OpenApiRequestBodyDocumentation.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.OpenApiResponseDocumentation">
+            <summary>
+            OpenAPI response documentation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiResponseDocumentation.Description">
+            <summary>
+            Description of the response.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiResponseDocumentation.Content">
+            <summary>
+            Content types and their schemas.
+            Key: Media type (e.g., "application/json").
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.OpenApiResponseDocumentation.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.OpenApiRouteDocumentation">
+            <summary>
+            OpenAPI documentation for a single route.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRouteDocumentation.OperationId">
+            <summary>
+            Unique operation identifier.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRouteDocumentation.Summary">
+            <summary>
+            Short summary of the operation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRouteDocumentation.Description">
+            <summary>
+            Detailed description of the operation.
+            CommonMark syntax may be used.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRouteDocumentation.Tags">
+            <summary>
+            Tags for grouping the operation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRouteDocumentation.Deprecated">
+            <summary>
+            Whether the operation is deprecated.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRouteDocumentation.Parameters">
+            <summary>
+            Parameter documentation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRouteDocumentation.RequestBody">
+            <summary>
+            Request body documentation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRouteDocumentation.Responses">
+            <summary>
+            Response documentation by status code.
+            Key: HTTP status code (e.g., "200", "404", "default").
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OpenApiRouteDocumentation.Security">
+            <summary>
+            Security requirements for this operation.
+            List of security scheme names.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.OpenApiRouteDocumentation.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.OriginServer">
             <summary>
             Origin server.
@@ -766,6 +978,76 @@
             Dispose.
             </summary>
         </member>
+        <member name="T:Switchboard.Core.Services.OpenApiService">
+            <summary>
+            Service for generating and serving OpenAPI documentation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.OpenApiService.#ctor(Switchboard.Core.SwitchboardSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Switchboard settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.OpenApiService.InitializeRoutes(WatsonWebserver.Webserver)">
+            <summary>
+            Initialize OpenAPI routes on the webserver.
+            </summary>
+            <param name="webserver">Watson webserver instance.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.OpenApiService.RegenerateDocument">
+            <summary>
+            Regenerate the OpenAPI document cache.
+            Call this if settings have changed at runtime.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.OpenApiService.Dispose">
+            <summary>
+            Dispose.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.OpenApiService.Dispose(System.Boolean)">
+            <summary>
+            Dispose.
+            </summary>
+            <param name="disposing">Disposing.</param>
+        </member>
+        <member name="T:Switchboard.Core.Services.SwaggerUiHandler">
+            <summary>
+            Generates Swagger UI HTML content.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.SwaggerUiHandler.GenerateHtml(System.String,System.String)">
+            <summary>
+            Generate the Swagger UI HTML page.
+            </summary>
+            <param name="openApiPath">Path to the OpenAPI JSON document.</param>
+            <param name="title">Page title.</param>
+            <returns>HTML string.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Services.SwitchboardOpenApiDocumentGenerator">
+            <summary>
+            Generates OpenAPI 3.0.3 specification documents from Switchboard settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.SwitchboardOpenApiDocumentGenerator.SerializerOptions">
+            <summary>
+            JSON serializer options used for generating the OpenAPI document.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.SwitchboardOpenApiDocumentGenerator.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.SwitchboardOpenApiDocumentGenerator.Generate(Switchboard.Core.SwitchboardSettings)">
+            <summary>
+            Generate an OpenAPI JSON document from the Switchboard settings.
+            </summary>
+            <param name="settings">Switchboard settings.</param>
+            <returns>OpenAPI JSON string.</returns>
+        </member>
         <member name="T:Switchboard.Core.Settings.LoggingSettings">
             <summary>
             Logging settings.
@@ -802,6 +1084,211 @@
             </summary>
         </member>
         <member name="M:Switchboard.Core.Settings.LoggingSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.OpenApiContactSettings">
+            <summary>
+            OpenAPI contact information settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiContactSettings.Name">
+            <summary>
+            Contact name.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiContactSettings.Url">
+            <summary>
+            Contact URL.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiContactSettings.Email">
+            <summary>
+            Contact email.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.OpenApiContactSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.OpenApiDocumentSettings">
+            <summary>
+            OpenAPI document generation settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.Enable">
+            <summary>
+            Enable or disable OpenAPI document generation.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.EnableSwaggerUi">
+            <summary>
+            Enable or disable Swagger UI.
+            Default is true when OpenAPI is enabled.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.DocumentPath">
+            <summary>
+            Path to serve the OpenAPI JSON document.
+            Default is "/openapi.json".
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.SwaggerUiPath">
+            <summary>
+            Path to serve the Swagger UI.
+            Default is "/swagger".
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.Title">
+            <summary>
+            API title for the OpenAPI document.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.Version">
+            <summary>
+            API version for the OpenAPI document.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.Description">
+            <summary>
+            API description for the OpenAPI document.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.TermsOfService">
+            <summary>
+            Terms of service URL.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.Contact">
+            <summary>
+            Contact information.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.License">
+            <summary>
+            License information.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.Servers">
+            <summary>
+            Server URLs for the API.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.SecuritySchemes">
+            <summary>
+            Security schemes available for the API.
+            Key is the scheme name (e.g., "bearerAuth").
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiDocumentSettings.Tags">
+            <summary>
+            Global tags for organizing operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.OpenApiDocumentSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.OpenApiLicenseSettings">
+            <summary>
+            OpenAPI license settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiLicenseSettings.Name">
+            <summary>
+            License name.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiLicenseSettings.Url">
+            <summary>
+            License URL.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.OpenApiLicenseSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.OpenApiSecuritySchemeSettings">
+            <summary>
+            OpenAPI security scheme settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiSecuritySchemeSettings.Type">
+            <summary>
+            Type of security scheme (apiKey, http, oauth2, openIdConnect).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiSecuritySchemeSettings.Description">
+            <summary>
+            Description of the security scheme.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiSecuritySchemeSettings.Name">
+            <summary>
+            Name of the header, query, or cookie parameter (for apiKey type).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiSecuritySchemeSettings.In">
+            <summary>
+            Location of the API key (query, header, cookie) for apiKey type.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiSecuritySchemeSettings.Scheme">
+            <summary>
+            HTTP authorization scheme (bearer, basic, etc.) for http type.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiSecuritySchemeSettings.BearerFormat">
+            <summary>
+            Bearer format hint for documentation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.OpenApiSecuritySchemeSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.OpenApiServerSettings">
+            <summary>
+            OpenAPI server settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiServerSettings.Url">
+            <summary>
+            Server URL.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiServerSettings.Description">
+            <summary>
+            Server description.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.OpenApiServerSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.OpenApiTagSettings">
+            <summary>
+            OpenAPI tag settings for grouping operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiTagSettings.Name">
+            <summary>
+            Tag name.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OpenApiTagSettings.Description">
+            <summary>
+            Tag description.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.OpenApiTagSettings.#ctor">
             <summary>
             Instantiate.
             </summary>
@@ -932,6 +1419,12 @@
         <member name="P:Switchboard.Core.SwitchboardSettings.Webserver">
             <summary>
             Webserver settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardSettings.OpenApi">
+            <summary>
+            OpenAPI documentation settings.
+            Set Enable to true to generate OpenAPI documentation.
             </summary>
         </member>
         <member name="M:Switchboard.Core.SwitchboardSettings.#ctor">

@@ -9,6 +9,7 @@ namespace Test.Automated
     using RestWrapper;
     using SerializationHelper;
     using Switchboard.Core;
+    using Switchboard.Core.Settings;
     using WatsonWebserver;
     using WatsonWebserver.Core;
 
@@ -48,6 +49,7 @@ namespace Test.Automated
             Console.WriteLine("  • HTTP version blocking");
             Console.WriteLine("  • Custom headers and CORS");
             Console.WriteLine("  • Error handling");
+            Console.WriteLine("  • OpenAPI documentation and Swagger UI");
             Console.WriteLine("");
 
             bool allTestsPassed = false;
@@ -123,6 +125,37 @@ namespace Test.Automated
             _Settings.Logging.MinimumSeverity = _DebugMode ? 0 : 3;
             _Settings.Logging.EnableColors = true;
 
+            // Configure OpenAPI
+            _Settings.OpenApi = new OpenApiDocumentSettings
+            {
+                Enable = true,
+                EnableSwaggerUi = true,
+                DocumentPath = "/openapi.json",
+                SwaggerUiPath = "/swagger",
+                Title = "Switchboard Automated Test API",
+                Version = "1.0.0",
+                Description = "Automated test suite API documentation",
+                SecuritySchemes = new Dictionary<string, OpenApiSecuritySchemeSettings>
+                {
+                    {
+                        "bearerAuth",
+                        new OpenApiSecuritySchemeSettings
+                        {
+                            Type = "http",
+                            Scheme = "bearer",
+                            BearerFormat = "JWT",
+                            Description = "JWT Bearer token authentication"
+                        }
+                    }
+                },
+                Tags = new List<OpenApiTagSettings>
+                {
+                    new OpenApiTagSettings { Name = "Public", Description = "Public endpoints" },
+                    new OpenApiTagSettings { Name = "Secure", Description = "Authenticated endpoints" },
+                    new OpenApiTagSettings { Name = "Streaming", Description = "Chunked and SSE endpoints" }
+                }
+            };
+
             // Configure endpoints
             _Settings.Endpoints.Add(new ApiEndpoint
             {
@@ -158,7 +191,65 @@ namespace Test.Automated
                         }
                     }
                 },
-                OriginServers = new List<string> { "origin1", "origin2" }
+                OriginServers = new List<string> { "origin1", "origin2" },
+                OpenApiDocumentation = new OpenApiEndpointMetadata
+                {
+                    Routes = new Dictionary<string, Dictionary<string, OpenApiRouteDocumentation>>
+                    {
+                        {
+                            "GET", new Dictionary<string, OpenApiRouteDocumentation>
+                            {
+                                {
+                                    "/public", new OpenApiRouteDocumentation
+                                    {
+                                        OperationId = "getPublic",
+                                        Summary = "Get public resource",
+                                        Description = "Returns a public resource without authentication",
+                                        Tags = new List<string> { "Public" }
+                                    }
+                                },
+                                {
+                                    "/chunked", new OpenApiRouteDocumentation
+                                    {
+                                        OperationId = "getChunked",
+                                        Summary = "Get chunked response",
+                                        Tags = new List<string> { "Streaming" }
+                                    }
+                                },
+                                {
+                                    "/sse", new OpenApiRouteDocumentation
+                                    {
+                                        OperationId = "getServerSentEvents",
+                                        Summary = "Get server-sent events stream",
+                                        Tags = new List<string> { "Streaming" }
+                                    }
+                                },
+                                {
+                                    "/secure", new OpenApiRouteDocumentation
+                                    {
+                                        OperationId = "getSecure",
+                                        Summary = "Get secure resource",
+                                        Description = "Returns a secure resource requiring authentication",
+                                        Tags = new List<string> { "Secure" }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "POST", new Dictionary<string, OpenApiRouteDocumentation>
+                            {
+                                {
+                                    "/public", new OpenApiRouteDocumentation
+                                    {
+                                        OperationId = "postPublic",
+                                        Summary = "Post to public resource",
+                                        Tags = new List<string> { "Public" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             });
 
             // Endpoint for rate limiting tests (low threshold)
@@ -1061,6 +1152,209 @@ namespace Test.Automated
                         throw new Exception("Expected Switchboard tracking headers (x-sb-origin-id or x-sb-request-id)");
 
                     return "Response headers validated including Switchboard tracking headers";
+                }
+            });
+
+            // Test 22: OpenAPI Document Endpoint
+            await RunTest("OpenAPI Document - JSON Endpoint", async () =>
+            {
+                using (RestRequest req = new RestRequest("http://localhost:" + SWITCHBOARD_PORT + "/openapi.json"))
+                using (RestResponse resp = await req.SendAsync())
+                {
+                    if (resp.StatusCode != 200)
+                        throw new Exception("Expected 200, got " + resp.StatusCode);
+
+                    string contentType = resp.ContentType ?? "";
+                    if (!contentType.Contains("application/json"))
+                        throw new Exception("Expected application/json content type, got " + contentType);
+
+                    string json = resp.DataAsString;
+                    if (String.IsNullOrEmpty(json))
+                        throw new Exception("Empty response body");
+
+                    // Verify OpenAPI 3.0.3 structure
+                    if (!json.Contains("\"openapi\""))
+                        throw new Exception("Missing 'openapi' field");
+
+                    if (!json.Contains("3.0.3"))
+                        throw new Exception("Expected OpenAPI version 3.0.3");
+
+                    if (!json.Contains("\"info\""))
+                        throw new Exception("Missing 'info' section");
+
+                    if (!json.Contains("\"paths\""))
+                        throw new Exception("Missing 'paths' section");
+
+                    if (!json.Contains("Switchboard Automated Test API"))
+                        throw new Exception("Missing expected API title");
+
+                    return "OpenAPI document served successfully (" + json.Length + " bytes)";
+                }
+            });
+
+            // Test 23: OpenAPI Document Contains All Paths
+            await RunTest("OpenAPI Document - Contains All Paths", async () =>
+            {
+                using (RestRequest req = new RestRequest("http://localhost:" + SWITCHBOARD_PORT + "/openapi.json"))
+                using (RestResponse resp = await req.SendAsync())
+                {
+                    if (resp.StatusCode != 200)
+                        throw new Exception("Expected 200, got " + resp.StatusCode);
+
+                    string json = resp.DataAsString;
+
+                    // Verify key paths are documented
+                    if (!json.Contains("/public"))
+                        throw new Exception("Missing /public path");
+
+                    if (!json.Contains("/secure"))
+                        throw new Exception("Missing /secure path");
+
+                    if (!json.Contains("/chunked"))
+                        throw new Exception("Missing /chunked path");
+
+                    if (!json.Contains("/sse"))
+                        throw new Exception("Missing /sse path");
+
+                    // Verify HTTP methods
+                    if (!json.Contains("\"get\""))
+                        throw new Exception("Missing GET method documentation");
+
+                    if (!json.Contains("\"post\""))
+                        throw new Exception("Missing POST method documentation");
+
+                    return "All expected paths found in OpenAPI document";
+                }
+            });
+
+            // Test 24: OpenAPI Security Schemes
+            await RunTest("OpenAPI Document - Security Schemes", async () =>
+            {
+                using (RestRequest req = new RestRequest("http://localhost:" + SWITCHBOARD_PORT + "/openapi.json"))
+                using (RestResponse resp = await req.SendAsync())
+                {
+                    if (resp.StatusCode != 200)
+                        throw new Exception("Expected 200, got " + resp.StatusCode);
+
+                    string json = resp.DataAsString;
+
+                    // Verify security schemes
+                    if (!json.Contains("\"securitySchemes\""))
+                        throw new Exception("Missing securitySchemes in components");
+
+                    if (!json.Contains("bearerAuth"))
+                        throw new Exception("Missing bearerAuth security scheme");
+
+                    if (!json.Contains("\"bearer\""))
+                        throw new Exception("Missing bearer scheme type");
+
+                    // Verify authenticated routes have security requirements
+                    if (!json.Contains("\"security\""))
+                        throw new Exception("Missing security requirements on authenticated routes");
+
+                    return "Security schemes configured correctly";
+                }
+            });
+
+            // Test 25: OpenAPI Custom Route Documentation
+            await RunTest("OpenAPI Document - Custom Route Documentation", async () =>
+            {
+                using (RestRequest req = new RestRequest("http://localhost:" + SWITCHBOARD_PORT + "/openapi.json"))
+                using (RestResponse resp = await req.SendAsync())
+                {
+                    if (resp.StatusCode != 200)
+                        throw new Exception("Expected 200, got " + resp.StatusCode);
+
+                    string json = resp.DataAsString;
+
+                    // Verify custom operationIds
+                    if (!json.Contains("getPublic"))
+                        throw new Exception("Missing operationId 'getPublic'");
+
+                    if (!json.Contains("getSecure"))
+                        throw new Exception("Missing operationId 'getSecure'");
+
+                    if (!json.Contains("getChunked"))
+                        throw new Exception("Missing operationId 'getChunked'");
+
+                    if (!json.Contains("getServerSentEvents"))
+                        throw new Exception("Missing operationId 'getServerSentEvents'");
+
+                    // Verify custom summaries
+                    if (!json.Contains("Get public resource"))
+                        throw new Exception("Missing custom summary for getPublic");
+
+                    // Verify tags
+                    if (!json.Contains("\"Public\""))
+                        throw new Exception("Missing Public tag");
+
+                    if (!json.Contains("\"Secure\""))
+                        throw new Exception("Missing Secure tag");
+
+                    if (!json.Contains("\"Streaming\""))
+                        throw new Exception("Missing Streaming tag");
+
+                    return "Custom route documentation verified";
+                }
+            });
+
+            // Test 26: Swagger UI HTML Page
+            await RunTest("Swagger UI - HTML Page", async () =>
+            {
+                using (RestRequest req = new RestRequest("http://localhost:" + SWITCHBOARD_PORT + "/swagger"))
+                using (RestResponse resp = await req.SendAsync())
+                {
+                    if (resp.StatusCode != 200)
+                        throw new Exception("Expected 200, got " + resp.StatusCode);
+
+                    string contentType = resp.ContentType ?? "";
+                    if (!contentType.Contains("text/html"))
+                        throw new Exception("Expected text/html content type, got " + contentType);
+
+                    string html = resp.DataAsString;
+                    if (String.IsNullOrEmpty(html))
+                        throw new Exception("Empty response body");
+
+                    // Verify Swagger UI components
+                    if (!html.Contains("swagger-ui"))
+                        throw new Exception("Missing swagger-ui div");
+
+                    if (!html.Contains("SwaggerUIBundle"))
+                        throw new Exception("Missing SwaggerUIBundle script");
+
+                    if (!html.Contains("/openapi.json"))
+                        throw new Exception("Missing OpenAPI document URL reference");
+
+                    if (!html.Contains("Switchboard Automated Test API"))
+                        throw new Exception("Missing API title in page");
+
+                    return "Swagger UI page served successfully (" + html.Length + " bytes)";
+                }
+            });
+
+            // Test 27: OpenAPI Auto-Generated Path Parameters
+            await RunTest("OpenAPI Document - Auto-Generated Path Parameters", async () =>
+            {
+                using (RestRequest req = new RestRequest("http://localhost:" + SWITCHBOARD_PORT + "/openapi.json"))
+                using (RestResponse resp = await req.SendAsync())
+                {
+                    if (resp.StatusCode != 200)
+                        throw new Exception("Expected 200, got " + resp.StatusCode);
+
+                    string json = resp.DataAsString;
+
+                    // Verify path with parameters exists
+                    if (!json.Contains("/api/users/{id}"))
+                        throw new Exception("Missing parameterized path /api/users/{id}");
+
+                    // Verify path parameters are documented
+                    if (!json.Contains("\"in\":\"path\"") && !json.Contains("\"in\": \"path\""))
+                        throw new Exception("Missing path parameters in document");
+
+                    if (!json.Contains("\"parameters\""))
+                        throw new Exception("Missing parameters section");
+
+                    return "Path parameters auto-generated correctly";
                 }
             });
         }

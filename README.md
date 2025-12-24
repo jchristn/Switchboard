@@ -34,6 +34,11 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
   - [Docker](#docker)
 - [Configuration](#configuration)
 - [Advanced Features](#advanced-features)
+  - [URL Rewriting](#url-rewriting)
+  - [Authentication Context Forwarding](#authentication-context-forwarding)
+  - [Server-Sent Events](#server-sent-events-sse)
+  - [Chunked Transfer Encoding](#chunked-transfer-encoding)
+  - [OpenAPI Documentation](#openapi-documentation)
 - [Support](#support)
 - [Contributing](#contributing)
 - [License](#license)
@@ -70,6 +75,7 @@ Built on **.NET 8.0**, Switchboard is designed for developers who need a simple,
 ✅ **Logging** – Built-in syslog integration with multiple severity levels
 ✅ **Docker Ready** – Available on [Docker Hub](https://hub.docker.com/repository/docker/jchristn/switchboard/general)
 ✅ **Embeddable** – Integrate directly into your application via NuGet
+✅ **OpenAPI Support** – Auto-generate OpenAPI 3.0.3 docs with Swagger UI
 
 ---
 
@@ -578,6 +584,140 @@ Switchboard transparently proxies server-sent events:
 ### Chunked Transfer Encoding
 
 Automatically handled for both requests and responses.
+
+### OpenAPI Documentation
+
+Switchboard can automatically generate OpenAPI 3.0.3 documentation for your proxied routes and serve a Swagger UI:
+
+#### Enable OpenAPI (JSON Configuration)
+
+```json
+{
+  "OpenApi": {
+    "Enable": true,
+    "EnableSwaggerUi": true,
+    "DocumentPath": "/openapi.json",
+    "SwaggerUiPath": "/swagger",
+    "Title": "My API Gateway",
+    "Version": "1.0.0",
+    "Description": "API Gateway for microservices",
+    "Contact": {
+      "Name": "API Support",
+      "Email": "support@example.com",
+      "Url": "https://example.com/support"
+    },
+    "License": {
+      "Name": "MIT",
+      "Url": "https://opensource.org/licenses/MIT"
+    },
+    "Servers": [
+      { "Url": "https://api.example.com", "Description": "Production" },
+      { "Url": "https://staging-api.example.com", "Description": "Staging" }
+    ],
+    "SecuritySchemes": {
+      "bearerAuth": {
+        "Type": "http",
+        "Scheme": "bearer",
+        "BearerFormat": "JWT",
+        "Description": "JWT Bearer token authentication"
+      }
+    },
+    "Tags": [
+      { "Name": "Users", "Description": "User management operations" },
+      { "Name": "Products", "Description": "Product catalog operations" }
+    ]
+  },
+  "Endpoints": [...]
+}
+```
+
+#### Add Custom Route Documentation
+
+Document individual routes with detailed metadata on each endpoint:
+
+```json
+{
+  "Endpoints": [
+    {
+      "Identifier": "user-api",
+      "Name": "User API",
+      "Unauthenticated": {
+        "ParameterizedUrls": {
+          "GET": ["/api/users/{id}"]
+        }
+      },
+      "Authenticated": {
+        "ParameterizedUrls": {
+          "POST": ["/api/users"],
+          "PUT": ["/api/users/{id}"]
+        }
+      },
+      "OpenApiDocumentation": {
+        "Routes": {
+          "GET": {
+            "/api/users/{id}": {
+              "OperationId": "getUserById",
+              "Summary": "Get a user by ID",
+              "Description": "Retrieves detailed information about a specific user.",
+              "Tags": ["Users"],
+              "Parameters": [
+                {
+                  "Name": "id",
+                  "In": "path",
+                  "Required": true,
+                  "SchemaType": "integer",
+                  "Description": "The unique user identifier"
+                }
+              ],
+              "Responses": {
+                "200": { "Description": "User found successfully" },
+                "404": { "Description": "User not found" }
+              }
+            }
+          },
+          "POST": {
+            "/api/users": {
+              "OperationId": "createUser",
+              "Summary": "Create a new user",
+              "Tags": ["Users"],
+              "RequestBody": {
+                "Description": "User data to create",
+                "Required": true,
+                "Content": {
+                  "application/json": {
+                    "SchemaType": "object"
+                  }
+                }
+              },
+              "Responses": {
+                "201": { "Description": "User created successfully" },
+                "400": { "Description": "Invalid request data" }
+              }
+            }
+          }
+        }
+      },
+      "OriginServers": ["backend-1"]
+    }
+  ]
+}
+```
+
+#### Auto-Generated Documentation
+
+Routes without explicit `OpenApiDocumentation` are automatically documented with:
+
+- **Summary:** Generated from HTTP method and path (e.g., "GET /api/users/{id}")
+- **Tags:** Uses the endpoint's `Name` or `Identifier`
+- **Path Parameters:** Automatically extracted from URL patterns like `{id}`
+- **Security:** Automatically added for routes in `Authenticated` groups
+
+#### Accessing Documentation
+
+Once enabled, access your API documentation at:
+
+- **OpenAPI JSON:** `http://localhost:8000/openapi.json`
+- **Swagger UI:** `http://localhost:8000/swagger`
 
 ---
 

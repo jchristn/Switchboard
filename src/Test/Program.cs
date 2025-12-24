@@ -13,6 +13,7 @@
     using RestWrapper;
     using SerializationHelper;
     using Switchboard.Core;
+    using Switchboard.Core.Settings;
     using WatsonWebserver;
     using WatsonWebserver.Core;
 
@@ -58,6 +59,8 @@
             Console.WriteLine("- Authenticated URL   : GET /authenticated");
             Console.WriteLine("- Load Balancing      : Round Robin");
             Console.WriteLine("- Origin Servers      : 4 (ports 8001-8004)");
+            Console.WriteLine("- OpenAPI Document    : /openapi.json");
+            Console.WriteLine("- Swagger UI          : /swagger");
             Console.WriteLine("");
 
             InitializeSettings();
@@ -98,6 +101,215 @@
                                     if (!allHealthy) throw new Exception("Not all origin servers became healthy");
 
                                     return "All origin servers are healthy";
+                                });
+
+                                #endregion
+
+                                #region OpenAPI-and-Swagger-Tests
+
+                                await RunTest("OpenAPI Document - JSON Endpoint", async () =>
+                                {
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/openapi.json"))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            Console.WriteLine($"  Response ({resp.StatusCode})");
+
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+
+                                            string contentType = resp.ContentType ?? "";
+                                            if (!contentType.Contains("application/json"))
+                                                throw new Exception($"Expected application/json content type, got {contentType}");
+
+                                            string json = resp.DataAsString;
+                                            Console.WriteLine($"  Document length: {json.Length} bytes");
+
+                                            // Verify OpenAPI 3.0.3 structure
+                                            if (!json.Contains("\"openapi\""))
+                                                throw new Exception("Missing 'openapi' field in document");
+
+                                            if (!json.Contains("3.0.3"))
+                                                throw new Exception("Expected OpenAPI version 3.0.3");
+
+                                            if (!json.Contains("\"info\""))
+                                                throw new Exception("Missing 'info' section");
+
+                                            if (!json.Contains("\"paths\""))
+                                                throw new Exception("Missing 'paths' section");
+
+                                            if (!json.Contains("Switchboard Test API"))
+                                                throw new Exception("Missing expected API title");
+
+                                            return $"OpenAPI document served successfully ({json.Length} bytes)";
+                                        }
+                                    }
+                                });
+
+                                await RunTest("OpenAPI Document - Contains Endpoint Paths", async () =>
+                                {
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/openapi.json"))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+
+                                            string json = resp.DataAsString;
+
+                                            // Verify paths are documented
+                                            if (!json.Contains("/unauthenticated"))
+                                                throw new Exception("Missing /unauthenticated path");
+
+                                            if (!json.Contains("/api/users"))
+                                                throw new Exception("Missing /api/users path");
+
+                                            if (!json.Contains("/events"))
+                                                throw new Exception("Missing /events path");
+
+                                            if (!json.Contains("/authenticated"))
+                                                throw new Exception("Missing /authenticated path");
+
+                                            // Verify HTTP methods
+                                            if (!json.Contains("\"get\""))
+                                                throw new Exception("Missing GET method documentation");
+
+                                            if (!json.Contains("\"post\""))
+                                                throw new Exception("Missing POST method documentation");
+
+                                            Console.WriteLine("  All expected paths and methods found in OpenAPI document");
+                                            return "OpenAPI document contains all expected endpoint paths";
+                                        }
+                                    }
+                                });
+
+                                await RunTest("OpenAPI Document - Security Schemes", async () =>
+                                {
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/openapi.json"))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+
+                                            string json = resp.DataAsString;
+
+                                            // Verify security schemes
+                                            if (!json.Contains("\"securitySchemes\""))
+                                                throw new Exception("Missing securitySchemes in components");
+
+                                            if (!json.Contains("bearerAuth"))
+                                                throw new Exception("Missing bearerAuth security scheme");
+
+                                            if (!json.Contains("\"bearer\""))
+                                                throw new Exception("Missing bearer scheme type");
+
+                                            // Verify authenticated routes have security requirements
+                                            if (!json.Contains("\"security\""))
+                                                throw new Exception("Missing security requirements on authenticated routes");
+
+                                            Console.WriteLine("  Security schemes and requirements configured correctly");
+                                            return "OpenAPI security schemes configured correctly";
+                                        }
+                                    }
+                                });
+
+                                await RunTest("OpenAPI Document - Custom Route Documentation", async () =>
+                                {
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/openapi.json"))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+
+                                            string json = resp.DataAsString;
+
+                                            // Verify custom documentation is present
+                                            if (!json.Contains("getUsers"))
+                                                throw new Exception("Missing operationId 'getUsers'");
+
+                                            if (!json.Contains("List all users"))
+                                                throw new Exception("Missing custom summary for getUsers");
+
+                                            if (!json.Contains("createUser"))
+                                                throw new Exception("Missing operationId 'createUser'");
+
+                                            if (!json.Contains("getEvents"))
+                                                throw new Exception("Missing operationId 'getEvents'");
+
+                                            // Verify tags
+                                            if (!json.Contains("\"Users\""))
+                                                throw new Exception("Missing Users tag");
+
+                                            if (!json.Contains("\"Events\""))
+                                                throw new Exception("Missing Events tag");
+
+                                            Console.WriteLine("  Custom route documentation verified");
+                                            return "Custom OpenAPI documentation present for documented routes";
+                                        }
+                                    }
+                                });
+
+                                await RunTest("Swagger UI - HTML Page", async () =>
+                                {
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/swagger"))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            Console.WriteLine($"  Response ({resp.StatusCode})");
+
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+
+                                            string contentType = resp.ContentType ?? "";
+                                            if (!contentType.Contains("text/html"))
+                                                throw new Exception($"Expected text/html content type, got {contentType}");
+
+                                            string html = resp.DataAsString;
+                                            Console.WriteLine($"  HTML length: {html.Length} bytes");
+
+                                            // Verify Swagger UI components
+                                            if (!html.Contains("swagger-ui"))
+                                                throw new Exception("Missing swagger-ui div");
+
+                                            if (!html.Contains("SwaggerUIBundle"))
+                                                throw new Exception("Missing SwaggerUIBundle script");
+
+                                            if (!html.Contains("/openapi.json"))
+                                                throw new Exception("Missing OpenAPI document URL reference");
+
+                                            if (!html.Contains("Switchboard Test API"))
+                                                throw new Exception("Missing API title in page");
+
+                                            return $"Swagger UI page served successfully ({html.Length} bytes)";
+                                        }
+                                    }
+                                });
+
+                                await RunTest("OpenAPI Document - Auto-Generated Path Parameters", async () =>
+                                {
+                                    using (RestRequest req = new RestRequest("http://localhost:8000/openapi.json"))
+                                    {
+                                        using (RestResponse resp = await req.SendAsync())
+                                        {
+                                            if (resp.StatusCode != 200)
+                                                throw new Exception($"Expected 200 OK, got {resp.StatusCode}");
+
+                                            string json = resp.DataAsString;
+
+                                            // Verify path parameters are auto-extracted
+                                            if (!json.Contains("\"in\":\"path\"") && !json.Contains("\"in\": \"path\""))
+                                                throw new Exception("Missing path parameters in document");
+
+                                            // Check for parameter definitions
+                                            if (!json.Contains("\"parameters\""))
+                                                throw new Exception("Missing parameters section");
+
+                                            Console.WriteLine("  Path parameters auto-generated correctly");
+                                            return "Path parameters correctly extracted from URL patterns";
+                                        }
+                                    }
                                 });
 
                                 #endregion
@@ -1363,6 +1575,39 @@
             _Settings.Logging.MinimumSeverity = 1;
             _Settings.Logging.EnableColors = false;
 
+            // Configure OpenAPI documentation
+            _Settings.OpenApi = new OpenApiDocumentSettings
+            {
+                Enable = true,
+                EnableSwaggerUi = true,
+                DocumentPath = "/openapi.json",
+                SwaggerUiPath = "/swagger",
+                Title = "Switchboard Test API",
+                Version = "1.0.0",
+                Description = "Test API for Switchboard reverse proxy",
+                Contact = new OpenApiContactSettings
+                {
+                    Name = "Test Support",
+                    Email = "test@example.com"
+                },
+                SecuritySchemes = new Dictionary<string, OpenApiSecuritySchemeSettings>
+                {
+                    ["bearerAuth"] = new OpenApiSecuritySchemeSettings
+                    {
+                        Type = "http",
+                        Scheme = "bearer",
+                        BearerFormat = "JWT",
+                        Description = "JWT Bearer token authentication"
+                    }
+                },
+                Tags = new List<OpenApiTagSettings>
+                {
+                    new OpenApiTagSettings { Name = "Users", Description = "User management operations" },
+                    new OpenApiTagSettings { Name = "Data", Description = "Data operations" },
+                    new OpenApiTagSettings { Name = "Events", Description = "Server-Sent Events" }
+                }
+            };
+
             _Settings.Endpoints.Add(new ApiEndpoint
             {
                 Identifier = "test-endpoint",
@@ -1410,6 +1655,77 @@
                     "server2",
                     "server3",
                     "server4"
+                },
+                OpenApiDocumentation = new OpenApiEndpointMetadata
+                {
+                    Routes = new Dictionary<string, Dictionary<string, OpenApiRouteDocumentation>>
+                    {
+                        ["GET"] = new Dictionary<string, OpenApiRouteDocumentation>
+                        {
+                            ["/api/users"] = new OpenApiRouteDocumentation
+                            {
+                                OperationId = "getUsers",
+                                Summary = "List all users",
+                                Description = "Returns a list of all users in the system",
+                                Tags = new List<string> { "Users" },
+                                Responses = new Dictionary<string, OpenApiResponseDocumentation>
+                                {
+                                    ["200"] = new OpenApiResponseDocumentation
+                                    {
+                                        Description = "Successful response",
+                                        Content = new Dictionary<string, OpenApiMediaTypeDocumentation>
+                                        {
+                                            ["application/json"] = new OpenApiMediaTypeDocumentation
+                                            {
+                                                SchemaType = "array"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            ["/events"] = new OpenApiRouteDocumentation
+                            {
+                                OperationId = "getEvents",
+                                Summary = "Subscribe to event stream",
+                                Description = "Opens a Server-Sent Events connection",
+                                Tags = new List<string> { "Events" },
+                                Responses = new Dictionary<string, OpenApiResponseDocumentation>
+                                {
+                                    ["200"] = new OpenApiResponseDocumentation
+                                    {
+                                        Description = "Event stream opened"
+                                    }
+                                }
+                            }
+                        },
+                        ["POST"] = new Dictionary<string, OpenApiRouteDocumentation>
+                        {
+                            ["/api/users"] = new OpenApiRouteDocumentation
+                            {
+                                OperationId = "createUser",
+                                Summary = "Create a new user",
+                                Description = "Creates a new user account",
+                                Tags = new List<string> { "Users" },
+                                RequestBody = new OpenApiRequestBodyDocumentation
+                                {
+                                    Description = "User data",
+                                    Required = true,
+                                    Content = new Dictionary<string, OpenApiMediaTypeDocumentation>
+                                    {
+                                        ["application/json"] = new OpenApiMediaTypeDocumentation
+                                        {
+                                            SchemaType = "object"
+                                        }
+                                    }
+                                },
+                                Responses = new Dictionary<string, OpenApiResponseDocumentation>
+                                {
+                                    ["201"] = new OpenApiResponseDocumentation { Description = "User created" },
+                                    ["400"] = new OpenApiResponseDocumentation { Description = "Invalid request" }
+                                }
+                            }
+                        }
+                    }
                 }
             });
 
