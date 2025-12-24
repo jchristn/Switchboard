@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<Title>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Title>
-		<Version>3.0.12</Version>
+		<Version>3.0.13</Version>
 		<Description>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Description>
 		<Copyright>(c)2025 Joel Christner</Copyright>
 		<PackageReleaseNotes>Add health checks and rate limiting</PackageReleaseNotes>
@@ -49,8 +49,8 @@
 	<ItemGroup>
 		<PackageReference Include="RestWrapper" Version="3.1.8" />
 		<PackageReference Include="SerializationHelper" Version="2.0.3" />
-		<PackageReference Include="SyslogLogging" Version="2.0.11" />
-		<PackageReference Include="Watson" Version="6.5.0" />
+		<PackageReference Include="SyslogLogging" Version="2.0.12" />
+		<PackageReference Include="Watson" Version="6.5.1" />
 	</ItemGroup>
 
 </Project>
