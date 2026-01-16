@@ -20,7 +20,7 @@ docker run ^
   -e "TERM=xterm-256color" ^
   -v .\sb.json:/app/sb.json ^
   -v .\logs\:/app/logs/ ^
-  jchristn/switchboard:%1
+  jchristn77/switchboard:%1
 
 GOTO :Done
 

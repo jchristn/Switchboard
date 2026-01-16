@@ -5,7 +5,7 @@
 
   **A lightweight reverse proxy and API gateway for .NET**
 
-  [![NuGet Version](https://img.shields.io/nuget/v/SwitchboardApplicationProxy.svg?style=flat)](https://www.nuget.org/packages/SwitchboardApplicationProxy/) [![NuGet Downloads](https://img.shields.io/nuget/dt/SwitchboardApplicationProxy.svg)](https://www.nuget.org/packages/SwitchboardApplicationProxy/) [![Docker Hub](https://img.shields.io/badge/docker-jchristn%2Fswitchboard-blue.svg)](https://hub.docker.com/repository/docker/jchristn/switchboard/general) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![NuGet Version](https://img.shields.io/nuget/v/SwitchboardApplicationProxy.svg?style=flat)](https://www.nuget.org/packages/SwitchboardApplicationProxy/) [![NuGet Downloads](https://img.shields.io/nuget/dt/SwitchboardApplicationProxy.svg)](https://www.nuget.org/packages/SwitchboardApplicationProxy/) [![Docker Hub](https://img.shields.io/badge/docker-jchristn77%2Fswitchboard-blue.svg)](https://hub.docker.com/repository/docker/jchristn77/switchboard/general) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 </div>
 
 ---
@@ -73,7 +73,7 @@ Built on **.NET 8.0**, Switchboard is designed for developers who need a simple,
 ✅ **Smart Routing** – Parameterized URLs with wildcard matching (`/users/{id}`)
 ✅ **Header Management** – Automatic proxy headers and configurable blocking
 ✅ **Logging** – Built-in syslog integration with multiple severity levels
-✅ **Docker Ready** – Available on [Docker Hub](https://hub.docker.com/repository/docker/jchristn/switchboard/general)
+✅ **Docker Ready** – Available on [Docker Hub](https://hub.docker.com/repository/docker/jchristn77/switchboard/general)
 ✅ **Embeddable** – Integrate directly into your application via NuGet
 ✅ **OpenAPI Support** – Auto-generate OpenAPI 3.0.3 docs with Swagger UI
 
@@ -174,8 +174,8 @@ dotnet Switchboard.Server.dll
 ### 3. Run with Docker
 
 ```bash
-docker pull jchristn/switchboard
-docker run -p 8000:8000 -v $(pwd)/sb.json:/app/sb.json jchristn/switchboard
+docker pull jchristn77/switchboard
+docker run -p 8000:8000 -v $(pwd)/sb.json:/app/sb.json jchristn77/switchboard
 ```
 
 Visit `http://localhost:8000/` to confirm Switchboard is running!
@@ -203,10 +203,10 @@ Install-Package SwitchboardApplicationProxy
 Pull from Docker Hub:
 
 ```bash
-docker pull jchristn/switchboard
+docker pull jchristn77/switchboard
 ```
 
-Docker image: **[jchristn/switchboard](https://hub.docker.com/repository/docker/jchristn/switchboard/general)**
+Docker image: **[jchristn77/switchboard](https://hub.docker.com/repository/docker/jchristn77/switchboard/general)**
 
 ### Build from Source
 
@@ -441,7 +441,7 @@ curl http://localhost:8000/health
 version: '3.8'
 services:
   switchboard:
-    image: jchristn/switchboard:latest
+    image: jchristn77/switchboard:latest
     ports:
       - "8000:8000"
     volumes:
@@ -475,7 +475,7 @@ docker run -d \
   --name switchboard \
   -p 8000:8000 \
   -v $(pwd)/sb.json:/app/sb.json \
-  jchristn/switchboard:latest
+  jchristn77/switchboard:latest
 ```
 
 ---
