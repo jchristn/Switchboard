@@ -78,13 +78,13 @@ Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers 
 - ✅ **Smart Routing** – Parameterized URLs with wildcard matching (`/users/{id}`)
 - ✅ **Header Management** – Automatic proxy headers and configurable blocking
 - ✅ **Logging** – Built-in syslog integration with multiple severity levels
-✅ **Docker Ready** – Server and Dashboard available on Docker Hub ([switchboard](https://hub.docker.com/r/jchristn77/switchboard), [switchboard-ui](https://hub.docker.com/r/jchristn77/switchboard-ui))
-✅ **Embeddable** – Integrate directly into your application via NuGet
-✅ **OpenAPI Support** – Auto-generate OpenAPI 3.0.3 docs with Swagger UI
-✅ **Management API** – RESTful API for runtime configuration changes
-✅ **Web Dashboard** – React-based UI for configuration and monitoring
-✅ **Database Backend** – Store config in SQLite, MySQL, PostgreSQL, or SQL Server
-✅ **Request History** – Track and analyze requests with searchable history
+- ✅ **Docker Ready** – Server and Dashboard available on Docker Hub ([switchboard](https://hub.docker.com/r/jchristn77/switchboard), [switchboard-ui](https://hub.docker.com/r/jchristn77/switchboard-ui))
+- ✅ **Embeddable** – Integrate directly into your application via NuGet
+- ✅ **OpenAPI Support** – Auto-generate OpenAPI 3.0.3 docs with Swagger UI
+- ✅ **Management API** – RESTful API for runtime configuration changes
+- ✅ **Web Dashboard** – React-based UI for configuration and monitoring
+- ✅ **Database Backend** – Store config in SQLite, MySQL, PostgreSQL, or SQL Server
+- ✅ **Request History** – Track and analyze requests with searchable history
 
 ---
 
