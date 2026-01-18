@@ -112,6 +112,57 @@
             }
         }
 
+        /// <summary>
+        /// Database configuration settings.
+        /// Enable to store configuration in database instead of JSON file.
+        /// </summary>
+        public DatabaseSettings Database
+        {
+            get
+            {
+                return _Database;
+            }
+            set
+            {
+                if (value == null) value = new DatabaseSettings();
+                _Database = value;
+            }
+        }
+
+        /// <summary>
+        /// Management API settings.
+        /// Enable to expose REST API for configuration management.
+        /// </summary>
+        public ManagementSettings Management
+        {
+            get
+            {
+                return _Management;
+            }
+            set
+            {
+                if (value == null) value = new ManagementSettings();
+                _Management = value;
+            }
+        }
+
+        /// <summary>
+        /// Request history capture settings.
+        /// Enable to capture and store request/response history.
+        /// </summary>
+        public RequestHistorySettings RequestHistory
+        {
+            get
+            {
+                return _RequestHistory;
+            }
+            set
+            {
+                if (value == null) value = new RequestHistorySettings();
+                _RequestHistory = value;
+            }
+        }
+
         #endregion
 
         #region Private-Members
@@ -121,6 +172,9 @@
         private List<OriginServer> _Origins = new List<OriginServer>();
         private WebserverSettings _Webserver = new WebserverSettings();
         private OpenApiDocumentSettings _OpenApi = new OpenApiDocumentSettings();
+        private DatabaseSettings _Database = new DatabaseSettings();
+        private ManagementSettings _Management = new ManagementSettings();
+        private RequestHistorySettings _RequestHistory = new RequestHistorySettings();
         private List<string> _BlockedHeaders = new List<string>
         {
             "alt-svc",

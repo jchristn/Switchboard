@@ -103,14 +103,15 @@
             {
                 Console.WriteLine("Settings file " + Constants.SettingsFile + " does not exist, creating");
                 _Settings = new SwitchboardSettings();
-                
+
                 _Settings.Webserver.Port = 8000;
                 _Settings.Webserver.Ssl.Enable = false;
 
+                _Settings.Database.Type = Core.Database.DatabaseTypeEnum.Sqlite;
+                _Settings.Database.Filename = "sb.db";
+
                 File.WriteAllText(Constants.SettingsFile, _Serializer.SerializeJson(_Settings, true));
-                Console.WriteLine("Created settings file " + Constants.SettingsFile + ", please modify and restart Switchboard");
-                Console.WriteLine("");
-                Environment.Exit(1);
+                Console.WriteLine("Created default settings file " + Constants.SettingsFile);
             }
             else
             {

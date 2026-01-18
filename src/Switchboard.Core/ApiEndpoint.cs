@@ -210,6 +210,58 @@
             }
         }
 
+        /// <summary>
+        /// Enable capture of request body for this endpoint.
+        /// Default is false.
+        /// </summary>
+        public bool CaptureRequestBody { get; set; } = false;
+
+        /// <summary>
+        /// Enable capture of response body for this endpoint.
+        /// Default is false.
+        /// </summary>
+        public bool CaptureResponseBody { get; set; } = false;
+
+        /// <summary>
+        /// Enable capture of request headers for this endpoint.
+        /// Default is true.
+        /// </summary>
+        public bool CaptureRequestHeaders { get; set; } = true;
+
+        /// <summary>
+        /// Enable capture of response headers for this endpoint.
+        /// Default is true.
+        /// </summary>
+        public bool CaptureResponseHeaders { get; set; } = true;
+
+        /// <summary>
+        /// Maximum request body size to capture in bytes.
+        /// Default is 64KB.
+        /// </summary>
+        public int MaxCaptureRequestBodySize
+        {
+            get => _MaxCaptureRequestBodySize;
+            set
+            {
+                if (value < 0) throw new ArgumentOutOfRangeException(nameof(MaxCaptureRequestBodySize));
+                _MaxCaptureRequestBodySize = value;
+            }
+        }
+
+        /// <summary>
+        /// Maximum response body size to capture in bytes.
+        /// Default is 64KB.
+        /// </summary>
+        public int MaxCaptureResponseBodySize
+        {
+            get => _MaxCaptureResponseBodySize;
+            set
+            {
+                if (value < 0) throw new ArgumentOutOfRangeException(nameof(MaxCaptureResponseBodySize));
+                _MaxCaptureResponseBodySize = value;
+            }
+        }
+
         #endregion
 
         #region Internal-Members
@@ -229,6 +281,8 @@
         private ApiEndpointGroup _Authenticated = new ApiEndpointGroup();
         private Dictionary<string, Dictionary<string, string>> _RewriteUrls = new Dictionary<string, Dictionary<string, string>>();
         private OpenApiEndpointMetadata _OpenApiDocumentation = new OpenApiEndpointMetadata();
+        private int _MaxCaptureRequestBodySize = 65536;
+        private int _MaxCaptureResponseBodySize = 65536;
 
         #endregion
 

@@ -1,0 +1,58 @@
+#
+# Switchboard with SQL Server database
+# Usage: docker compose -f compose.sqlserver.yaml up -d
+#
+# Note: SQL Server requires at least 2GB RAM
+#
+
+services:
+
+  sqlserver:
+    container_name: 'switchboard-sqlserver'
+    image: 'mcr.microsoft.com/mssql/server:2022-latest'
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Switchboard123!"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Switchboard123!" -Q "SELECT 1" -C || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  switchboard:
+    container_name: 'switchboard'
+    image: 'jchristn77/switchboard:v4.0.0'
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sb.sqlserver.json:/app/sb.json
+      - ./logs/:/app/logs/
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    healthcheck:
+      test: curl --fail http://localhost:8000/_sb/v1.0/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  dashboard:
+    container_name: 'switchboard-dashboard'
+    build:
+      context: ..
+      dockerfile: Docker/dashboard/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - switchboard
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:

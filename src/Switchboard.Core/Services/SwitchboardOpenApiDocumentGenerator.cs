@@ -20,7 +20,6 @@ namespace Switchboard.Core.Services
         public JsonSerializerOptions SerializerOptions { get; set; } = new JsonSerializerOptions
         {
             WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 

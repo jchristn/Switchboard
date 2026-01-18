@@ -1,0 +1,33 @@
+#
+# Switchboard with SQLite database
+# Usage: docker compose -f compose.sqlite.yaml up -d
+#
+
+services:
+
+  switchboard:
+    container_name: 'switchboard'
+    image: 'jchristn77/switchboard:v4.0.0'
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sb.sqlite.json:/app/sb.json
+      - ./logs/:/app/logs/
+      - ./data/:/app/data/
+    healthcheck:
+      test: curl --fail http://localhost:8000/_sb/v1.0/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  dashboard:
+    container_name: 'switchboard-dashboard'
+    build:
+      context: ..
+      dockerfile: Docker/dashboard/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - switchboard
+    restart: unless-stopped

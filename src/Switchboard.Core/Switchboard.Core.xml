@@ -108,6 +108,42 @@
             Optional - if not provided, minimal documentation is auto-generated.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.CaptureRequestBody">
+            <summary>
+            Enable capture of request body for this endpoint.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.CaptureResponseBody">
+            <summary>
+            Enable capture of response body for this endpoint.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.CaptureRequestHeaders">
+            <summary>
+            Enable capture of request headers for this endpoint.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.CaptureResponseHeaders">
+            <summary>
+            Enable capture of response headers for this endpoint.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.MaxCaptureRequestBodySize">
+            <summary>
+            Maximum request body size to capture in bytes.
+            Default is 64KB.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.MaxCaptureResponseBodySize">
+            <summary>
+            Maximum response body size to capture in bytes.
+            Default is 64KB.
+            </summary>
+        </member>
         <member name="M:Switchboard.Core.ApiEndpoint.#ctor">
             <summary>
             Instantiate.
@@ -456,6 +492,1427 @@
             InternalError.
             </summary>
         </member>
+        <member name="T:Switchboard.Core.Client.Implementations.ApiEndpointMethods">
+            <summary>
+            API endpoint operations implementation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.#ctor(Switchboard.Core.Database.IDatabaseDriver)">
+            <summary>
+            Instantiate API endpoint methods.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.CreateAsync(Switchboard.Core.Models.ApiEndpointConfig,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.GetByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.GetByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.GetAllAsync(System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.UpdateAsync(Switchboard.Core.Models.ApiEndpointConfig,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.DeleteByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.DeleteByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.ExistsByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.ExistsByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.ApiEndpointMethods.CountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Client.Implementations.BlockedHeaderMethods">
+            <summary>
+            Blocked header operations implementation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.BlockedHeaderMethods.#ctor(Switchboard.Core.Database.IDatabaseDriver)">
+            <summary>
+            Instantiate blocked header methods.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.BlockedHeaderMethods.CreateAsync(Switchboard.Core.Models.BlockedHeader,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.BlockedHeaderMethods.GetByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.BlockedHeaderMethods.GetByNameAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.BlockedHeaderMethods.GetAllAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.BlockedHeaderMethods.DeleteByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.BlockedHeaderMethods.DeleteByNameAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.BlockedHeaderMethods.IsBlockedAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.BlockedHeaderMethods.CountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Client.Implementations.CredentialMethods">
+            <summary>
+            Credential operations implementation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.#ctor(Switchboard.Core.Database.IDatabaseDriver)">
+            <summary>
+            Instantiate credential methods.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.CreateAsync(Switchboard.Core.Models.Credential,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.GetByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.GetByUserGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.GetAllAsync(System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.GetActiveCredentialsAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.ValidateBearerTokenAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.GetUserByBearerTokenAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.UpdateAsync(Switchboard.Core.Models.Credential,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.RegenerateBearerTokenAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.DeleteByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.DeleteByUserGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.ExistsByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.CountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.CredentialMethods.CountByUserGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods">
+            <summary>
+            Endpoint-origin mapping operations implementation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.#ctor(Switchboard.Core.Database.IDatabaseDriver)">
+            <summary>
+            Instantiate endpoint-origin mapping methods.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.CreateAsync(Switchboard.Core.Models.EndpointOriginMapping,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.GetByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.GetByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.GetByOriginGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.GetOriginsForEndpointAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.GetEndpointsForOriginAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.GetAllAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.DeleteByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.DeleteByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.DeleteByOriginGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.ExistsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointOriginMappingMethods.CountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Client.Implementations.EndpointRouteMethods">
+            <summary>
+            Endpoint route operations implementation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointRouteMethods.#ctor(Switchboard.Core.Database.IDatabaseDriver)">
+            <summary>
+            Instantiate endpoint route methods.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointRouteMethods.CreateAsync(Switchboard.Core.Models.EndpointRoute,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointRouteMethods.GetByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointRouteMethods.GetByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointRouteMethods.GetAllAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointRouteMethods.UpdateAsync(Switchboard.Core.Models.EndpointRoute,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointRouteMethods.DeleteByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointRouteMethods.DeleteByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointRouteMethods.CountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.EndpointRouteMethods.CountByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Client.Implementations.OriginServerMethods">
+            <summary>
+            Origin server operations implementation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.#ctor(Switchboard.Core.Database.IDatabaseDriver)">
+            <summary>
+            Instantiate origin server methods.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.CreateAsync(Switchboard.Core.Models.OriginServerConfig,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.GetByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.GetByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.GetAllAsync(System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.UpdateAsync(Switchboard.Core.Models.OriginServerConfig,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.DeleteByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.DeleteByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.ExistsByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.ExistsByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.OriginServerMethods.CountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Client.Implementations.RequestHistoryMethods">
+            <summary>
+            Request history operations implementation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.#ctor(Switchboard.Core.Database.IDatabaseDriver)">
+            <summary>
+            Instantiate request history methods.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.CreateAsync(Switchboard.Core.Models.RequestHistory,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.GetByIdAsync(System.Int64,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.GetByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.GetByEndpointGuidAsync(System.Guid,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.GetByOriginGuidAsync(System.Guid,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.GetByTimeRangeAsync(System.DateTime,System.DateTime,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.GetAllAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.GetRecentAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.GetFailedRequestsAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.DeleteByIdAsync(System.Int64,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.DeleteByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.DeleteOlderThanAsync(System.DateTime,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.DeleteByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.DeleteByOriginGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.CountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.CountByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.CountByOriginGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.RequestHistoryMethods.CountFailedAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Client.Implementations.UrlRewriteMethods">
+            <summary>
+            URL rewrite operations implementation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UrlRewriteMethods.#ctor(Switchboard.Core.Database.IDatabaseDriver)">
+            <summary>
+            Instantiate URL rewrite methods.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UrlRewriteMethods.CreateAsync(Switchboard.Core.Models.UrlRewrite,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UrlRewriteMethods.GetByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UrlRewriteMethods.GetByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UrlRewriteMethods.GetAllAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UrlRewriteMethods.UpdateAsync(Switchboard.Core.Models.UrlRewrite,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UrlRewriteMethods.DeleteByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UrlRewriteMethods.DeleteByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UrlRewriteMethods.CountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UrlRewriteMethods.CountByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Client.Implementations.UserMethods">
+            <summary>
+            User operations implementation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.#ctor(Switchboard.Core.Database.IDatabaseDriver)">
+            <summary>
+            Instantiate user methods.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.CreateAsync(Switchboard.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.GetByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.GetByUsernameAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.GetByEmailAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.GetAllAsync(System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.GetActiveUsersAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.GetAdminUsersAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.UpdateAsync(Switchboard.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.DeleteByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.DeleteByUsernameAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.ExistsByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.ExistsByUsernameAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.ExistsByEmailAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Client.Implementations.UserMethods.CountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Client.Interfaces.IApiEndpointMethods">
+            <summary>
+            Interface for API endpoint operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IApiEndpointMethods.CreateAsync(Switchboard.Core.Models.ApiEndpointConfig,System.Threading.CancellationToken)">
+            <summary>
+            Create an API endpoint.
+            </summary>
+            <param name="config">API endpoint configuration.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created API endpoint configuration.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IApiEndpointMethods.GetByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get an API endpoint by GUID.
+            </summary>
+            <param name="guid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>API endpoint configuration or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IApiEndpointMethods.GetByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get an API endpoint by identifier.
+            </summary>
+            <param name="identifier">API endpoint identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>API endpoint configuration or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IApiEndpointMethods.GetAllAsync(System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all API endpoints.
+            </summary>
+            <param name="searchTerm">Optional search term for name or identifier.</param>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of API endpoint configurations.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IApiEndpointMethods.UpdateAsync(Switchboard.Core.Models.ApiEndpointConfig,System.Threading.CancellationToken)">
+            <summary>
+            Update an API endpoint.
+            </summary>
+            <param name="config">API endpoint configuration to update.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated API endpoint configuration.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IApiEndpointMethods.DeleteByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete an API endpoint by GUID.
+            </summary>
+            <param name="guid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IApiEndpointMethods.DeleteByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an API endpoint by identifier.
+            </summary>
+            <param name="identifier">API endpoint identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IApiEndpointMethods.ExistsByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Check if an API endpoint exists by GUID.
+            </summary>
+            <param name="guid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if exists, false otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IApiEndpointMethods.ExistsByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if an API endpoint exists by identifier.
+            </summary>
+            <param name="identifier">API endpoint identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if exists, false otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IApiEndpointMethods.CountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the total count of API endpoints.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Total count.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Client.Interfaces.IBlockedHeaderMethods">
+            <summary>
+            Interface for blocked header operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IBlockedHeaderMethods.CreateAsync(Switchboard.Core.Models.BlockedHeader,System.Threading.CancellationToken)">
+            <summary>
+            Create a blocked header.
+            </summary>
+            <param name="header">Blocked header to create.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created blocked header.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IBlockedHeaderMethods.GetByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Get a blocked header by ID.
+            </summary>
+            <param name="id">Blocked header ID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Blocked header or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IBlockedHeaderMethods.GetByNameAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get a blocked header by name.
+            </summary>
+            <param name="headerName">Header name.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Blocked header or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IBlockedHeaderMethods.GetAllAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all blocked headers.
+            </summary>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of blocked headers.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IBlockedHeaderMethods.DeleteByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Delete a blocked header by ID.
+            </summary>
+            <param name="id">Blocked header ID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IBlockedHeaderMethods.DeleteByNameAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a blocked header by name.
+            </summary>
+            <param name="headerName">Header name.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IBlockedHeaderMethods.IsBlockedAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if a header is blocked.
+            </summary>
+            <param name="headerName">Header name.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if blocked, false otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IBlockedHeaderMethods.CountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the total count of blocked headers.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Total count.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Client.Interfaces.ICredentialMethods">
+            <summary>
+            Interface for credential operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.CreateAsync(Switchboard.Core.Models.Credential,System.Threading.CancellationToken)">
+            <summary>
+            Create a credential.
+            </summary>
+            <param name="credential">Credential to create.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created credential with generated bearer token.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.GetByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get a credential by GUID.
+            </summary>
+            <param name="guid">Credential GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Credential or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.GetByUserGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get all credentials for a user.
+            </summary>
+            <param name="userGuid">User GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of credentials.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.GetAllAsync(System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all credentials.
+            </summary>
+            <param name="searchTerm">Optional search term for name or description.</param>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of credentials.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.GetActiveCredentialsAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get all active credentials.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>List of active credentials.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.ValidateBearerTokenAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Validate a bearer token.
+            </summary>
+            <param name="bearerToken">Bearer token to validate.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Credential if valid, null otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.GetUserByBearerTokenAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get the user associated with a bearer token.
+            </summary>
+            <param name="bearerToken">Bearer token.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>User if token is valid, null otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.UpdateAsync(Switchboard.Core.Models.Credential,System.Threading.CancellationToken)">
+            <summary>
+            Update a credential.
+            </summary>
+            <param name="credential">Credential to update.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated credential.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.RegenerateBearerTokenAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Regenerate bearer token for a credential.
+            </summary>
+            <param name="guid">Credential GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated credential with new bearer token.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.DeleteByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete a credential by GUID.
+            </summary>
+            <param name="guid">Credential GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.DeleteByUserGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete all credentials for a user.
+            </summary>
+            <param name="userGuid">User GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.ExistsByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Check if a credential exists by GUID.
+            </summary>
+            <param name="guid">Credential GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if exists, false otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.CountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the total count of credentials.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Total count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.ICredentialMethods.CountByUserGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get the count of credentials for a user.
+            </summary>
+            <param name="userGuid">User GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Credential count.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods">
+            <summary>
+            Interface for endpoint-origin mapping operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.CreateAsync(Switchboard.Core.Models.EndpointOriginMapping,System.Threading.CancellationToken)">
+            <summary>
+            Create an endpoint-origin mapping.
+            </summary>
+            <param name="mapping">Mapping to create.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created mapping.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.GetByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Get a mapping by ID.
+            </summary>
+            <param name="id">Mapping ID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Mapping or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.GetByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get all mappings for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of mappings.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.GetByOriginGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get all mappings for an origin server.
+            </summary>
+            <param name="originGuid">Origin server GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of mappings.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.GetOriginsForEndpointAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get all origin servers for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of origin server configurations.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.GetEndpointsForOriginAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get all API endpoints for an origin server.
+            </summary>
+            <param name="originGuid">Origin server GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of API endpoint configurations.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.GetAllAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all mappings.
+            </summary>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of mappings.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.DeleteByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Delete a mapping by ID.
+            </summary>
+            <param name="id">Mapping ID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.DeleteByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete all mappings for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.DeleteByOriginGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete all mappings for an origin server.
+            </summary>
+            <param name="originGuid">Origin server GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.ExistsAsync(System.Guid,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Check if a mapping exists.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="originGuid">Origin server GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if exists, false otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointOriginMappingMethods.CountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the total count of mappings.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Total count.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Client.Interfaces.IEndpointRouteMethods">
+            <summary>
+            Interface for endpoint route operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointRouteMethods.CreateAsync(Switchboard.Core.Models.EndpointRoute,System.Threading.CancellationToken)">
+            <summary>
+            Create an endpoint route.
+            </summary>
+            <param name="route">Endpoint route to create.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created endpoint route.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointRouteMethods.GetByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Get an endpoint route by ID.
+            </summary>
+            <param name="id">Endpoint route ID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Endpoint route or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointRouteMethods.GetByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get all routes for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of endpoint routes.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointRouteMethods.GetAllAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all endpoint routes.
+            </summary>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of endpoint routes.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointRouteMethods.UpdateAsync(Switchboard.Core.Models.EndpointRoute,System.Threading.CancellationToken)">
+            <summary>
+            Update an endpoint route.
+            </summary>
+            <param name="route">Endpoint route to update.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated endpoint route.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointRouteMethods.DeleteByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Delete an endpoint route by ID.
+            </summary>
+            <param name="id">Endpoint route ID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointRouteMethods.DeleteByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete all routes for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointRouteMethods.CountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the total count of endpoint routes.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Total count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IEndpointRouteMethods.CountByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get the count of routes for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Route count.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Client.Interfaces.IOriginServerMethods">
+            <summary>
+            Interface for origin server operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IOriginServerMethods.CreateAsync(Switchboard.Core.Models.OriginServerConfig,System.Threading.CancellationToken)">
+            <summary>
+            Create an origin server.
+            </summary>
+            <param name="config">Origin server configuration.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created origin server configuration.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IOriginServerMethods.GetByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get an origin server by GUID.
+            </summary>
+            <param name="guid">Origin server GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Origin server configuration or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IOriginServerMethods.GetByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get an origin server by identifier.
+            </summary>
+            <param name="identifier">Origin server identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Origin server configuration or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IOriginServerMethods.GetAllAsync(System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all origin servers.
+            </summary>
+            <param name="searchTerm">Optional search term for name or identifier.</param>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of origin server configurations.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IOriginServerMethods.UpdateAsync(Switchboard.Core.Models.OriginServerConfig,System.Threading.CancellationToken)">
+            <summary>
+            Update an origin server.
+            </summary>
+            <param name="config">Origin server configuration to update.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated origin server configuration.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IOriginServerMethods.DeleteByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete an origin server by GUID.
+            </summary>
+            <param name="guid">Origin server GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IOriginServerMethods.DeleteByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an origin server by identifier.
+            </summary>
+            <param name="identifier">Origin server identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IOriginServerMethods.ExistsByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Check if an origin server exists by GUID.
+            </summary>
+            <param name="guid">Origin server GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if exists, false otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IOriginServerMethods.ExistsByIdentifierAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if an origin server exists by identifier.
+            </summary>
+            <param name="identifier">Origin server identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if exists, false otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IOriginServerMethods.CountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the total count of origin servers.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Total count.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods">
+            <summary>
+            Interface for request history operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.CreateAsync(Switchboard.Core.Models.RequestHistory,System.Threading.CancellationToken)">
+            <summary>
+            Create a request history record.
+            </summary>
+            <param name="history">Request history to create.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created request history.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.GetByIdAsync(System.Int64,System.Threading.CancellationToken)">
+            <summary>
+            Get a request history record by ID.
+            </summary>
+            <param name="id">Request history ID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Request history or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.GetByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get a request history record by GUID.
+            </summary>
+            <param name="guid">Request history GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Request history or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.GetByEndpointGuidAsync(System.Guid,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all request history for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of request history records.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.GetByOriginGuidAsync(System.Guid,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all request history for an origin server.
+            </summary>
+            <param name="originGuid">Origin server GUID.</param>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of request history records.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.GetByTimeRangeAsync(System.DateTime,System.DateTime,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get request history within a time range.
+            </summary>
+            <param name="startUtc">Start of time range (UTC).</param>
+            <param name="endUtc">End of time range (UTC).</param>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of request history records.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.GetAllAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all request history.
+            </summary>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of request history records.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.GetRecentAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Get recent request history.
+            </summary>
+            <param name="count">Number of records to retrieve.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of recent request history records.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.GetFailedRequestsAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get failed requests.
+            </summary>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of failed request history records.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.DeleteByIdAsync(System.Int64,System.Threading.CancellationToken)">
+            <summary>
+            Delete request history by ID.
+            </summary>
+            <param name="id">Request history ID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.DeleteByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete request history by GUID.
+            </summary>
+            <param name="guid">Request history GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.DeleteOlderThanAsync(System.DateTime,System.Threading.CancellationToken)">
+            <summary>
+            Delete request history older than a specified date.
+            </summary>
+            <param name="olderThanUtc">Delete records older than this date (UTC).</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Number of records deleted.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.DeleteByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete all request history for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Number of records deleted.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.DeleteByOriginGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete all request history for an origin server.
+            </summary>
+            <param name="originGuid">Origin server GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Number of records deleted.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.CountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the total count of request history records.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Total count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.CountByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get the count of request history for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Request count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.CountByOriginGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get the count of request history for an origin server.
+            </summary>
+            <param name="originGuid">Origin server GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Request count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IRequestHistoryMethods.CountFailedAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the count of failed requests.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Failed request count.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Client.Interfaces.IUrlRewriteMethods">
+            <summary>
+            Interface for URL rewrite operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUrlRewriteMethods.CreateAsync(Switchboard.Core.Models.UrlRewrite,System.Threading.CancellationToken)">
+            <summary>
+            Create a URL rewrite rule.
+            </summary>
+            <param name="rewrite">URL rewrite rule to create.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created URL rewrite rule.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUrlRewriteMethods.GetByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Get a URL rewrite rule by ID.
+            </summary>
+            <param name="id">URL rewrite ID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>URL rewrite rule or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUrlRewriteMethods.GetByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get all URL rewrite rules for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of URL rewrite rules.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUrlRewriteMethods.GetAllAsync(System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all URL rewrite rules.
+            </summary>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of URL rewrite rules.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUrlRewriteMethods.UpdateAsync(Switchboard.Core.Models.UrlRewrite,System.Threading.CancellationToken)">
+            <summary>
+            Update a URL rewrite rule.
+            </summary>
+            <param name="rewrite">URL rewrite rule to update.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated URL rewrite rule.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUrlRewriteMethods.DeleteByIdAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Delete a URL rewrite rule by ID.
+            </summary>
+            <param name="id">URL rewrite ID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUrlRewriteMethods.DeleteByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete all URL rewrite rules for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUrlRewriteMethods.CountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the total count of URL rewrite rules.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Total count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUrlRewriteMethods.CountByEndpointGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get the count of URL rewrite rules for an API endpoint.
+            </summary>
+            <param name="endpointGuid">API endpoint GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Rewrite count.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Client.Interfaces.IUserMethods">
+            <summary>
+            Interface for user operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.CreateAsync(Switchboard.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <summary>
+            Create a user.
+            </summary>
+            <param name="user">User to create.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created user.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.GetByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Get a user by GUID.
+            </summary>
+            <param name="guid">User GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>User or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.GetByUsernameAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get a user by username.
+            </summary>
+            <param name="username">Username.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>User or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.GetByEmailAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get a user by email.
+            </summary>
+            <param name="email">Email address.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>User or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.GetAllAsync(System.String,System.Int32,System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>
+            Get all users.
+            </summary>
+            <param name="searchTerm">Optional search term for username, email, or name.</param>
+            <param name="skip">Number of records to skip.</param>
+            <param name="take">Number of records to take.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of users.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.GetActiveUsersAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get all active users.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>List of active users.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.GetAdminUsersAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get all admin users.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>List of admin users.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.UpdateAsync(Switchboard.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <summary>
+            Update a user.
+            </summary>
+            <param name="user">User to update.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated user.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.DeleteByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Delete a user by GUID.
+            </summary>
+            <param name="guid">User GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.DeleteByUsernameAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a user by username.
+            </summary>
+            <param name="username">Username.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.ExistsByGuidAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Check if a user exists by GUID.
+            </summary>
+            <param name="guid">User GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if exists, false otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.ExistsByUsernameAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if a user exists by username.
+            </summary>
+            <param name="username">Username.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if exists, false otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.ExistsByEmailAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if a user exists by email.
+            </summary>
+            <param name="email">Email address.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if exists, false otherwise.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.Interfaces.IUserMethods.CountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the total count of users.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Total count.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Client.SwitchboardClient">
+            <summary>
+            Main client for Switchboard database operations.
+            Provides access to all entity CRUD operations through a unified interface.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.OriginServers">
+            <summary>
+            Origin server operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.ApiEndpoints">
+            <summary>
+            API endpoint operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.EndpointRoutes">
+            <summary>
+            Endpoint route operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.EndpointOriginMappings">
+            <summary>
+            Endpoint-origin mapping operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.UrlRewrites">
+            <summary>
+            URL rewrite operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.BlockedHeaders">
+            <summary>
+            Blocked header operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.Users">
+            <summary>
+            User operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.Credentials">
+            <summary>
+            Credential operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.RequestHistory">
+            <summary>
+            Request history operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.Database">
+            <summary>
+            Gets the underlying database driver.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Client.SwitchboardClient.IsConnected">
+            <summary>
+            Gets whether the client is connected to the database.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.SwitchboardClient.#ctor(System.String)">
+            <summary>
+            Instantiate client with SQLite database.
+            </summary>
+            <param name="databasePath">Path to SQLite database file.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.SwitchboardClient.#ctor(Switchboard.Core.Database.IDatabaseDriver)">
+            <summary>
+            Instantiate client with custom database driver.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.SwitchboardClient.CreateAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Create and initialize a new SwitchboardClient asynchronously.
+            </summary>
+            <param name="databasePath">Path to SQLite database file.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Initialized SwitchboardClient.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.SwitchboardClient.CreateAsync(Switchboard.Core.Database.IDatabaseDriver,System.Threading.CancellationToken)">
+            <summary>
+            Create and initialize a new SwitchboardClient asynchronously with a custom database driver.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Initialized SwitchboardClient.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.SwitchboardClient.ConnectAsync(System.Threading.CancellationToken)">
+            <summary>
+            Connect to the database and initialize the schema.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.SwitchboardClient.DisconnectAsync(System.Threading.CancellationToken)">
+            <summary>
+            Disconnect from the database.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Client.SwitchboardClient.Dispose">
+            <summary>
+            Dispose of the client.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.SwitchboardClient.DisposeAsync">
+            <summary>
+            Async dispose of the client.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Client.SwitchboardClient.Dispose(System.Boolean)">
+            <summary>
+            Dispose pattern implementation.
+            </summary>
+            <param name="disposing">Whether disposing managed resources.</param>
+        </member>
+        <member name="M:Switchboard.Core.Client.SwitchboardClient.DisposeAsyncCore">
+            <summary>
+            Async dispose implementation.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.Constants">
             <summary>
             Constants.
@@ -547,6 +2004,725 @@
             Origin server ID header.
             </summary>
         </member>
+        <member name="T:Switchboard.Core.Database.DatabaseDriverBase">
+            <summary>
+            Base class for database drivers.
+            Provides common functionality for all database implementations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Database.DatabaseDriverBase.IsOpen">
+            <summary>
+            Gets whether the database connection is open.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Database.DatabaseDriverBase.DatabaseType">
+            <summary>
+            Gets the database type.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Database.DatabaseDriverBase.ConnectionString">
+            <summary>
+            Connection string.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Database.DatabaseDriverBase.Disposed">
+            <summary>
+            Disposed flag.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Database.DatabaseDriverBase.Lock">
+            <summary>
+            Lock object for thread-safe operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.OpenAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.CloseAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.InitializeSchemaAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.InsertAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.SelectAllAsync``1(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.SelectAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.SelectByIdAsync``1(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.SelectByIdAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.SelectByGuidAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.UpdateAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.DeleteAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.DeleteAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.ExistsAsync``1(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.ExistsAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.ExistsAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.ExistsAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.CountAsync``1(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.CountAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.Dispose">
+            <summary>
+            Dispose of the database driver.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.DisposeAsync">
+            <summary>
+            Async dispose of the database driver.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.Dispose(System.Boolean)">
+            <summary>
+            Dispose pattern implementation.
+            </summary>
+            <param name="disposing">Whether disposing managed resources.</param>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.DisposeAsyncCore">
+            <summary>
+            Async dispose implementation.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.ThrowIfDisposed">
+            <summary>
+            Throws if the driver has been disposed.
+            </summary>
+            <exception cref="T:System.ObjectDisposedException">Thrown if disposed.</exception>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverBase.ThrowIfNotConnected">
+            <summary>
+            Throws if the connection is not open.
+            </summary>
+            <exception cref="T:System.InvalidOperationException">Thrown if not connected.</exception>
+        </member>
+        <member name="T:Switchboard.Core.Database.DatabaseDriverFactory">
+            <summary>
+            Factory for creating database driver instances.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverFactory.Create(Switchboard.Core.Database.DatabaseTypeEnum,System.String)">
+            <summary>
+            Create a database driver from a connection string.
+            </summary>
+            <param name="type">Database type.</param>
+            <param name="connectionString">Connection string.</param>
+            <returns>Database driver instance.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown if connectionString is null or empty.</exception>
+            <exception cref="T:System.NotSupportedException">Thrown if database type is not supported.</exception>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverFactory.CreateSqlite(System.String)">
+            <summary>
+            Create a SQLite database driver.
+            </summary>
+            <param name="databasePathOrConnectionString">Path to the SQLite database file, or a connection string.</param>
+            <returns>SQLite database driver instance.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverFactory.CreateMysql(System.String,System.Int32,System.String,System.String,System.String,System.String)">
+            <summary>
+            Create a MySQL database driver.
+            </summary>
+            <param name="host">Database host.</param>
+            <param name="port">Database port.</param>
+            <param name="database">Database name.</param>
+            <param name="username">Username.</param>
+            <param name="password">Password.</param>
+            <param name="sslMode">SSL mode (None, Preferred, Required).</param>
+            <returns>MySQL database driver instance.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverFactory.CreatePostgres(System.String,System.Int32,System.String,System.String,System.String,System.String)">
+            <summary>
+            Create a PostgreSQL database driver.
+            </summary>
+            <param name="host">Database host.</param>
+            <param name="port">Database port.</param>
+            <param name="database">Database name.</param>
+            <param name="username">Username.</param>
+            <param name="password">Password.</param>
+            <param name="sslMode">SSL mode (Disable, Prefer, Require).</param>
+            <returns>PostgreSQL database driver instance.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.DatabaseDriverFactory.CreateSqlServer(System.String,System.Int32,System.String,System.String,System.String,System.Boolean)">
+            <summary>
+            Create a SQL Server database driver.
+            </summary>
+            <param name="host">Database host.</param>
+            <param name="port">Database port (default 1433).</param>
+            <param name="database">Database name.</param>
+            <param name="username">Username (null for Windows auth).</param>
+            <param name="password">Password.</param>
+            <param name="trustServerCertificate">Trust server certificate.</param>
+            <returns>SQL Server database driver instance.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Database.DatabaseTypeEnum">
+            <summary>
+            Database type enumeration.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Database.DatabaseTypeEnum.Sqlite">
+            <summary>
+            SQLite database.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Database.DatabaseTypeEnum.Mysql">
+            <summary>
+            MySQL database.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Database.DatabaseTypeEnum.Postgres">
+            <summary>
+            PostgreSQL database.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Database.DatabaseTypeEnum.SqlServer">
+            <summary>
+            SQL Server database.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Database.IDatabaseDriver">
+            <summary>
+            Database driver interface.
+            All database implementations must implement this interface.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Database.IDatabaseDriver.IsOpen">
+            <summary>
+            Gets whether the database connection is open.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Database.IDatabaseDriver.DatabaseType">
+            <summary>
+            Gets the database type.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.OpenAsync(System.Threading.CancellationToken)">
+            <summary>
+            Opens the database connection.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.CloseAsync(System.Threading.CancellationToken)">
+            <summary>
+            Closes the database connection.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.InitializeSchemaAsync(System.Threading.CancellationToken)">
+            <summary>
+            Initializes the database schema.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.InsertAsync``1(``0,System.Threading.CancellationToken)">
+            <summary>
+            Insert a record.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="record">Record to insert.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Inserted record.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.SelectAllAsync``1(System.Threading.CancellationToken)">
+            <summary>
+            Select all records of a type.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="token">Cancellation token.</param>
+            <returns>List of all records.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.SelectAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <summary>
+            Select records matching a predicate.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="predicate">Filter predicate.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of matching records.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.SelectByIdAsync``1(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Select a record by its identifier.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="id">Record identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Record or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.SelectByIdAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Select a record by its integer identifier.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="id">Record identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Record or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.SelectByGuidAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Select a record by its GUID identifier.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="guid">Record GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Record or null if not found.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.UpdateAsync``1(``0,System.Threading.CancellationToken)">
+            <summary>
+            Update a record.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="record">Record to update.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated record.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.DeleteAsync``1(``0,System.Threading.CancellationToken)">
+            <summary>
+            Delete a record.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="record">Record to delete.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.DeleteAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <summary>
+            Delete records matching a predicate.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="predicate">Filter predicate.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Number of records deleted.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.ExistsAsync``1(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if a record exists by its string identifier.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="id">Record identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.ExistsAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Check if a record exists by its integer identifier.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="id">Record identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.ExistsAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Check if a record exists by its GUID.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="guid">Record GUID.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.ExistsAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <summary>
+            Check if a record exists matching a predicate.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="predicate">Filter predicate.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if any record matches.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.CountAsync``1(System.Threading.CancellationToken)">
+            <summary>
+            Count all records of a type.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="token">Cancellation token.</param>
+            <returns>Number of records.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.IDatabaseDriver.CountAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <summary>
+            Count records matching a predicate.
+            </summary>
+            <typeparam name="T">Record type.</typeparam>
+            <param name="predicate">Filter predicate.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Number of matching records.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver">
+            <summary>
+            MySQL database driver implementation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.IsOpen">
+            <inheritdoc />
+        </member>
+        <member name="P:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.DatabaseType">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.#ctor(System.String)">
+            <summary>
+            Instantiate MySQL database driver with connection string.
+            </summary>
+            <param name="connectionString">MySQL connection string.</param>
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.#ctor(System.String,System.Int32,System.String,System.String,System.String,System.String)">
+            <summary>
+            Instantiate MySQL database driver with individual parameters.
+            </summary>
+            <param name="host">Database host.</param>
+            <param name="port">Database port.</param>
+            <param name="database">Database name.</param>
+            <param name="username">Username.</param>
+            <param name="password">Password.</param>
+            <param name="sslMode">SSL mode (None, Preferred, Required).</param>
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.OpenAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.CloseAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.InitializeSchemaAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.InsertAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.SelectAllAsync``1(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.SelectAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.SelectByIdAsync``1(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.SelectByIdAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.SelectByGuidAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.UpdateAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.DeleteAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.DeleteAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.ExistsAsync``1(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.ExistsAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.ExistsAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.ExistsAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.CountAsync``1(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.CountAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.Dispose(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Mysql.MysqlDatabaseDriver.DisposeAsyncCore">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver">
+            <summary>
+            PostgreSQL database driver implementation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.IsOpen">
+            <inheritdoc />
+        </member>
+        <member name="P:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.DatabaseType">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.#ctor(System.String)">
+            <summary>
+            Instantiate PostgreSQL database driver with connection string.
+            </summary>
+            <param name="connectionString">PostgreSQL connection string.</param>
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.#ctor(System.String,System.Int32,System.String,System.String,System.String,System.String)">
+            <summary>
+            Instantiate PostgreSQL database driver with individual parameters.
+            </summary>
+            <param name="host">Database host.</param>
+            <param name="port">Database port.</param>
+            <param name="database">Database name.</param>
+            <param name="username">Username.</param>
+            <param name="password">Password.</param>
+            <param name="sslMode">SSL mode (Disable, Prefer, Require).</param>
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.OpenAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.CloseAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.InitializeSchemaAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.InsertAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.SelectAllAsync``1(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.SelectAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.SelectByIdAsync``1(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.SelectByIdAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.SelectByGuidAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.UpdateAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.DeleteAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.DeleteAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.ExistsAsync``1(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.ExistsAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.ExistsAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.ExistsAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.CountAsync``1(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.CountAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.Dispose(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Postgres.PostgresDatabaseDriver.DisposeAsyncCore">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver">
+            <summary>
+            SQLite database driver implementation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.IsOpen">
+            <inheritdoc />
+        </member>
+        <member name="P:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.DatabaseType">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.#ctor(System.String)">
+            <summary>
+            Instantiate SQLite database driver.
+            </summary>
+            <param name="databasePathOrConnectionString">Path to the SQLite database file, or a connection string.</param>
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.ExtractDataSource(System.String)">
+            <summary>
+            Extracts the Data Source value from a SQLite connection string.
+            </summary>
+            <param name="connectionString">Connection string.</param>
+            <returns>Data Source value.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.OpenAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.CloseAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.InitializeSchemaAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.InsertAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.SelectAllAsync``1(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.SelectAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.SelectByIdAsync``1(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.SelectByIdAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.SelectByGuidAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.UpdateAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.DeleteAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.DeleteAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.ExistsAsync``1(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.ExistsAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.ExistsAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.ExistsAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.CountAsync``1(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.CountAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.Dispose(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.Sqlite.SqliteDatabaseDriver.DisposeAsyncCore">
+            <inheritdoc />
+        </member>
+        <member name="T:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver">
+            <summary>
+            SQL Server database driver implementation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.IsOpen">
+            <inheritdoc />
+        </member>
+        <member name="P:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.DatabaseType">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.#ctor(System.String)">
+            <summary>
+            Instantiate SQL Server database driver with connection string.
+            </summary>
+            <param name="connectionString">SQL Server connection string.</param>
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.#ctor(System.String,System.Int32,System.String,System.String,System.String,System.Boolean)">
+            <summary>
+            Instantiate SQL Server database driver with individual parameters.
+            </summary>
+            <param name="host">Database host.</param>
+            <param name="port">Database port (default 1433).</param>
+            <param name="database">Database name.</param>
+            <param name="username">Username (null for Windows auth).</param>
+            <param name="password">Password.</param>
+            <param name="trustServerCertificate">Trust server certificate.</param>
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.OpenAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.CloseAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.InitializeSchemaAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.InsertAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.SelectAllAsync``1(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.SelectAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.SelectByIdAsync``1(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.SelectByIdAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.SelectByGuidAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.UpdateAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.DeleteAsync``1(``0,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.DeleteAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.ExistsAsync``1(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.ExistsAsync``1(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.ExistsAsync``1(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.ExistsAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.CountAsync``1(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.CountAsync``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.Dispose(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.DisposeAsyncCore">
+            <inheritdoc />
+        </member>
         <member name="T:Switchboard.Core.LoadBalancingMode">
             <summary>
             Load balancing mode.
@@ -591,6 +2767,1075 @@
             <summary>
             Matching API endpoint.
             </summary>
+        </member>
+        <member name="T:Switchboard.Core.Models.ApiEndpointConfig">
+            <summary>
+            API endpoint configuration.
+            This class contains only configuration data that is stored in the database.
+            Runtime state is maintained separately in ApiEndpointState.
+            Routes and origin mappings are stored in separate tables.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.GUID">
+            <summary>
+            Unique GUID for this API endpoint.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.Identifier">
+            <summary>
+            Unique identifier for this API endpoint.
+            Primary key.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.Name">
+            <summary>
+            Display name for this API endpoint.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.TimeoutMs">
+            <summary>
+            Number of milliseconds to wait before considering the request to be timed out.
+            Default is 60 seconds.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.LoadBalancingMode">
+            <summary>
+            Load-balancing mode.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.BlockHttp10">
+            <summary>
+            True to terminate HTTP/1.0 requests.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.MaxRequestBodySize">
+            <summary>
+            Maximum request body size in bytes.
+            Default is 512MB.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.LogRequestFull">
+            <summary>
+            True to enable logging of the full request.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.LogRequestBody">
+            <summary>
+            True to log the request body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.LogResponseBody">
+            <summary>
+            True to log the response body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.IncludeAuthContextHeader">
+            <summary>
+            Boolean indicating whether or not the auth context header should be included for authenticated requests.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.AuthContextHeader">
+            <summary>
+            Header to add when passing authentication context to an origin server.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.UseGlobalBlockedHeaders">
+            <summary>
+            True to use global blocked headers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.CaptureRequestBody">
+            <summary>
+            Enable capture of request body for this endpoint.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.CaptureResponseBody">
+            <summary>
+            Enable capture of response body for this endpoint.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.CaptureRequestHeaders">
+            <summary>
+            Enable capture of request headers for this endpoint.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.CaptureResponseHeaders">
+            <summary>
+            Enable capture of response headers for this endpoint.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.MaxCaptureRequestBodySize">
+            <summary>
+            Maximum request body size to capture in bytes.
+            Default is 64KB.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.MaxCaptureResponseBodySize">
+            <summary>
+            Maximum response body size to capture in bytes.
+            Default is 64KB.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.CreatedUtc">
+            <summary>
+            Timestamp when this record was created.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.ModifiedUtc">
+            <summary>
+            Timestamp when this record was last modified.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.ApiEndpointConfig.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.ApiEndpointConfig.#ctor(System.String)">
+            <summary>
+            Instantiate with identifier.
+            </summary>
+            <param name="identifier">Unique identifier.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.ApiEndpointState">
+            <summary>
+            Runtime state for an API endpoint.
+            This class contains only runtime state data that is NOT stored in the database.
+            Configuration is maintained separately in ApiEndpointConfig.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointState.Identifier">
+            <summary>
+            Endpoint identifier (matches ApiEndpointConfig.Identifier).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointState.LastIndex">
+            <summary>
+            Last-used index for round-robin load balancing.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointState.TotalRequests">
+            <summary>
+            Total requests processed by this endpoint.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointState.SuccessfulRequests">
+            <summary>
+            Total successful requests (2xx status codes).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointState.FailedRequests">
+            <summary>
+            Total failed requests (4xx or 5xx status codes).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointState.Lock">
+            <summary>
+            Lock object for thread-safe operations.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.ApiEndpointState.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.ApiEndpointState.#ctor(System.String)">
+            <summary>
+            Instantiate with identifier.
+            </summary>
+            <param name="identifier">Endpoint identifier.</param>
+        </member>
+        <member name="M:Switchboard.Core.Models.ApiEndpointState.FromConfig(Switchboard.Core.Models.ApiEndpointConfig)">
+            <summary>
+            Create state from configuration.
+            </summary>
+            <param name="config">API endpoint configuration.</param>
+            <returns>New state object.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.ApiEndpointState.GetNextIndex(System.Int32)">
+            <summary>
+            Get and increment the last index atomically for round-robin.
+            </summary>
+            <param name="maxValue">Maximum value (number of origins).</param>
+            <returns>Next index to use.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.ApiEndpointState.IncrementTotalRequests">
+            <summary>
+            Increment total request count atomically.
+            </summary>
+            <returns>New count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.ApiEndpointState.IncrementSuccessfulRequests">
+            <summary>
+            Increment successful request count atomically.
+            </summary>
+            <returns>New count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.ApiEndpointState.IncrementFailedRequests">
+            <summary>
+            Increment failed request count atomically.
+            </summary>
+            <returns>New count.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Models.BlockedHeader">
+            <summary>
+            Globally blocked header.
+            Headers in this table are not forwarded from incoming requests to origin servers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.BlockedHeader.Id">
+            <summary>
+            Auto-incremented primary key.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.BlockedHeader.HeaderName">
+            <summary>
+            Header name (case-insensitive).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.BlockedHeader.CreatedUtc">
+            <summary>
+            Timestamp when this record was created.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.BlockedHeader.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.BlockedHeader.#ctor(System.String)">
+            <summary>
+            Instantiate with header name.
+            </summary>
+            <param name="headerName">Header name.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.Credential">
+            <summary>
+            User credential (bearer token).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.GUID">
+            <summary>
+            Unique identifier for this credential.
+            Primary key.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.UserGUID">
+            <summary>
+            User GUID (foreign key to UserMaster).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.Name">
+            <summary>
+            Display name for this credential (e.g., "API Token 1", "CLI Access").
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.Description">
+            <summary>
+            Description of what this token is used for.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.BearerToken">
+            <summary>
+            Bearer token value.
+            This should only be shown once when created.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.BearerTokenHash">
+            <summary>
+            SHA256 hash of the bearer token.
+            Used for lookup and validation without storing the plain token.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.Active">
+            <summary>
+            True if this credential is active.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.IsReadOnly">
+            <summary>
+            True if this credential is read-only and cannot be modified via API or dashboard.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.CreatedUtc">
+            <summary>
+            Timestamp when this credential was created.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.ExpiresUtc">
+            <summary>
+            Timestamp when this credential expires.
+            Null means no expiration.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.LastUsedUtc">
+            <summary>
+            Timestamp when this credential was last used.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.ModifiedUtc">
+            <summary>
+            Timestamp when this credential was last modified.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.IsExpired">
+            <summary>
+            True if this credential has expired.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.Credential.IsValid">
+            <summary>
+            True if this credential is valid (active and not expired).
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.Credential.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.Credential.#ctor(System.Guid)">
+            <summary>
+            Instantiate with user GUID.
+            Generates a new random bearer token.
+            </summary>
+            <param name="userGuid">User GUID.</param>
+        </member>
+        <member name="M:Switchboard.Core.Models.Credential.#ctor(System.Guid,System.String)">
+            <summary>
+            Instantiate with user GUID and custom token.
+            </summary>
+            <param name="userGuid">User GUID.</param>
+            <param name="bearerToken">Bearer token.</param>
+        </member>
+        <member name="M:Switchboard.Core.Models.Credential.GenerateBearerToken">
+            <summary>
+            Generate a new random bearer token.
+            </summary>
+            <returns>Random bearer token string.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.Credential.ComputeTokenHash(System.String)">
+            <summary>
+            Compute SHA256 hash of a bearer token.
+            </summary>
+            <param name="token">Bearer token.</param>
+            <returns>SHA256 hash as base64 string.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Models.EndpointOriginMapping">
+            <summary>
+            Mapping between an API endpoint and an origin server.
+            Many-to-many relationship table.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.Id">
+            <summary>
+            Auto-incremented primary key.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.EndpointIdentifier">
+            <summary>
+            Endpoint identifier (foreign key).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.OriginIdentifier">
+            <summary>
+            Origin server identifier (foreign key).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.SortOrder">
+            <summary>
+            Sort order for load balancing priority.
+            Lower values are considered first in round-robin.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.CreatedUtc">
+            <summary>
+            Timestamp when this record was created.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.EndpointGUID">
+            <summary>
+            Endpoint GUID (foreign key).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.OriginGUID">
+            <summary>
+            Origin server GUID (foreign key).
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.EndpointOriginMapping.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.EndpointOriginMapping.#ctor(System.String,System.String,System.Int32)">
+            <summary>
+            Instantiate with parameters.
+            </summary>
+            <param name="endpointIdentifier">Endpoint identifier.</param>
+            <param name="originIdentifier">Origin server identifier.</param>
+            <param name="sortOrder">Sort order.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.EndpointRoute">
+            <summary>
+            URL route for an API endpoint.
+            Defines HTTP method and URL pattern that maps to an endpoint.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointRoute.Id">
+            <summary>
+            Auto-incremented primary key.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointRoute.EndpointIdentifier">
+            <summary>
+            Endpoint identifier (foreign key).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointRoute.HttpMethod">
+            <summary>
+            HTTP method (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointRoute.UrlPattern">
+            <summary>
+            URL pattern (parameterized URL, e.g., /api/users/{id}).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointRoute.RequiresAuthentication">
+            <summary>
+            True if this route requires authentication.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointRoute.SortOrder">
+            <summary>
+            Sort order for route matching priority.
+            Lower values are matched first.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointRoute.CreatedUtc">
+            <summary>
+            Timestamp when this record was created.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointRoute.EndpointGUID">
+            <summary>
+            Endpoint GUID (foreign key).
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.EndpointRoute.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.EndpointRoute.#ctor(System.String,System.String,System.String,System.Boolean)">
+            <summary>
+            Instantiate with parameters.
+            </summary>
+            <param name="endpointIdentifier">Endpoint identifier.</param>
+            <param name="httpMethod">HTTP method.</param>
+            <param name="urlPattern">URL pattern.</param>
+            <param name="requiresAuthentication">True if authentication is required.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.OriginServerConfig">
+            <summary>
+            Origin server configuration.
+            This class contains only configuration data that is stored in the database.
+            Runtime state is maintained separately in OriginServerState.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.GUID">
+            <summary>
+            Unique GUID for this origin server.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.Identifier">
+            <summary>
+            Unique identifier for this origin server.
+            Primary key.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.Name">
+            <summary>
+            Display name for this origin server.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.Hostname">
+            <summary>
+            Hostname.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.Port">
+            <summary>
+            TCP port.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.Ssl">
+            <summary>
+            Enable or disable SSL.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.HealthCheckIntervalMs">
+            <summary>
+            Interval at which health is checked against this origin.
+            Default is 5 seconds (5000). Minimum is 1 second (1000).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.HealthCheckMethod">
+            <summary>
+            HTTP method to use when performing a healthcheck.
+            Default is HEAD.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.HealthCheckUrl">
+            <summary>
+            URL to use when performing a healthcheck.
+            Default is /.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.UnhealthyThreshold">
+            <summary>
+            Number of consecutive failed health checks before marking an origin as unhealthy.
+            Default is 2.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.HealthyThreshold">
+            <summary>
+            Number of consecutive successful health checks before marking an origin as healthy.
+            Default is 1.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.MaxParallelRequests">
+            <summary>
+            Maximum number of parallel requests to this backend.
+            Default is 10.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.RateLimitRequestsThreshold">
+            <summary>
+            Threshold at which 429 rate limit responses are sent.
+            Default is 30.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.LogRequest">
+            <summary>
+            True to log requests to this origin.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.LogRequestBody">
+            <summary>
+            True to log the request body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.LogResponse">
+            <summary>
+            True to log responses from this origin.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.LogResponseBody">
+            <summary>
+            True to log the response body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.CaptureRequestBody">
+            <summary>
+            Enable capture of request body for this origin.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.CaptureResponseBody">
+            <summary>
+            Enable capture of response body for this origin.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.CaptureRequestHeaders">
+            <summary>
+            Enable capture of request headers for this origin.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.CaptureResponseHeaders">
+            <summary>
+            Enable capture of response headers for this origin.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.MaxCaptureRequestBodySize">
+            <summary>
+            Maximum request body size to capture in bytes.
+            Default is 64KB.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.MaxCaptureResponseBodySize">
+            <summary>
+            Maximum response body size to capture in bytes.
+            Default is 64KB.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.CreatedUtc">
+            <summary>
+            Timestamp when this record was created.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.ModifiedUtc">
+            <summary>
+            Timestamp when this record was last modified.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.UrlPrefix">
+            <summary>
+            URL prefix for this origin server.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerConfig.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerConfig.#ctor(System.String)">
+            <summary>
+            Instantiate with identifier.
+            </summary>
+            <param name="identifier">Unique identifier.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.OriginServerState">
+            <summary>
+            Runtime state for an origin server.
+            This class contains only runtime state data that is NOT stored in the database.
+            Configuration is maintained separately in OriginServerConfig.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.Identifier">
+            <summary>
+            Origin server identifier (matches OriginServerConfig.Identifier).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.Healthy">
+            <summary>
+            Boolean indicating if the backend is healthy.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.HealthCheckSuccess">
+            <summary>
+            Number of consecutive successful health checks.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.HealthCheckFailure">
+            <summary>
+            Number of consecutive failed health checks.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.ActiveRequests">
+            <summary>
+            Number of currently active requests.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.PendingRequests">
+            <summary>
+            Number of pending requests.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.TotalRequests">
+            <summary>
+            Total requests processed.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.SuccessfulRequests">
+            <summary>
+            Total successful requests (2xx status codes).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.FailedRequests">
+            <summary>
+            Total failed requests (4xx or 5xx status codes).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.Lock">
+            <summary>
+            Lock object for thread-safe operations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerState.Semaphore">
+            <summary>
+            Semaphore for limiting concurrent requests.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerState.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerState.#ctor(System.String,System.Int32)">
+            <summary>
+            Instantiate with identifier and max parallel requests.
+            </summary>
+            <param name="identifier">Origin server identifier.</param>
+            <param name="maxParallelRequests">Maximum parallel requests.</param>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerState.FromConfig(Switchboard.Core.Models.OriginServerConfig)">
+            <summary>
+            Create state from configuration.
+            </summary>
+            <param name="config">Origin server configuration.</param>
+            <returns>New state object.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerState.IncrementActiveRequests">
+            <summary>
+            Increment active request count atomically.
+            </summary>
+            <returns>New count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerState.DecrementActiveRequests">
+            <summary>
+            Decrement active request count atomically.
+            </summary>
+            <returns>New count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerState.IncrementPendingRequests">
+            <summary>
+            Increment pending request count atomically.
+            </summary>
+            <returns>New count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerState.DecrementPendingRequests">
+            <summary>
+            Decrement pending request count atomically.
+            </summary>
+            <returns>New count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerState.IncrementTotalRequests">
+            <summary>
+            Increment total request count atomically.
+            </summary>
+            <returns>New count.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerState.Dispose">
+            <summary>
+            Dispose of resources.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerState.Dispose(System.Boolean)">
+            <summary>
+            Dispose pattern implementation.
+            </summary>
+            <param name="disposing">Whether disposing managed resources.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.RequestHistory">
+            <summary>
+            Request history record.
+            Stores information about processed requests for monitoring and debugging.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.Id">
+            <summary>
+            Auto-increment ID.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.GUID">
+            <summary>
+            Unique GUID for this request.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.RequestId">
+            <summary>
+            Unique identifier for this request.
+            Primary key.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.TimestampUtc">
+            <summary>
+            Timestamp when the request was received.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.HttpMethod">
+            <summary>
+            HTTP method of the request.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.RequestPath">
+            <summary>
+            Request path (without query string).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.QueryString">
+            <summary>
+            Query string (without leading ?).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.EndpointIdentifier">
+            <summary>
+            Matched endpoint identifier.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.EndpointGUID">
+            <summary>
+            Matched endpoint GUID.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.OriginIdentifier">
+            <summary>
+            Selected origin server identifier.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.OriginGUID">
+            <summary>
+            Selected origin server GUID.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.ClientIp">
+            <summary>
+            Client IP address.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.RequestBodySize">
+            <summary>
+            Size of the request body in bytes.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.RequestBody">
+            <summary>
+            Request body content (if captured).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.RequestHeaders">
+            <summary>
+            Request headers as JSON.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.StatusCode">
+            <summary>
+            Response status code.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.ResponseBodySize">
+            <summary>
+            Size of the response body in bytes.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.ResponseBody">
+            <summary>
+            Response body content (if captured).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.ResponseHeaders">
+            <summary>
+            Response headers as JSON.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.DurationMs">
+            <summary>
+            Total request duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.WasAuthenticated">
+            <summary>
+            True if the request was authenticated.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.ErrorMessage">
+            <summary>
+            Error message if the request failed.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.RequestHistory.Success">
+            <summary>
+            True if the request was successful (2xx or 3xx status code).
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.RequestHistory.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.RequestHistory.#ctor(System.Guid)">
+            <summary>
+            Instantiate with request ID.
+            </summary>
+            <param name="requestId">Request ID.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.SchemaVersion">
+            <summary>
+            Schema version tracking record.
+            Used for database migrations.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.SchemaVersion.Version">
+            <summary>
+            Schema version number.
+            Primary key.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.SchemaVersion.AppliedUtc">
+            <summary>
+            Timestamp when this version was applied.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.SchemaVersion.Description">
+            <summary>
+            Description of changes in this version.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.SchemaVersion.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.SchemaVersion.#ctor(System.Int32)">
+            <summary>
+            Instantiate with version number.
+            </summary>
+            <param name="version">Version number.</param>
+        </member>
+        <member name="M:Switchboard.Core.Models.SchemaVersion.#ctor(System.Int32,System.String)">
+            <summary>
+            Instantiate with version number and description.
+            </summary>
+            <param name="version">Version number.</param>
+            <param name="description">Description.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.UrlRewrite">
+            <summary>
+            URL rewrite rule for an API endpoint.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UrlRewrite.Id">
+            <summary>
+            Auto-incremented primary key.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UrlRewrite.EndpointIdentifier">
+            <summary>
+            Endpoint identifier (foreign key).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UrlRewrite.HttpMethod">
+            <summary>
+            HTTP method this rewrite applies to.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UrlRewrite.SourcePattern">
+            <summary>
+            Source URL pattern to match.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UrlRewrite.TargetPattern">
+            <summary>
+            Target URL pattern to rewrite to.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UrlRewrite.SortOrder">
+            <summary>
+            Sort order for rewrite rule priority.
+            Lower values are applied first.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UrlRewrite.CreatedUtc">
+            <summary>
+            Timestamp when this record was created.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UrlRewrite.EndpointGUID">
+            <summary>
+            Endpoint GUID (foreign key).
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.UrlRewrite.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.UrlRewrite.#ctor(System.String,System.String,System.String,System.String)">
+            <summary>
+            Instantiate with parameters.
+            </summary>
+            <param name="endpointIdentifier">Endpoint identifier.</param>
+            <param name="httpMethod">HTTP method.</param>
+            <param name="sourcePattern">Source URL pattern.</param>
+            <param name="targetPattern">Target URL pattern.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.UserMaster">
+            <summary>
+            User master record.
+            Represents a user account for management API access.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.GUID">
+            <summary>
+            Unique identifier for this user.
+            Primary key.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.Username">
+            <summary>
+            Username for login.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.Email">
+            <summary>
+            User's email address.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.FirstName">
+            <summary>
+            User's first name.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.LastName">
+            <summary>
+            User's last name.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.Active">
+            <summary>
+            True if the user is active and can log in.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.IsAdmin">
+            <summary>
+            True if the user has administrator privileges.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.CreatedUtc">
+            <summary>
+            Timestamp when this record was created.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.ModifiedUtc">
+            <summary>
+            Timestamp when this record was last modified.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.LastLoginUtc">
+            <summary>
+            Timestamp of the user's last login.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.UserMaster.DisplayName">
+            <summary>
+            Display name for the user.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.UserMaster.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.UserMaster.#ctor(System.String)">
+            <summary>
+            Instantiate with username.
+            </summary>
+            <param name="username">Username.</param>
+        </member>
+        <member name="M:Switchboard.Core.Models.UserMaster.#ctor(System.String,System.Boolean)">
+            <summary>
+            Instantiate with username and admin status.
+            </summary>
+            <param name="username">Username.</param>
+            <param name="isAdmin">True if administrator.</param>
         </member>
         <member name="T:Switchboard.Core.OpenApiEndpointMetadata">
             <summary>
@@ -883,6 +4128,42 @@
             True to log the response body.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.OriginServer.CaptureRequestBody">
+            <summary>
+            Enable capture of request body for this origin.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.CaptureResponseBody">
+            <summary>
+            Enable capture of response body for this origin.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.CaptureRequestHeaders">
+            <summary>
+            Enable capture of request headers for this origin.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.CaptureResponseHeaders">
+            <summary>
+            Enable capture of response headers for this origin.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.MaxCaptureRequestBodySize">
+            <summary>
+            Maximum request body size to capture in bytes.
+            Default is 64KB.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.MaxCaptureResponseBodySize">
+            <summary>
+            Maximum response body size to capture in bytes.
+            Default is 64KB.
+            </summary>
+        </member>
         <member name="P:Switchboard.Core.OriginServer.UrlPrefix">
             <summary>
             URL.
@@ -891,6 +4172,12 @@
         <member name="T:Switchboard.Core.Services.GatewayService">
             <summary>
             Gateway service.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.GatewayService.RequestHistoryService">
+            <summary>
+            Request history capture service.
+            If set, requests will be captured for history tracking.
             </summary>
         </member>
         <member name="M:Switchboard.Core.Services.GatewayService.#ctor(Switchboard.Core.SwitchboardSettings,Switchboard.Core.SwitchboardCallbacks,SyslogLogging.LoggingModule,SerializationHelper.Serializer)">
@@ -978,6 +4265,37 @@
             Dispose.
             </summary>
         </member>
+        <member name="T:Switchboard.Core.Services.ManagementService">
+            <summary>
+            Management API service.
+            Provides REST endpoints for managing Switchboard configuration.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.ManagementService.#ctor(Switchboard.Core.Settings.ManagementSettings,Switchboard.Core.Client.SwitchboardClient,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate management service.
+            </summary>
+            <param name="settings">Management settings.</param>
+            <param name="client">Switchboard client.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.ManagementService.InitializeRoutes(WatsonWebserver.Webserver)">
+            <summary>
+            Initialize routes on the webserver.
+            </summary>
+            <param name="webserver">Webserver instance.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.ManagementService.Dispose">
+            <summary>
+            Dispose.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.ManagementService.Dispose(System.Boolean)">
+            <summary>
+            Dispose pattern.
+            </summary>
+            <param name="disposing">True if disposing managed resources.</param>
+        </member>
         <member name="T:Switchboard.Core.Services.OpenApiService">
             <summary>
             Service for generating and serving OpenAPI documentation.
@@ -1013,6 +4331,187 @@
             </summary>
             <param name="disposing">Disposing.</param>
         </member>
+        <member name="T:Switchboard.Core.Services.RequestCaptureContext">
+            <summary>
+            Context for capturing a single request.
+            Holds all data collected during the request lifecycle for history capture.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.RequestId">
+            <summary>
+            Request ID.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.StartTimeUtc">
+            <summary>
+            Start time of the request.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.HttpMethod">
+            <summary>
+            HTTP method.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.RequestPath">
+            <summary>
+            Request path.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.QueryString">
+            <summary>
+            Query string.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.EndpointIdentifier">
+            <summary>
+            Matched endpoint identifier.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.EndpointGuid">
+            <summary>
+            Matched endpoint GUID.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.OriginIdentifier">
+            <summary>
+            Selected origin identifier.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.OriginGuid">
+            <summary>
+            Selected origin GUID.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.ClientIp">
+            <summary>
+            Client IP address.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.RequestHeaders">
+            <summary>
+            Request headers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.RequestBody">
+            <summary>
+            Request body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.RequestBodySize">
+            <summary>
+            Request body size in bytes.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.StatusCode">
+            <summary>
+            Response status code.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.ResponseHeaders">
+            <summary>
+            Response headers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.ResponseBody">
+            <summary>
+            Response body.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.ResponseBodySize">
+            <summary>
+            Response body size in bytes.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.DurationMs">
+            <summary>
+            Duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.WasAuthenticated">
+            <summary>
+            Whether the request was authenticated.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.ErrorMessage">
+            <summary>
+            Error message if the request failed.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.Endpoint">
+            <summary>
+            Endpoint for per-endpoint capture settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestCaptureContext.Origin">
+            <summary>
+            Origin server for per-origin capture settings.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.RequestCaptureContext.#ctor(System.Guid)">
+            <summary>
+            Instantiate request capture context.
+            </summary>
+            <param name="requestId">Request ID.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.RequestCaptureContext.Complete">
+            <summary>
+            Complete the capture and record duration.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Services.RequestHistoryCaptureService">
+            <summary>
+            Service for capturing request history.
+            Captures request/response data and manages retention policies.
+            </summary>
+        </member>
+        <member name="E:Switchboard.Core.Services.RequestHistoryCaptureService.RequestCaptured">
+            <summary>
+            Event raised when a request is captured.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.RequestHistoryCaptureService.#ctor(Switchboard.Core.Settings.RequestHistorySettings,Switchboard.Core.Client.SwitchboardClient,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate request history capture service.
+            </summary>
+            <param name="settings">Request history settings.</param>
+            <param name="client">Switchboard client.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.RequestHistoryCaptureService.BeginCapture(System.Guid)">
+            <summary>
+            Create a new request capture context.
+            Call this when a request is received.
+            </summary>
+            <param name="requestId">Request ID.</param>
+            <returns>Request capture context.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.RequestHistoryCaptureService.EndCaptureAsync(Switchboard.Core.Services.RequestCaptureContext,System.Threading.CancellationToken)">
+            <summary>
+            Complete request capture and store the record.
+            Per-endpoint and per-origin capture settings are read from the context.
+            </summary>
+            <param name="context">Request capture context with endpoint and origin configs.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Captured request history record.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.RequestHistoryCaptureService.RunCleanupAsync(System.Threading.CancellationToken)">
+            <summary>
+            Run retention cleanup immediately.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Number of records deleted.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.RequestHistoryCaptureService.Dispose">
+            <summary>
+            Dispose.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.RequestHistoryCaptureService.Dispose(System.Boolean)">
+            <summary>
+            Dispose pattern.
+            </summary>
+            <param name="disposing">True if disposing managed resources.</param>
+        </member>
         <member name="T:Switchboard.Core.Services.SwaggerUiHandler">
             <summary>
             Generates Swagger UI HTML content.
@@ -1047,6 +4546,78 @@
             </summary>
             <param name="settings">Switchboard settings.</param>
             <returns>OpenAPI JSON string.</returns>
+        </member>
+        <member name="T:Switchboard.Core.Settings.DatabaseSettings">
+            <summary>
+            Database configuration settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.DatabaseSettings.Type">
+            <summary>
+            Database type.
+            Default is Sqlite.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.DatabaseSettings.ConnectionString">
+            <summary>
+            Connection string.
+            If provided, this takes precedence over individual connection parameters.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.DatabaseSettings.Filename">
+            <summary>
+            Database file path (for SQLite only).
+            Default is "sb.db".
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.DatabaseSettings.Hostname">
+            <summary>
+            Database hostname (for MySQL, PostgreSQL, SQL Server).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.DatabaseSettings.Port">
+            <summary>
+            Database port.
+            Default values: MySQL=3306, PostgreSQL=5432, SQL Server=1433.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.DatabaseSettings.DatabaseName">
+            <summary>
+            Database name.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.DatabaseSettings.Username">
+            <summary>
+            Database username.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.DatabaseSettings.Password">
+            <summary>
+            Database password.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.DatabaseSettings.Ssl">
+            <summary>
+            Enable SSL/TLS for database connection.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.DatabaseSettings.TrustServerCertificate">
+            <summary>
+            Trust server certificate (for SSL connections).
+            Default is false.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.DatabaseSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.DatabaseSettings.BuildConnectionString">
+            <summary>
+            Build connection string from settings.
+            </summary>
+            <returns>Connection string.</returns>
         </member>
         <member name="T:Switchboard.Core.Settings.LoggingSettings">
             <summary>
@@ -1084,6 +4655,40 @@
             </summary>
         </member>
         <member name="M:Switchboard.Core.Settings.LoggingSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.ManagementSettings">
+            <summary>
+            Settings for the Management API.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.ManagementSettings.Enable">
+            <summary>
+            Enable or disable the Management API.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.ManagementSettings.BasePath">
+            <summary>
+            Base path for the Management API.
+            Default is /_sb/v1.0/.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.ManagementSettings.AdminToken">
+            <summary>
+            Admin bearer token for authentication.
+            Default is "sbadmin".
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.ManagementSettings.RequireAuthentication">
+            <summary>
+            True to require authentication for all management endpoints.
+            Default is true.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.ManagementSettings.#ctor">
             <summary>
             Instantiate.
             </summary>
@@ -1293,6 +4898,83 @@
             Instantiate.
             </summary>
         </member>
+        <member name="T:Switchboard.Core.Settings.RequestHistorySettings">
+            <summary>
+            Settings for request history capture.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.RequestHistorySettings.Enable">
+            <summary>
+            Enable or disable request history capture.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.RequestHistorySettings.CaptureRequestBody">
+            <summary>
+            Capture request body.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.RequestHistorySettings.CaptureResponseBody">
+            <summary>
+            Capture response body.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.RequestHistorySettings.CaptureRequestHeaders">
+            <summary>
+            Capture request headers.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.RequestHistorySettings.CaptureResponseHeaders">
+            <summary>
+            Capture response headers.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.RequestHistorySettings.MaxRequestBodySize">
+            <summary>
+            Maximum request body size to capture in bytes.
+            Bodies larger than this are not captured.
+            Default is 65536 (64KB).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.RequestHistorySettings.MaxResponseBodySize">
+            <summary>
+            Maximum response body size to capture in bytes.
+            Bodies larger than this are not captured.
+            Default is 65536 (64KB).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.RequestHistorySettings.RetentionDays">
+            <summary>
+            Retention period in days.
+            Records older than this are automatically deleted.
+            Default is 7 days.
+            Set to 0 for no retention limit.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.RequestHistorySettings.MaxRecords">
+            <summary>
+            Maximum number of records to retain.
+            When exceeded, oldest records are deleted.
+            Default is 100000.
+            Set to 0 for no limit.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.RequestHistorySettings.CleanupIntervalSeconds">
+            <summary>
+            Cleanup interval in seconds.
+            How often to run the retention cleanup.
+            Default is 3600 (1 hour).
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.RequestHistorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.Settings.SyslogServer">
             <summary>
             Syslog server settings.
@@ -1374,6 +5056,12 @@
             Webserver.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.SwitchboardDaemon.Client">
+            <summary>
+            Switchboard client for database operations.
+            Use this to seed or manage data programmatically.
+            </summary>
+        </member>
         <member name="M:Switchboard.Core.SwitchboardDaemon.#ctor(Switchboard.Core.SwitchboardSettings)">
             <summary>
             Instantiate.
@@ -1425,6 +5113,24 @@
             <summary>
             OpenAPI documentation settings.
             Set Enable to true to generate OpenAPI documentation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardSettings.Database">
+            <summary>
+            Database configuration settings.
+            Enable to store configuration in database instead of JSON file.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardSettings.Management">
+            <summary>
+            Management API settings.
+            Enable to expose REST API for configuration management.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardSettings.RequestHistory">
+            <summary>
+            Request history capture settings.
+            Enable to capture and store request/response history.
             </summary>
         </member>
         <member name="M:Switchboard.Core.SwitchboardSettings.#ctor">

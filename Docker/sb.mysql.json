@@ -1,0 +1,45 @@
+{
+  "Logging": {
+    "LogDirectory": "./logs/",
+    "LogFilename": "switchboard.log",
+    "ConsoleLogging": true,
+    "MinimumSeverity": 1
+  },
+  "Database": {
+    "Enable": true,
+    "Type": "Mysql",
+    "Hostname": "mysql",
+    "Port": 3306,
+    "DatabaseName": "switchboard",
+    "Username": "switchboard",
+    "Password": "switchboard123",
+    "Ssl": false
+  },
+  "Management": {
+    "Enable": true,
+    "BasePath": "/_sb/v1.0/",
+    "AdminToken": "switchboardadmin",
+    "RequireAuthentication": true
+  },
+  "RequestHistory": {
+    "Enable": true,
+    "CaptureRequestBody": false,
+    "CaptureResponseBody": false,
+    "RetentionDays": 7,
+    "MaxRecords": 10000
+  },
+  "Endpoints": [],
+  "Origins": [],
+  "BlockedHeaders": [
+    "connection",
+    "host",
+    "transfer-encoding"
+  ],
+  "Webserver": {
+    "Hostname": "*",
+    "Port": 8000,
+    "Ssl": {
+      "Enable": false
+    }
+  }
+}
