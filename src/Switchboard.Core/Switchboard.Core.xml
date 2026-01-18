@@ -4513,6 +4513,79 @@
             </summary>
             <param name="disposing">True if disposing managed resources.</param>
         </member>
+        <member name="T:Switchboard.Core.Services.ImportResult">
+            <summary>
+            Result of a settings import operation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ImportResult.EndpointsImported">
+            <summary>
+            Number of endpoints imported.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ImportResult.OriginsImported">
+            <summary>
+            Number of origins imported.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ImportResult.RoutesImported">
+            <summary>
+            Number of routes imported.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ImportResult.MappingsImported">
+            <summary>
+            Number of endpoint-origin mappings imported.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ImportResult.RewritesImported">
+            <summary>
+            Number of URL rewrites imported.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ImportResult.BlockedHeadersImported">
+            <summary>
+            Number of blocked headers imported.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ImportResult.EndpointsSkipped">
+            <summary>
+            Number of endpoints skipped (already exist).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ImportResult.OriginsSkipped">
+            <summary>
+            Number of origins skipped (already exist).
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Services.SettingsImportService">
+            <summary>
+            Service to import configuration from SwitchboardSettings (sb.json) into the database.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.SettingsImportService.#ctor(Switchboard.Core.SwitchboardSettings,Switchboard.Core.Client.SwitchboardClient,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate the settings import service.
+            </summary>
+            <param name="settings">Switchboard settings.</param>
+            <param name="client">Switchboard client for database operations.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.SettingsImportService.HasItemsToImportAsync(System.Threading.CancellationToken)">
+            <summary>
+            Check if there are any items in the settings file to potentially import.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>True if there are endpoints or origins in the settings file.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.SettingsImportService.ImportAsync(System.Threading.CancellationToken)">
+            <summary>
+            Import configuration from settings to database.
+            Only imports items that don't already exist in the database.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Import result with counts of imported items.</returns>
+        </member>
         <member name="T:Switchboard.Core.Services.SwaggerUiHandler">
             <summary>
             Generates Swagger UI HTML content.

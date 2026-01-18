@@ -3,7 +3,7 @@
 # Multi-stage build: Node.js build + nginx serve
 #
 # Build from the dashboard directory:
-#   docker build -t jchristn77/switchboard-ui:v4.0.2 .
+#   docker build -t jchristn77/switchboard-ui:v4.0.3 .
 #
 
 #

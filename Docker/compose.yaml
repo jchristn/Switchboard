@@ -8,7 +8,7 @@ services:
 
   switchboard:
     container_name: 'switchboard'
-    image: 'jchristn77/switchboard:v4.0.2'
+    image: 'jchristn77/switchboard:v4.0.3'
     ports:
       - "8000:8000"
     volumes:
@@ -29,7 +29,7 @@ services:
 
   switchboard-ui:
     container_name: 'switchboard-ui'
-    image: 'jchristn77/switchboard-ui:v4.0.2'
+    image: 'jchristn77/switchboard-ui:v4.0.3'
     ports:
       - "3000:80"
     depends_on:

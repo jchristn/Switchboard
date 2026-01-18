@@ -211,10 +211,10 @@ Pull from Docker Hub:
 
 ```bash
 # Switchboard Server
-docker pull jchristn77/switchboard:v4.0.2
+docker pull jchristn77/switchboard:v4.0.3
 
 # Switchboard Dashboard (Web UI)
-docker pull jchristn77/switchboard-ui:v4.0.2
+docker pull jchristn77/switchboard-ui:v4.0.3
 ```
 
 Docker images:
@@ -558,7 +558,7 @@ docker run -d \
   -v $(pwd)/sb.json:/app/sb.json \
   -v $(pwd)/logs:/app/logs \
   -v $(pwd)/data:/app/data \
-  jchristn77/switchboard:v4.0.2
+  jchristn77/switchboard:v4.0.3
 ```
 
 #### Building the Dashboard Image

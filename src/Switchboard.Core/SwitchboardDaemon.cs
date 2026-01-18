@@ -208,6 +208,34 @@
             _Logging.Info(_Header + "default administrator account created successfully");
         }
 
+        private void ImportSettingsToDatabase()
+        {
+            SettingsImportService importService = new SettingsImportService(
+                _Settings,
+                _Client,
+                _Logging);
+
+            if (!importService.HasItemsToImportAsync().GetAwaiter().GetResult())
+                return;
+
+            _Logging.Info(_Header + "checking settings file for configuration to import...");
+
+            ImportResult result = importService.ImportAsync().GetAwaiter().GetResult();
+
+            if (result.EndpointsImported > 0 || result.OriginsImported > 0)
+            {
+                _Logging.Info(_Header + "import complete: " + result.EndpointsImported + " endpoints, "
+                    + result.OriginsImported + " origins, " + result.RoutesImported + " routes, "
+                    + result.MappingsImported + " mappings, " + result.RewritesImported + " rewrites imported");
+            }
+
+            if (result.EndpointsSkipped > 0 || result.OriginsSkipped > 0)
+            {
+                _Logging.Debug(_Header + "skipped existing: " + result.EndpointsSkipped + " endpoints, "
+                    + result.OriginsSkipped + " origins");
+            }
+        }
+
         private void InitializeGlobals()
         {
             #region Logging
@@ -267,6 +295,9 @@
 
             // Check if this is first startup (no users exist)
             CreateDefaultAdminIfNeeded();
+
+            // Import configuration from settings file to database
+            ImportSettingsToDatabase();
 
             #endregion
 
