@@ -198,12 +198,12 @@
   },
   "OpenApi": {
     "Enable": true,
-    "Title": "Switchboard API",
-    "Description": "API Gateway managed by Switchboard",
-    "Version": "1.0.0",
+    "EnableSwaggerUi": true,
     "DocumentPath": "/openapi.json",
     "SwaggerUiPath": "/swagger",
-    "SwaggerUiEnable": true
+    "Title": "Switchboard API",
+    "Description": "API Gateway managed by Switchboard",
+    "Version": "4.0.2"
   },
   "Webserver": {
     "Hostname": "localhost",

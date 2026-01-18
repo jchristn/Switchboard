@@ -6,7 +6,6 @@
     "MinimumSeverity": 1
   },
   "Database": {
-    "Enable": true,
     "Type": "Sqlite",
     "Filename": "./data/switchboard.db"
   },
@@ -20,15 +19,38 @@
     "Enable": true,
     "CaptureRequestBody": false,
     "CaptureResponseBody": false,
+    "CaptureRequestHeaders": true,
+    "CaptureResponseHeaders": true,
+    "MaxRequestBodySize": 65536,
+    "MaxResponseBodySize": 65536,
     "RetentionDays": 7,
-    "MaxRecords": 10000
+    "MaxRecords": 100000,
+    "CleanupIntervalSeconds": 3600
+  },
+  "OpenApi": {
+    "Enable": false,
+    "EnableSwaggerUi": true,
+    "DocumentPath": "/openapi.json",
+    "SwaggerUiPath": "/swagger",
+    "Title": "Switchboard API",
+    "Version": "4.0.2"
   },
   "Endpoints": [],
   "Origins": [],
   "BlockedHeaders": [
+    "alt-svc",
     "connection",
+    "date",
     "host",
-    "transfer-encoding"
+    "keep-alive",
+    "proxy-authorization",
+    "proxy-connection",
+    "set-cookie",
+    "transfer-encoding",
+    "upgrade",
+    "via",
+    "x-forwarded-for",
+    "x-request-id"
   ],
   "Webserver": {
     "Hostname": "*",
