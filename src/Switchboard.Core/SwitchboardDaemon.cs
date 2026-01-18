@@ -8,6 +8,8 @@
     using System.Threading;
     using System.Threading.Tasks;
     using SerializationHelper;
+    using Switchboard.Core.Client;
+    using Switchboard.Core.Database;
     using Switchboard.Core.Services;
     using SyslogLogging;
     using WatsonWebserver;
@@ -44,6 +46,15 @@
             get => _Webserver;
         }
 
+        /// <summary>
+        /// Switchboard client for database operations.
+        /// Use this to seed or manage data programmatically.
+        /// </summary>
+        public SwitchboardClient Client
+        {
+            get => _Client;
+        }
+
         #endregion
 
         #region Private-Members
@@ -58,6 +69,11 @@
         private GatewayService _GatewayService = null;
         private OpenApiService _OpenApiService = null;
         private Webserver _Webserver = null;
+
+        private IDatabaseDriver _DatabaseDriver = null;
+        private SwitchboardClient _Client = null;
+        private ManagementService _ManagementService = null;
+        private RequestHistoryCaptureService _RequestHistoryService = null;
 
         private bool _IsDisposed = false;
 
@@ -92,6 +108,12 @@
             {
                 if (disposing)
                 {
+                    _ManagementService?.Dispose();
+                    _ManagementService = null;
+
+                    _RequestHistoryService?.Dispose();
+                    _RequestHistoryService = null;
+
                     _OpenApiService?.Dispose();
                     _OpenApiService = null;
 
@@ -100,6 +122,11 @@
 
                     _Webserver?.Dispose();
                     _Webserver = null;
+
+                    _DatabaseDriver?.Dispose();
+                    _DatabaseDriver = null;
+
+                    _Client = null;
 
                     _Logging?.Dispose();
                     _Logging = null;
@@ -124,6 +151,62 @@
         #endregion
 
         #region Private-Methods
+
+        private void CreateDefaultAdminIfNeeded()
+        {
+            int userCount = _Client.Users.CountAsync().GetAwaiter().GetResult();
+            if (userCount > 0)
+                return;
+
+            _Logging.Info(_Header + "first startup detected, creating default administrator account...");
+
+            // Create default admin user
+            Models.UserMaster adminUser = new Models.UserMaster("admin", isAdmin: true)
+            {
+                Email = "admin@switchboard",
+                FirstName = "Default",
+                LastName = "Administrator",
+                Active = true
+            };
+
+            adminUser = _Client.Users.CreateAsync(adminUser).GetAwaiter().GetResult();
+
+            // Create credential for admin user with known token
+            string bearerToken = "sbadmin";
+            Models.Credential adminCredential = new Models.Credential
+            {
+                UserGUID = adminUser.GUID,
+                Name = "Default Admin Credential",
+                Description = "Auto-generated credential created on first startup",
+                BearerToken = bearerToken,
+                Active = true,
+                IsReadOnly = true
+            };
+
+            adminCredential = _Client.Credentials.CreateAsync(adminCredential).GetAwaiter().GetResult();
+
+            Console.WriteLine();
+            Console.WriteLine("================================================================================");
+            Console.WriteLine("  DEFAULT ADMINISTRATOR ACCOUNT CREATED");
+            Console.WriteLine("================================================================================");
+            Console.WriteLine();
+            Console.WriteLine("  A default administrator account has been created for first-time setup.");
+            Console.WriteLine();
+            Console.WriteLine("  Username:     " + adminUser.Username);
+            Console.WriteLine("  User GUID:    " + adminUser.GUID);
+            Console.WriteLine("  Bearer Token: " + bearerToken);
+            Console.WriteLine();
+            Console.WriteLine("  IMPORTANT: This bearer token will NOT be displayed again.");
+            Console.WriteLine("  Please copy and store it securely now.");
+            Console.WriteLine();
+            Console.WriteLine("  This credential is marked as read-only and cannot be modified or");
+            Console.WriteLine("  deleted through the API or dashboard.");
+            Console.WriteLine();
+            Console.WriteLine("================================================================================");
+            Console.WriteLine();
+
+            _Logging.Info(_Header + "default administrator account created successfully");
+        }
 
         private void InitializeGlobals()
         {
@@ -170,6 +253,23 @@
 
             #endregion
 
+            #region Database
+
+            _Logging.Info(_Header + "initializing database (" + _Settings.Database.Type + ")");
+
+            _DatabaseDriver = DatabaseDriverFactory.Create(_Settings.Database.Type, _Settings.Database.BuildConnectionString());
+            _DatabaseDriver.OpenAsync().GetAwaiter().GetResult();
+            _DatabaseDriver.InitializeSchemaAsync().GetAwaiter().GetResult();
+
+            _Client = SwitchboardClient.CreateAsync(_DatabaseDriver).GetAwaiter().GetResult();
+
+            _Logging.Info(_Header + "database initialized successfully");
+
+            // Check if this is first startup (no users exist)
+            CreateDefaultAdminIfNeeded();
+
+            #endregion
+
             #region Services
 
             _HealthCheckService = new HealthCheckService(
@@ -187,6 +287,31 @@
                 _Settings,
                 _Logging);
 
+            if (_Client != null)
+            {
+                if (_Settings.RequestHistory.Enable)
+                {
+                    _RequestHistoryService = new RequestHistoryCaptureService(
+                        _Settings.RequestHistory,
+                        _Client,
+                        _Logging);
+
+                    _GatewayService.RequestHistoryService = _RequestHistoryService;
+
+                    _Logging.Info(_Header + "request history capture enabled");
+                }
+
+                if (_Settings.Management.Enable)
+                {
+                    _ManagementService = new ManagementService(
+                        _Settings.Management,
+                        _Client,
+                        _Logging);
+
+                    _Logging.Info(_Header + "management API enabled at " + _Settings.Management.BasePath);
+                }
+            }
+
             #endregion
 
             #region Webserver
@@ -199,6 +324,14 @@
 
             _GatewayService.InitializeRoutes(_Webserver);
             _OpenApiService.InitializeRoutes(_Webserver);
+
+            if (_ManagementService != null)
+            {
+                string serverUrl = (_Settings.Webserver.Ssl.Enable ? "https://" : "http://")
+                    + _Settings.Webserver.Hostname
+                    + ":" + _Settings.Webserver.Port;
+                _ManagementService.InitializeRoutes(_Webserver, serverUrl);
+            }
 
             _Webserver.Start();
 

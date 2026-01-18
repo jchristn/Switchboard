@@ -13,6 +13,7 @@
     using RestWrapper;
     using SerializationHelper;
     using Switchboard.Core;
+    using Switchboard.Core.Models;
     using Switchboard.Core.Settings;
     using WatsonWebserver;
     using WatsonWebserver.Core;
@@ -47,6 +48,17 @@
 
         public static async Task Main(string[] args)
         {
+            bool serverOnlyMode = args.Any(a =>
+                a.Equals("--run", StringComparison.OrdinalIgnoreCase) ||
+                a.Equals("--server-only", StringComparison.OrdinalIgnoreCase) ||
+                a.Equals("-r", StringComparison.OrdinalIgnoreCase));
+
+            if (serverOnlyMode)
+            {
+                await RunServerOnly();
+                return;
+            }
+
             _OverallStopwatch.Start();
 
             Console.WriteLine("");
@@ -1508,6 +1520,212 @@
                     }
                 }
             }
+        }
+
+        private static async Task RunServerOnly()
+        {
+            Console.WriteLine("");
+            Console.WriteLine("======================================");
+            Console.WriteLine("     SWITCHBOARD SERVER MODE");
+            Console.WriteLine("======================================");
+            Console.WriteLine("");
+            Console.WriteLine("Configuration:");
+            Console.WriteLine("- Switchboard       : http://localhost:8000");
+            Console.WriteLine("- Origin Servers    : 4 (ports 8001-8004)");
+            Console.WriteLine("- Load Balancing    : Round Robin");
+            Console.WriteLine("- OpenAPI Document  : /openapi.json");
+            Console.WriteLine("- Swagger UI        : /swagger");
+            Console.WriteLine("");
+
+            InitializeSettings();
+            InitializeOriginServers();
+
+            using (SwitchboardDaemon switchboard = new SwitchboardDaemon(_Settings))
+            {
+                switchboard.Callbacks.AuthenticateAndAuthorize = AuthenticateAndAuthorizeRequest;
+
+                // Seed the database with test configuration
+                await SeedDatabaseAsync(switchboard);
+
+                using (_Server1 = new Webserver(_Server1Settings, Server1Route))
+                {
+                    using (_Server2 = new Webserver(_Server2Settings, Server2Route))
+                    {
+                        using (_Server3 = new Webserver(_Server3Settings, Server3Route))
+                        {
+                            using (_Server4 = new Webserver(_Server4Settings, Server4Route))
+                            {
+                                _Server1.Start();
+                                _Server2.Start();
+                                _Server3.Start();
+                                _Server4.Start();
+
+                                Console.WriteLine("Starting servers...");
+
+                                while (_Settings.Origins.Any(o => !o.Healthy))
+                                {
+                                    Console.WriteLine("Waiting for origin servers to become healthy...");
+                                    await Task.Delay(1000);
+                                }
+
+                                Console.WriteLine("");
+                                Console.WriteLine("All servers are running and healthy.");
+                                Console.WriteLine("");
+                                Console.WriteLine("Endpoints:");
+                                Console.WriteLine("  GET  /unauthenticated     - No auth required");
+                                Console.WriteLine("  GET  /authenticated       - Auth required (use Authorization header)");
+                                Console.WriteLine("  GET  /api/users           - List users");
+                                Console.WriteLine("  POST /api/users           - Create user");
+                                Console.WriteLine("  GET  /events              - Server-Sent Events stream");
+                                Console.WriteLine("  POST /api/upload          - Chunked upload");
+                                Console.WriteLine("");
+                                Console.WriteLine("Management API:");
+                                Console.WriteLine("  Base path: /_sb/v1.0/");
+                                Console.WriteLine("  Token: sbadmin");
+                                Console.WriteLine("");
+                                Console.WriteLine("Press ENTER to stop the servers...");
+
+                                Console.ReadLine();
+
+                                Console.WriteLine("Shutting down...");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static async Task SeedDatabaseAsync(SwitchboardDaemon switchboard)
+        {
+            Console.WriteLine("Seeding database with test configuration...");
+
+            if (switchboard.Client == null)
+            {
+                Console.WriteLine("  Warning: No database client available, skipping seed.");
+                return;
+            }
+
+            // Create origin servers
+            string[] originIdentifiers = { "server1", "server2", "server3", "server4" };
+            Guid[] originGuids = new Guid[4];
+
+            for (int i = 0; i < 4; i++)
+            {
+                OriginServerConfig origin = new OriginServerConfig
+                {
+                    Identifier = originIdentifiers[i],
+                    Name = $"Server {i + 1}",
+                    Hostname = "localhost",
+                    Port = 8001 + i,
+                    Ssl = false,
+                    HealthCheckIntervalMs = 1000,
+                    HealthCheckMethod = "HEAD",
+                    HealthCheckUrl = "/",
+                    UnhealthyThreshold = 2,
+                    HealthyThreshold = 2,
+                    MaxParallelRequests = 2,
+                    RateLimitRequestsThreshold = 3
+                };
+
+                OriginServerConfig created = await switchboard.Client.OriginServers.CreateAsync(origin);
+                originGuids[i] = created.GUID;
+                Console.WriteLine($"  Created origin: {origin.Identifier} ({origin.Hostname}:{origin.Port})");
+            }
+
+            // Create API endpoint
+            ApiEndpointConfig endpoint = new ApiEndpointConfig
+            {
+                Identifier = "test-endpoint",
+                Name = "Test Endpoint",
+                TimeoutMs = 30000,
+                LoadBalancingMode = "RoundRobin",
+                BlockHttp10 = false,
+                MaxRequestBodySize = 10485760,
+                IncludeAuthContextHeader = true,
+                AuthContextHeader = Constants.AuthContextHeader
+            };
+
+            ApiEndpointConfig createdEndpoint = await switchboard.Client.ApiEndpoints.CreateAsync(endpoint);
+            Console.WriteLine($"  Created endpoint: {endpoint.Identifier}");
+
+            // Create endpoint routes (unauthenticated)
+            string[][] unauthenticatedRoutes = new string[][]
+            {
+                new[] { "GET", "/unauthenticated" },
+                new[] { "GET", "/api/users" },
+                new[] { "GET", "/api/data" },
+                new[] { "GET", "/events" },
+                new[] { "GET", "/api/v2/users/{userId}" },
+                new[] { "GET", "/api/headers-test" },
+                new[] { "GET", "/api/query-test" },
+                new[] { "GET", "/api/timeout-test" },
+                new[] { "GET", "/api/large-body-test" },
+                new[] { "POST", "/api/users" },
+                new[] { "POST", "/api/data" },
+                new[] { "POST", "/api/upload" },
+                new[] { "POST", "/api/large-body-test" },
+                new[] { "PUT", "/api/users/{id}" },
+                new[] { "PUT", "/api/data/{id}" },
+                new[] { "DELETE", "/api/users/{id}" },
+                new[] { "DELETE", "/api/data/{id}" },
+                new[] { "PATCH", "/api/users/{id}" },
+                new[] { "OPTIONS", "/api/cors-test" }
+            };
+
+            foreach (string[] route in unauthenticatedRoutes)
+            {
+                EndpointRoute endpointRoute = new EndpointRoute
+                {
+                    EndpointIdentifier = endpoint.Identifier,
+                    EndpointGUID = createdEndpoint.GUID,
+                    HttpMethod = route[0],
+                    UrlPattern = route[1],
+                    RequiresAuthentication = false
+                };
+                await switchboard.Client.EndpointRoutes.CreateAsync(endpointRoute);
+            }
+            Console.WriteLine($"  Created {unauthenticatedRoutes.Length} unauthenticated routes");
+
+            // Create endpoint routes (authenticated)
+            string[][] authenticatedRoutes = new string[][]
+            {
+                new[] { "GET", "/authenticated" },
+                new[] { "GET", "/api/secure" },
+                new[] { "POST", "/api/secure" },
+                new[] { "PUT", "/api/secure/{id}" },
+                new[] { "DELETE", "/api/secure/{id}" }
+            };
+
+            foreach (string[] route in authenticatedRoutes)
+            {
+                EndpointRoute endpointRoute = new EndpointRoute
+                {
+                    EndpointIdentifier = endpoint.Identifier,
+                    EndpointGUID = createdEndpoint.GUID,
+                    HttpMethod = route[0],
+                    UrlPattern = route[1],
+                    RequiresAuthentication = true
+                };
+                await switchboard.Client.EndpointRoutes.CreateAsync(endpointRoute);
+            }
+            Console.WriteLine($"  Created {authenticatedRoutes.Length} authenticated routes");
+
+            // Create endpoint-origin mappings
+            for (int i = 0; i < 4; i++)
+            {
+                EndpointOriginMapping mapping = new EndpointOriginMapping
+                {
+                    EndpointIdentifier = endpoint.Identifier,
+                    EndpointGUID = createdEndpoint.GUID,
+                    OriginIdentifier = originIdentifiers[i],
+                    OriginGUID = originGuids[i],
+                    SortOrder = i
+                };
+                await switchboard.Client.EndpointOriginMappings.CreateAsync(mapping);
+            }
+            Console.WriteLine($"  Created 4 endpoint-origin mappings");
+
+            Console.WriteLine("Database seeding complete.");
         }
 
         private static async Task<AuthContext> AuthenticateAndAuthorizeRequest(HttpContextBase ctx)

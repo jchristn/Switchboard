@@ -1,0 +1,60 @@
+#
+# Switchboard with MySQL database
+# Usage: docker compose -f compose.mysql.yaml up -d
+#
+
+services:
+
+  mysql:
+    container_name: 'switchboard-mysql'
+    image: 'mysql:8.0'
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: switchboard
+      MYSQL_USER: switchboard
+      MYSQL_PASSWORD: switchboard123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  switchboard:
+    container_name: 'switchboard'
+    image: 'jchristn77/switchboard:v4.0.2'
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sb.mysql.json:/app/sb.json
+      - ./logs/:/app/logs/
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: curl --fail http://localhost:8000/_sb/v1.0/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 2
+    restart: unless-stopped
+
+  switchboard-ui:
+    container_name: 'switchboard-ui'
+    image: 'jchristn77/switchboard-ui:v4.0.2'
+    ports:
+      - "3000:80"
+    depends_on:
+      - switchboard
+    healthcheck:
+      test: curl --fail http://localhost/ || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 2
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

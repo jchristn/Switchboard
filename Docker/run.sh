@@ -23,5 +23,5 @@ docker run \
   -e "TERM=xterm-256color" \
   -v ./sb.json:/app/sb.json \
   -v ./logs/:/app/logs/ \
-  jchristn/switchboard:$IMG_TAG
+  jchristn77/switchboard:$IMG_TAG
 

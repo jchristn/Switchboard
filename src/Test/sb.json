@@ -176,6 +176,35 @@
     "x-forwarded-for",
     "x-request-id"
   ],
+  "Database": {
+    "Enable": true,
+    "Type": "Sqlite",
+    "Filename": "sb.db"
+  },
+  "Management": {
+    "Enable": true,
+    "BasePath": "/_sb/v1.0/",
+    "AdminToken": "sbadmin"
+  },
+  "RequestHistory": {
+    "Enable": true,
+    "CaptureRequestBody": true,
+    "CaptureResponseBody": true,
+    "MaxRequestBodySize": 65536,
+    "MaxResponseBodySize": 65536,
+    "RetentionDays": 7,
+    "MaxRecords": 10000,
+    "CleanupIntervalSeconds": 3600
+  },
+  "OpenApi": {
+    "Enable": true,
+    "Title": "Switchboard API",
+    "Description": "API Gateway managed by Switchboard",
+    "Version": "1.0.0",
+    "DocumentPath": "/openapi.json",
+    "SwaggerUiPath": "/swagger",
+    "SwaggerUiEnable": true
+  },
   "Webserver": {
     "Hostname": "localhost",
     "Port": 8000,

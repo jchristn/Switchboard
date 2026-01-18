@@ -29,6 +29,12 @@
 
         #region Public-Members
 
+        /// <summary>
+        /// Request history capture service.
+        /// If set, requests will be captured for history tracking.
+        /// </summary>
+        public RequestHistoryCaptureService RequestHistoryService { get; set; } = null;
+
         #endregion
 
         #region Private-Members
@@ -198,6 +204,45 @@
         {
             Guid requestGuid = Guid.NewGuid();
             AuthContext authContext = null;
+            RequestCaptureContext captureContext = null;
+
+            // Start request capture if enabled
+            if (RequestHistoryService != null)
+            {
+                captureContext = RequestHistoryService.BeginCapture(requestGuid);
+                captureContext.HttpMethod = ctx.Request.Method.ToString();
+                captureContext.RequestPath = ctx.Request.Url.RawWithoutQuery;
+                captureContext.QueryString = ctx.Request.Query?.Querystring;
+                captureContext.ClientIp = ctx.Request.Source.IpAddress;
+                captureContext.RequestBodySize = ctx.Request.ContentLength;
+
+                // Capture request headers
+                if (ctx.Request.Headers != null && ctx.Request.Headers.Count > 0)
+                {
+                    captureContext.RequestHeaders = new Dictionary<string, string>();
+                    foreach (string key in ctx.Request.Headers.AllKeys)
+                    {
+                        if (!String.IsNullOrEmpty(key))
+                        {
+                            captureContext.RequestHeaders[key] = ctx.Request.Headers.Get(key) ?? "";
+                        }
+                    }
+                }
+
+                // Capture request body (will be filtered by size limits in EndCaptureAsync)
+                if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
+                {
+                    try
+                    {
+                        captureContext.RequestBody = Encoding.UTF8.GetString(ctx.Request.DataAsBytes);
+                    }
+                    catch
+                    {
+                        // Binary data that can't be converted to UTF-8
+                        captureContext.RequestBody = "[binary data: " + ctx.Request.DataAsBytes.Length + " bytes]";
+                    }
+                }
+            }
 
             try
             {
@@ -208,7 +253,19 @@
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadRequest, null, "No matching API endpoint found"), true));
+
+                    if (captureContext != null)
+                    {
+                        captureContext.StatusCode = 400;
+                        captureContext.ErrorMessage = "No matching API endpoint found";
+                    }
                     return;
+                }
+
+                if (captureContext != null)
+                {
+                    captureContext.EndpointIdentifier = match.Endpoint.Identifier;
+                    captureContext.Endpoint = match.Endpoint;
                 }
 
                 if (match.Endpoint.LogRequestFull)
@@ -220,6 +277,12 @@
                     ctx.Response.StatusCode = 505;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.UnsupportedHttpVersion), true));
+
+                    if (captureContext != null)
+                    {
+                        captureContext.StatusCode = 505;
+                        captureContext.ErrorMessage = "HTTP/1.0 not supported";
+                    }
                     return;
                 }
 
@@ -231,15 +294,21 @@
                         ctx.Response.StatusCode = 401;
                         ctx.Response.ContentType = Constants.JsonContentType;
                         await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed), true));
+
+                        if (captureContext != null)
+                        {
+                            captureContext.StatusCode = 401;
+                            captureContext.ErrorMessage = "Authentication required but no callback set";
+                        }
                         return;
                     }
 
                     authContext = await _Callbacks.AuthenticateAndAuthorize(ctx);
-                    if (authContext.Authentication.Result != AuthenticationResultEnum.Success 
+                    if (authContext.Authentication.Result != AuthenticationResultEnum.Success
                         && authContext.Authorization.Result != AuthorizationResultEnum.Success)
                     {
                         _Logging.Warn(
-                            _Header + 
+                            _Header +
                             "auth failure reported for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery + " " +
                             "(" + authContext.Authentication.Result + "/" + authContext.Authorization.Result + ")" +
                             ": " + authContext.FailureMessage);
@@ -247,7 +316,18 @@
                         ctx.Response.StatusCode = 401;
                         ctx.Response.ContentType = Constants.JsonContentType;
                         await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed, null, authContext.FailureMessage), true));
+
+                        if (captureContext != null)
+                        {
+                            captureContext.StatusCode = 401;
+                            captureContext.ErrorMessage = authContext.FailureMessage;
+                        }
                         return;
+                    }
+
+                    if (captureContext != null)
+                    {
+                        captureContext.WasAuthenticated = true;
                     }
                 }
 
@@ -258,7 +338,19 @@
                     ctx.Response.StatusCode = 502;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway, null, "No origin servers are available to service your request"), true));
+
+                    if (captureContext != null)
+                    {
+                        captureContext.StatusCode = 502;
+                        captureContext.ErrorMessage = "No origin servers available";
+                    }
                     return;
+                }
+
+                if (captureContext != null)
+                {
+                    captureContext.OriginIdentifier = origin.Identifier;
+                    captureContext.Origin = origin;
                 }
 
                 if (match.Endpoint.MaxRequestBodySize > 0 && ctx.Request.ContentLength > match.Endpoint.MaxRequestBodySize)
@@ -267,6 +359,12 @@
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.TooLarge, null, "Your request was too large"), true));
+
+                    if (captureContext != null)
+                    {
+                        captureContext.StatusCode = 400;
+                        captureContext.ErrorMessage = "Request too large";
+                    }
                     return;
                 }
 
@@ -280,6 +378,12 @@
                     ctx.Response.StatusCode = 429;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.SlowDown)));
+
+                    if (captureContext != null)
+                    {
+                        captureContext.StatusCode = 429;
+                        captureContext.ErrorMessage = "Rate limit exceeded";
+                    }
                     return;
                 }
 
@@ -290,7 +394,8 @@
                     ctx,
                     match,
                     origin,
-                    authContext);
+                    authContext,
+                    captureContext);
 
                 if (!responseReceived)
                 {
@@ -298,7 +403,19 @@
                     ctx.Response.StatusCode = 502;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway), true));
+
+                    if (captureContext != null)
+                    {
+                        captureContext.StatusCode = 502;
+                        captureContext.ErrorMessage = "No response from origin";
+                    }
                     return;
+                }
+
+                if (captureContext != null)
+                {
+                    captureContext.StatusCode = ctx.Response.StatusCode;
+                    captureContext.ResponseBodySize = ctx.Response.ContentLength;
                 }
             }
             catch (Exception e)
@@ -306,6 +423,20 @@
                 _Logging.Warn(_Header + "exception:" + Environment.NewLine + e.ToString());
                 ctx.Response.StatusCode = 500;
                 await ctx.Response.Send();
+
+                if (captureContext != null)
+                {
+                    captureContext.StatusCode = 500;
+                    captureContext.ErrorMessage = e.Message;
+                }
+            }
+            finally
+            {
+                // End request capture
+                if (captureContext != null && RequestHistoryService != null)
+                {
+                    _ = RequestHistoryService.EndCaptureAsync(captureContext, ctx.Token);
+                }
             }
         }
 
@@ -509,7 +640,8 @@
             HttpContextBase ctx,
             MatchingApiEndpoint endpoint,
             OriginServer origin,
-            AuthContext authResult)
+            AuthContext authResult,
+            RequestCaptureContext captureContext = null)
         {
             _Logging.Debug(_Header + "proxying request to " + origin.Identifier + " for endpoint " + endpoint.Endpoint.Identifier + " for request " + requestGuid.ToString());
 
@@ -610,7 +742,7 @@
                             bool finalChunk = false;
                             while (!finalChunk)
                             {
-                                var chunk = await ctx.Request.ReadChunk();
+                                Chunk chunk = await ctx.Request.ReadChunk();
                                 finalChunk = (chunk.Length == 0); // Zero-length chunk indicates end
 
                                 _Logging.Debug(_Header + "forwarding chunk: " + chunk.Length + " bytes, final: " + finalChunk);
@@ -685,6 +817,51 @@
                                             _Header
                                             + "response body (0 bytes) status " + resp.StatusCode);
                                     }
+                                }
+                            }
+
+                            #endregion
+
+                            #region Capture-Response-Data
+
+                            if (captureContext != null)
+                            {
+                                // Capture response headers
+                                if (resp.Headers != null && resp.Headers.Count > 0)
+                                {
+                                    captureContext.ResponseHeaders = new Dictionary<string, string>();
+                                    foreach (string key in resp.Headers.AllKeys)
+                                    {
+                                        if (!String.IsNullOrEmpty(key))
+                                        {
+                                            captureContext.ResponseHeaders[key] = resp.Headers.Get(key) ?? "";
+                                        }
+                                    }
+                                }
+
+                                // Capture response body (only for non-streaming responses)
+                                if (!resp.ServerSentEvents && !resp.ChunkedTransferEncoding)
+                                {
+                                    captureContext.ResponseBodySize = resp.DataAsBytes?.Length ?? 0;
+                                    if (resp.DataAsBytes != null && resp.DataAsBytes.Length > 0)
+                                    {
+                                        try
+                                        {
+                                            captureContext.ResponseBody = Encoding.UTF8.GetString(resp.DataAsBytes);
+                                        }
+                                        catch
+                                        {
+                                            // Binary data that can't be converted to UTF-8
+                                            captureContext.ResponseBody = "[binary data: " + resp.DataAsBytes.Length + " bytes]";
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    // For streaming responses, we can't capture the full body
+                                    captureContext.ResponseBody = resp.ServerSentEvents
+                                        ? "[server-sent events stream]"
+                                        : "[chunked transfer stream]";
                                 }
                             }
 

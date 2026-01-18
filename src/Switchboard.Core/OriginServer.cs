@@ -183,6 +183,58 @@
         public bool LogResponseBody { get; set; } = false;
 
         /// <summary>
+        /// Enable capture of request body for this origin.
+        /// Default is false.
+        /// </summary>
+        public bool CaptureRequestBody { get; set; } = false;
+
+        /// <summary>
+        /// Enable capture of response body for this origin.
+        /// Default is false.
+        /// </summary>
+        public bool CaptureResponseBody { get; set; } = false;
+
+        /// <summary>
+        /// Enable capture of request headers for this origin.
+        /// Default is true.
+        /// </summary>
+        public bool CaptureRequestHeaders { get; set; } = true;
+
+        /// <summary>
+        /// Enable capture of response headers for this origin.
+        /// Default is true.
+        /// </summary>
+        public bool CaptureResponseHeaders { get; set; } = true;
+
+        /// <summary>
+        /// Maximum request body size to capture in bytes.
+        /// Default is 64KB.
+        /// </summary>
+        public int MaxCaptureRequestBodySize
+        {
+            get => _MaxCaptureRequestBodySize;
+            set
+            {
+                if (value < 0) throw new ArgumentOutOfRangeException(nameof(MaxCaptureRequestBodySize));
+                _MaxCaptureRequestBodySize = value;
+            }
+        }
+
+        /// <summary>
+        /// Maximum response body size to capture in bytes.
+        /// Default is 64KB.
+        /// </summary>
+        public int MaxCaptureResponseBodySize
+        {
+            get => _MaxCaptureResponseBodySize;
+            set
+            {
+                if (value < 0) throw new ArgumentOutOfRangeException(nameof(MaxCaptureResponseBodySize));
+                _MaxCaptureResponseBodySize = value;
+            }
+        }
+
+        /// <summary>
         /// URL.
         /// </summary>
         [JsonIgnore]
@@ -230,6 +282,8 @@
         private int _RateLimitRequestsThreshold = 30;
         private string _HealthCheckUrl = "/";
         private SemaphoreSlim _Semaphore = null;
+        private int _MaxCaptureRequestBodySize = 65536;
+        private int _MaxCaptureResponseBodySize = 65536;
 
         #endregion
 

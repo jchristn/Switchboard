@@ -5,7 +5,7 @@
 
   **A lightweight reverse proxy and API gateway for .NET**
 
-  [![NuGet Version](https://img.shields.io/nuget/v/SwitchboardApplicationProxy.svg?style=flat)](https://www.nuget.org/packages/SwitchboardApplicationProxy/) [![NuGet Downloads](https://img.shields.io/nuget/dt/SwitchboardApplicationProxy.svg)](https://www.nuget.org/packages/SwitchboardApplicationProxy/) [![Docker Hub](https://img.shields.io/badge/docker-jchristn%2Fswitchboard-blue.svg)](https://hub.docker.com/repository/docker/jchristn/switchboard/general) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![NuGet Version](https://img.shields.io/nuget/v/SwitchboardApplicationProxy.svg?style=flat)](https://www.nuget.org/packages/SwitchboardApplicationProxy/) [![NuGet Downloads](https://img.shields.io/nuget/dt/SwitchboardApplicationProxy.svg)](https://www.nuget.org/packages/SwitchboardApplicationProxy/) [![Docker Hub](https://img.shields.io/badge/docker-jchristn77%2Fswitchboard-blue.svg)](https://hub.docker.com/repository/docker/jchristn77/switchboard/general) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 </div>
 
 ---
@@ -39,6 +39,11 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
   - [Server-Sent Events](#server-sent-events-sse)
   - [Chunked Transfer Encoding](#chunked-transfer-encoding)
   - [OpenAPI Documentation](#openapi-documentation)
+- [Management API & Dashboard](#management-api--dashboard)
+  - [Enabling the Management API](#enabling-the-management-api)
+  - [Running the Dashboard](#running-the-dashboard)
+  - [Database Configuration](#database-configuration)
+  - [Request History](#request-history)
 - [Support](#support)
 - [Contributing](#contributing)
 - [License](#license)
@@ -58,7 +63,7 @@ Switchboard is a **lightweight application proxy** that combines reverse proxy a
 - **URL rewriting** for API versioning
 - **Protocol support** for HTTP, chunked transfer encoding, and server-sent events (SSE)
 
-Built on **.NET 8.0**, Switchboard is designed for developers who need a simple, embeddable gateway without the complexity of heavyweight solutions.
+Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers who need a simple, embeddable gateway without the complexity of heavyweight solutions.
 
 ---
 
@@ -73,9 +78,13 @@ Built on **.NET 8.0**, Switchboard is designed for developers who need a simple,
 ✅ **Smart Routing** – Parameterized URLs with wildcard matching (`/users/{id}`)
 ✅ **Header Management** – Automatic proxy headers and configurable blocking
 ✅ **Logging** – Built-in syslog integration with multiple severity levels
-✅ **Docker Ready** – Available on [Docker Hub](https://hub.docker.com/repository/docker/jchristn/switchboard/general)
+✅ **Docker Ready** – Server and Dashboard available on Docker Hub ([switchboard](https://hub.docker.com/r/jchristn77/switchboard), [switchboard-ui](https://hub.docker.com/r/jchristn77/switchboard-ui))
 ✅ **Embeddable** – Integrate directly into your application via NuGet
 ✅ **OpenAPI Support** – Auto-generate OpenAPI 3.0.3 docs with Swagger UI
+✅ **Management API** – RESTful API for runtime configuration changes
+✅ **Web Dashboard** – React-based UI for configuration and monitoring
+✅ **Database Backend** – Store config in SQLite, MySQL, PostgreSQL, or SQL Server
+✅ **Request History** – Track and analyze requests with searchable history
 
 ---
 
@@ -142,8 +151,6 @@ Switchboard is **intentionally lightweight** and does not include:
 - ❌ OAuth/JWT validation (implement via callbacks)
 - ❌ GraphQL federation
 - ❌ Service mesh features (circuit breakers, retries, distributed tracing)
-- ❌ GUI/dashboard (use monitoring tools like Grafana)
-
 For these features, consider integrating Switchboard with specialized tools or using enterprise API gateways.
 
 ---
@@ -161,7 +168,7 @@ dotnet add package SwitchboardApplicationProxy
 ```bash
 # Clone the repository
 git clone https://github.com/jchristn/switchboard.git
-cd Switchboard-3.0/src
+cd switchboard/src
 
 # Build the solution
 dotnet build
@@ -174,8 +181,8 @@ dotnet Switchboard.Server.dll
 ### 3. Run with Docker
 
 ```bash
-docker pull jchristn/switchboard
-docker run -p 8000:8000 -v $(pwd)/sb.json:/app/sb.json jchristn/switchboard
+docker pull jchristn77/switchboard
+docker run -p 8000:8000 -v $(pwd)/sb.json:/app/sb.json jchristn77/switchboard
 ```
 
 Visit `http://localhost:8000/` to confirm Switchboard is running!
@@ -198,21 +205,27 @@ Or via Package Manager Console:
 Install-Package SwitchboardApplicationProxy
 ```
 
-### Docker Image
+### Docker Images
 
 Pull from Docker Hub:
 
 ```bash
-docker pull jchristn/switchboard
+# Switchboard Server
+docker pull jchristn77/switchboard:v4.0.2
+
+# Switchboard Dashboard (Web UI)
+docker pull jchristn77/switchboard-ui:v4.0.2
 ```
 
-Docker image: **[jchristn/switchboard](https://hub.docker.com/repository/docker/jchristn/switchboard/general)**
+Docker images:
+- **Server**: [jchristn77/switchboard](https://hub.docker.com/r/jchristn77/switchboard)
+- **Dashboard**: [jchristn77/switchboard-ui](https://hub.docker.com/r/jchristn77/switchboard-ui)
 
 ### Build from Source
 
 ```bash
 git clone https://github.com/jchristn/switchboard.git
-cd Switchboard-3.0/src
+cd switchboard/src
 dotnet build
 ```
 
@@ -311,8 +324,8 @@ using (SwitchboardDaemon sb = new SwitchboardDaemon(settings))
         {
             return new AuthContext
             {
-                Authentication = new AuthenticationContext { Result = AuthenticationResultEnum.Unauthenticated },
-                Authorization = new AuthorizationContext { Result = AuthorizationResultEnum.Unauthorized }
+                Authentication = new AuthenticationContext { Result = AuthenticationResultEnum.NotFound },
+                Authorization = new AuthorizationContext { Result = AuthorizationResultEnum.Denied }
             };
         }
 
@@ -323,13 +336,13 @@ using (SwitchboardDaemon sb = new SwitchboardDaemon(settings))
         {
             Authentication = new AuthenticationContext
             {
-                Result = isValid ? AuthenticationResultEnum.Success : AuthenticationResultEnum.Unauthenticated,
-                Metadata = new Dictionary<string, string> { { "UserId", "12345" } }
+                Result = isValid ? AuthenticationResultEnum.Success : AuthenticationResultEnum.InvalidCredentials,
+                Metadata = new { UserId = "12345" }
             },
             Authorization = new AuthorizationContext
             {
-                Result = isValid ? AuthorizationResultEnum.Success : AuthorizationResultEnum.Unauthorized,
-                Metadata = new Dictionary<string, string> { { "Role", "Admin" } }
+                Result = isValid ? AuthorizationResultEnum.Success : AuthorizationResultEnum.Denied,
+                Metadata = new { Role = "Admin" }
             }
         };
     };
@@ -419,7 +432,7 @@ dotnet Switchboard.Server.dll
  (_-< V  V / |  _/ _| ' \| '_ \/ _ \/ _` | '_/ _` |
  /__/\_/\_/|_|\__\__|_||_|_.__/\___/\__,_|_| \__,_|
 
-Switchboard Server v3.0.x
+Switchboard Server v4.0.x
 
 Loading from settings file ./sb.json
 [INFO] Webserver started on http://localhost:8000
@@ -434,49 +447,130 @@ curl http://localhost:8000/health
 
 ### Docker
 
-#### Using Docker Compose:
+Switchboard provides Docker images and compose files for running both the server and web dashboard.
 
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  switchboard:
-    image: jchristn/switchboard:latest
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./sb.json:/app/sb.json
-    restart: unless-stopped
-```
+#### Quick Start with Docker Compose
 
-Start with Docker Compose:
+The easiest way to run Switchboard with the dashboard is using the provided compose files:
 
 ```bash
-# Use provided scripts
 cd Docker
-./compose-up.sh  # Linux/Mac
-compose-up.bat   # Windows
 
-# Or manually
-docker-compose up -d
+# Start with SQLite (default, recommended for getting started)
+docker compose -f compose.sqlite.yaml up -d
+
+# Or use the default compose file
+docker compose up -d
 ```
 
-Stop with Docker Compose:
+This starts:
+- **Switchboard Server** at `http://localhost:8000`
+- **Web Dashboard** at `http://localhost:3000`
+
+Stop the services:
 
 ```bash
+docker compose down
+# or
 ./compose-down.sh  # Linux/Mac
 compose-down.bat   # Windows
 ```
 
-#### Manual Docker Run:
+#### Database-Specific Compose Files
+
+Choose a compose file based on your preferred database:
+
+| File | Database | Usage |
+|------|----------|-------|
+| `compose.sqlite.yaml` | SQLite | `docker compose -f compose.sqlite.yaml up -d` |
+| `compose.mysql.yaml` | MySQL 8.0 | `docker compose -f compose.mysql.yaml up -d` |
+| `compose.postgres.yaml` | PostgreSQL | `docker compose -f compose.postgres.yaml up -d` |
+| `compose.sqlserver.yaml` | SQL Server | `docker compose -f compose.sqlserver.yaml up -d` |
+
+Each compose file includes:
+- The database service (except SQLite which uses a file)
+- Switchboard server with appropriate configuration
+- Web dashboard
+
+#### Configuration
+
+Each compose file uses a corresponding configuration file:
+
+| Compose File | Config File | Description |
+|--------------|-------------|-------------|
+| `compose.yaml` | `sb.json` | Basic config without database |
+| `compose.sqlite.yaml` | `sb.sqlite.json` | SQLite with Management API enabled |
+| `compose.mysql.yaml` | `sb.mysql.json` | MySQL connection settings |
+| `compose.postgres.yaml` | `sb.postgres.json` | PostgreSQL connection settings |
+| `compose.sqlserver.yaml` | `sb.sqlserver.json` | SQL Server connection settings |
+
+Example `sb.sqlite.json` (recommended starting point):
+
+```json
+{
+  "Database": {
+    "Enable": true,
+    "Type": "Sqlite",
+    "Filename": "./data/switchboard.db"
+  },
+  "Management": {
+    "Enable": true,
+    "BasePath": "/_sb/v1.0/",
+    "AdminToken": "switchboardadmin",
+    "RequireAuthentication": true
+  },
+  "RequestHistory": {
+    "Enable": true,
+    "RetentionDays": 7
+  },
+  "Webserver": {
+    "Hostname": "*",
+    "Port": 8000
+  }
+}
+```
+
+#### Connecting to the Dashboard
+
+1. Open `http://localhost:3000` in your browser
+2. Enter the server URL: `http://localhost:8000`
+3. Enter the admin token from your config (default: `switchboardadmin`)
+4. Click **Connect**
+
+#### Volume Mounts
+
+The compose files mount these directories:
+
+| Mount | Purpose |
+|-------|---------|
+| `./sb.*.json:/app/sb.json` | Server configuration |
+| `./logs/:/app/logs/` | Log files |
+| `./data/:/app/data/` | SQLite database and data files |
+
+#### Manual Docker Run (Server Only)
+
+To run just the Switchboard server without compose:
 
 ```bash
 docker run -d \
   --name switchboard \
   -p 8000:8000 \
   -v $(pwd)/sb.json:/app/sb.json \
-  jchristn/switchboard:latest
+  -v $(pwd)/logs:/app/logs \
+  -v $(pwd)/data:/app/data \
+  jchristn77/switchboard:v4.0.2
 ```
+
+#### Building the Dashboard Image
+
+The dashboard is built from source using a multi-stage Dockerfile:
+
+```bash
+# From the repository root
+docker build -t jchristn77/switchboard-ui -f Docker/dashboard/Dockerfile .
+```
+
+See [docs/DASHBOARD-GUIDE.md](docs/DASHBOARD-GUIDE.md) for dashboard usage details.
 
 ---
 
@@ -551,20 +645,12 @@ sb.Callbacks.AuthenticateAndAuthorize = async (ctx) =>
         Authentication = new AuthenticationContext
         {
             Result = AuthenticationResultEnum.Success,
-            Metadata = new Dictionary<string, string>
-            {
-                { "UserId", "12345" },
-                { "Email", "user@example.com" }
-            }
+            Metadata = new { UserId = "12345", Email = "user@example.com" }
         },
         Authorization = new AuthorizationContext
         {
             Result = AuthorizationResultEnum.Success,
-            Metadata = new Dictionary<string, string>
-            {
-                { "Role", "Admin" },
-                { "Permissions", "read,write,delete" }
-            }
+            Metadata = new { Role = "Admin", Permissions = "read,write,delete" }
         }
     };
 };
@@ -718,6 +804,149 @@ Once enabled, access your API documentation at:
 
 - **OpenAPI JSON:** `http://localhost:8000/openapi.json`
 - **Swagger UI:** `http://localhost:8000/swagger`
+
+---
+
+## Management API & Dashboard
+
+Switchboard 4.0 introduces a comprehensive management system with a RESTful API and web-based dashboard for runtime configuration and monitoring.
+
+### Enabling the Management API
+
+Add the following to your `sb.json`:
+
+```json
+{
+  "Database": {
+    "Enable": true,
+    "Type": "Sqlite",
+    "Filename": "switchboard.db"
+  },
+  "Management": {
+    "Enable": true,
+    "BasePath": "/_sb/v1.0/",
+    "AdminToken": "your-secure-token-here",
+    "RequireAuthentication": true
+  }
+}
+```
+
+Once enabled, access the API at `http://localhost:8000/_sb/v1.0/`:
+
+```bash
+# List origin servers
+curl -H "Authorization: Bearer your-token" http://localhost:8000/_sb/v1.0/origins
+
+# Create a new origin
+curl -X POST -H "Authorization: Bearer your-token" \
+  -H "Content-Type: application/json" \
+  -d '{"identifier":"api-1","hostname":"api.example.com","port":443,"ssl":true}' \
+  http://localhost:8000/_sb/v1.0/origins
+
+# Check system health
+curl -H "Authorization: Bearer your-token" http://localhost:8000/_sb/v1.0/health
+```
+
+See [docs/REST_API.md](docs/REST_API.md) for complete API reference.
+
+### Running the Dashboard
+
+The web dashboard provides a user-friendly interface for managing Switchboard.
+
+#### Development Mode
+
+```bash
+cd dashboard
+npm install
+npm run dev
+```
+
+Access the dashboard at `http://localhost:5173`
+
+#### Production Build
+
+```bash
+cd dashboard
+npm run build
+```
+
+The built files are in `dashboard/dist/` and can be served by any static file server.
+
+#### Docker
+
+```bash
+cd Docker
+docker compose up -d
+```
+
+The dashboard will be available at `http://localhost:3000`
+
+See [docs/DASHBOARD-GUIDE.md](docs/DASHBOARD-GUIDE.md) for the complete user guide.
+
+### Database Configuration
+
+Switchboard supports multiple database backends:
+
+| Database | Configuration |
+|----------|---------------|
+| **SQLite** (default) | `"Type": "Sqlite", "Filename": "switchboard.db"` |
+| **MySQL** | `"Type": "Mysql", "Hostname": "...", "Port": 3306, ...` |
+| **PostgreSQL** | `"Type": "Postgres", "Hostname": "...", "Port": 5432, ...` |
+| **SQL Server** | `"Type": "SqlServer", "Hostname": "...", "Port": 1433, ...` |
+
+Example MySQL configuration:
+
+```json
+{
+  "Database": {
+    "Enable": true,
+    "Type": "Mysql",
+    "Hostname": "localhost",
+    "Port": 3306,
+    "DatabaseName": "switchboard",
+    "Username": "switchboard",
+    "Password": "your-password",
+    "Ssl": false
+  }
+}
+```
+
+See [docs/MIGRATION.md](docs/MIGRATION.md) for migration guide and detailed configuration options.
+
+### Request History
+
+Track and analyze requests passing through Switchboard:
+
+```json
+{
+  "RequestHistory": {
+    "Enable": true,
+    "CaptureRequestBody": false,
+    "CaptureResponseBody": false,
+    "MaxRequestBodySize": 65536,
+    "MaxResponseBodySize": 65536,
+    "RetentionDays": 7,
+    "MaxRecords": 10000,
+    "CleanupIntervalSeconds": 3600
+  }
+}
+```
+
+Query history via API:
+
+```bash
+# Get recent requests
+curl -H "Authorization: Bearer your-token" \
+  http://localhost:8000/_sb/v1.0/history/recent?count=100
+
+# Get failed requests
+curl -H "Authorization: Bearer your-token" \
+  http://localhost:8000/_sb/v1.0/history/failed
+
+# Get statistics
+curl -H "Authorization: Bearer your-token" \
+  http://localhost:8000/_sb/v1.0/history/stats
+```
 
 ---
 

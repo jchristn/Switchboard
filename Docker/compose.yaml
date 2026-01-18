@@ -1,19 +1,42 @@
 services:
 
   #
-  # Switchboard
-  # See https://hub.docker.com/r/jchristn/switchboard
+  # Switchboard Server
+  # See https://hub.docker.com/r/jchristn77/switchboard
   # and https://github.com/jchristn/Switchboard
   #
 
-  litegraph:
+  switchboard:
     container_name: 'switchboard'
-    image: 'jchristn/switchboard:v2.0.0'
-    network_mode: 'host'
-    stdin_open: true
-    tty: true
+    image: 'jchristn77/switchboard:v4.0.2'
+    ports:
+      - "8000:8000"
     volumes:
       - ./sb.json:/app/sb.json
       - ./logs/:/app/logs/
+      - ./data/:/app/data/
     healthcheck:
-      test: curl --fail http://localhost:8000
+      test: curl --fail http://localhost:8000/_sb/v1.0/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 2
+    restart: unless-stopped
+
+  #
+  # Switchboard Dashboard
+  # See https://hub.docker.com/r/jchristn77/switchboard-ui
+  #
+
+  switchboard-ui:
+    container_name: 'switchboard-ui'
+    image: 'jchristn77/switchboard-ui:v4.0.2'
+    ports:
+      - "3000:80"
+    depends_on:
+      - switchboard
+    healthcheck:
+      test: curl --fail http://localhost/ || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 2
+    restart: unless-stopped
