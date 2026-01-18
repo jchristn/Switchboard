@@ -1,0 +1,24 @@
+2026-01-18 03:17:20 42c5d10292ab Info [SwitchboardDaemon] initializing database (Sqlite)
+2026-01-18 03:17:21 42c5d10292ab Info [SwitchboardDaemon] database initialized successfully
+2026-01-18 03:17:21 42c5d10292ab Info [SwitchboardDaemon] first startup detected, creating default administrator account...
+2026-01-18 03:17:21 42c5d10292ab Info [SwitchboardDaemon] default administrator account created successfully
+2026-01-18 03:17:21 42c5d10292ab Info [RequestHistoryCaptureService] starting cleanup task with interval 3600 seconds
+2026-01-18 03:17:21 42c5d10292ab Info [SwitchboardDaemon] request history capture enabled
+2026-01-18 03:17:21 42c5d10292ab Info [SwitchboardDaemon] management API enabled at /_sb/v1.0/
+2026-01-18 03:17:21 42c5d10292ab Info [ManagementService] initializing routes at /_sb/v1.0
+2026-01-18 03:17:21 42c5d10292ab Info [ManagementService] routes initialized successfully
+2026-01-18 03:17:21 42c5d10292ab Info [ManagementService] Management API OpenAPI document available at /openapi.json
+2026-01-18 03:17:21 42c5d10292ab Info [ManagementService] Management API Swagger UI available at /swagger
+2026-01-18 03:17:21 42c5d10292ab Info [SwitchboardDaemon] webserver started on http://*:8000
+2026-01-18 03:17:21 42c5d10292ab Info [SwitchboardDaemon] Switchboard Server started using process ID 1
+2026-01-18 03:18:38 493270acb38b Info [SwitchboardDaemon] initializing database (Sqlite)
+2026-01-18 03:18:38 493270acb38b Info [SwitchboardDaemon] database initialized successfully
+2026-01-18 03:18:38 493270acb38b Info [RequestHistoryCaptureService] starting cleanup task with interval 3600 seconds
+2026-01-18 03:18:38 493270acb38b Info [SwitchboardDaemon] request history capture enabled
+2026-01-18 03:18:38 493270acb38b Info [SwitchboardDaemon] management API enabled at /_sb/v1.0/
+2026-01-18 03:18:38 493270acb38b Info [ManagementService] initializing routes at /_sb/v1.0
+2026-01-18 03:18:38 493270acb38b Info [ManagementService] routes initialized successfully
+2026-01-18 03:18:38 493270acb38b Info [ManagementService] Management API OpenAPI document available at /openapi.json
+2026-01-18 03:18:38 493270acb38b Info [ManagementService] Management API Swagger UI available at /swagger
+2026-01-18 03:18:38 493270acb38b Info [SwitchboardDaemon] webserver started on http://*:8000
+2026-01-18 03:18:38 493270acb38b Info [SwitchboardDaemon] Switchboard Server started using process ID 1

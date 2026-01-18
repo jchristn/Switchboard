@@ -38,7 +38,7 @@ RUN dotnet publish "Switchboard.Server.csproj" -c Release -f net10.0 -o /app/pub
 # Runtime stage
 #
 #
-FROM viewio/view-server-base:v1.4.0 AS final
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS final
 
 # Install network troubleshooting tools and useful utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
