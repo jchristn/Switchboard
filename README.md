@@ -69,15 +69,15 @@ Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers 
 
 ## Key Features
 
-✅ **Flexible Load Balancing** – Round-robin or random distribution across healthy origin servers
-✅ **Automatic Health Checks** – Continuous monitoring with configurable thresholds
-✅ **Rate Limiting** – Per-origin concurrent request limits and throttling
-✅ **Custom Authentication** – Callback-based auth/authz with context forwarding
-✅ **URL Rewriting** – Transform URLs before proxying to backends
-✅ **Protocol Support** – HTTP/1.1, chunked transfer encoding, server-sent events
-✅ **Smart Routing** – Parameterized URLs with wildcard matching (`/users/{id}`)
-✅ **Header Management** – Automatic proxy headers and configurable blocking
-✅ **Logging** – Built-in syslog integration with multiple severity levels
+- ✅ **Flexible Load Balancing** – Round-robin or random distribution across healthy origin servers
+- ✅ **Automatic Health Checks** – Continuous monitoring with configurable thresholds
+- ✅ **Rate Limiting** – Per-origin concurrent request limits and throttling
+- ✅ **Custom Authentication** – Callback-based auth/authz with context forwarding
+- ✅ **URL Rewriting** – Transform URLs before proxying to backends
+- ✅ **Protocol Support** – HTTP/1.1, chunked transfer encoding, server-sent events
+- ✅ **Smart Routing** – Parameterized URLs with wildcard matching (`/users/{id}`)
+- ✅ **Header Management** – Automatic proxy headers and configurable blocking
+- ✅ **Logging** – Built-in syslog integration with multiple severity levels
 ✅ **Docker Ready** – Server and Dashboard available on Docker Hub ([switchboard](https://hub.docker.com/r/jchristn77/switchboard), [switchboard-ui](https://hub.docker.com/r/jchristn77/switchboard-ui))
 ✅ **Embeddable** – Integrate directly into your application via NuGet
 ✅ **OpenAPI Support** – Auto-generate OpenAPI 3.0.3 docs with Swagger UI
