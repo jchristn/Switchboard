@@ -327,7 +327,10 @@
 
             if (_ManagementService != null)
             {
-                _ManagementService.InitializeRoutes(_Webserver);
+                string serverUrl = (_Settings.Webserver.Ssl.Enable ? "https://" : "http://")
+                    + _Settings.Webserver.Hostname
+                    + ":" + _Settings.Webserver.Port;
+                _ManagementService.InitializeRoutes(_Webserver, serverUrl);
             }
 
             _Webserver.Start();

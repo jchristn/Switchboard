@@ -80,6 +80,46 @@ namespace Switchboard.Core.Services
             return JsonSerializer.Serialize(document, SerializerOptions);
         }
 
+        /// <summary>
+        /// Generate an OpenAPI JSON document for the Switchboard Management API.
+        /// </summary>
+        /// <param name="basePath">Base path for the management API (e.g., "/_sb/v1.0").</param>
+        /// <param name="serverUrl">Server URL (e.g., "http://localhost:8000").</param>
+        /// <returns>OpenAPI JSON string.</returns>
+        public string GenerateManagementApiDocument(string basePath = "/_sb/v1.0", string serverUrl = "")
+        {
+            if (String.IsNullOrEmpty(basePath)) basePath = "/_sb/v1.0";
+            basePath = basePath.TrimEnd('/');
+
+            Dictionary<string, object> document = new Dictionary<string, object>
+            {
+                ["openapi"] = "3.0.3",
+                ["info"] = new Dictionary<string, object>
+                {
+                    ["title"] = "Switchboard Management API",
+                    ["version"] = "4.0.2",
+                    ["description"] = "REST API for managing Switchboard configuration including origin servers, API endpoints, routes, mappings, URL rewrites, blocked headers, users, credentials, and request history."
+                },
+                ["paths"] = BuildManagementPaths(basePath),
+                ["tags"] = BuildManagementTags(),
+                ["components"] = BuildManagementComponents()
+            };
+
+            if (!String.IsNullOrEmpty(serverUrl))
+            {
+                document["servers"] = new List<object>
+                {
+                    new Dictionary<string, object>
+                    {
+                        ["url"] = serverUrl,
+                        ["description"] = "Switchboard Server"
+                    }
+                };
+            }
+
+            return JsonSerializer.Serialize(document, SerializerOptions);
+        }
+
         #endregion
 
         #region Private-Methods
@@ -546,6 +586,773 @@ namespace Switchboard.Core.Services
                     parameters.Add(match.Groups[1].Value);
             }
             return parameters;
+        }
+
+        private List<object> BuildManagementTags()
+        {
+            return new List<object>
+            {
+                new Dictionary<string, object> { ["name"] = "Origins", ["description"] = "Origin server management" },
+                new Dictionary<string, object> { ["name"] = "Endpoints", ["description"] = "API endpoint management" },
+                new Dictionary<string, object> { ["name"] = "Routes", ["description"] = "Endpoint route management" },
+                new Dictionary<string, object> { ["name"] = "Mappings", ["description"] = "Endpoint-origin mapping management" },
+                new Dictionary<string, object> { ["name"] = "Rewrites", ["description"] = "URL rewrite rule management" },
+                new Dictionary<string, object> { ["name"] = "Headers", ["description"] = "Blocked header management" },
+                new Dictionary<string, object> { ["name"] = "Users", ["description"] = "User management" },
+                new Dictionary<string, object> { ["name"] = "Credentials", ["description"] = "Credential and bearer token management" },
+                new Dictionary<string, object> { ["name"] = "History", ["description"] = "Request history and statistics" },
+                new Dictionary<string, object> { ["name"] = "System", ["description"] = "Health check and system information" }
+            };
+        }
+
+        private Dictionary<string, object> BuildManagementComponents()
+        {
+            return new Dictionary<string, object>
+            {
+                ["securitySchemes"] = new Dictionary<string, object>
+                {
+                    ["bearerAuth"] = new Dictionary<string, object>
+                    {
+                        ["type"] = "http",
+                        ["scheme"] = "bearer",
+                        ["bearerFormat"] = "token",
+                        ["description"] = "Bearer token authentication. Use the AdminToken from configuration or a user's bearer token from credentials."
+                    }
+                },
+                ["schemas"] = BuildManagementSchemas()
+            };
+        }
+
+        private Dictionary<string, object> BuildManagementSchemas()
+        {
+            return new Dictionary<string, object>
+            {
+                ["OriginServerConfig"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["GUID"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["Identifier"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["Name"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["Hostname"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["Port"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["Ssl"] = new Dictionary<string, object> { ["type"] = "boolean" },
+                        ["HealthCheckIntervalMs"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["HealthCheckUrl"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["HealthCheckMethod"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["UnhealthyThreshold"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["HealthyThreshold"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["MaxParallelRequests"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["RateLimitRequestsThreshold"] = new Dictionary<string, object> { ["type"] = "integer" }
+                    }
+                },
+                ["ApiEndpointConfig"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["GUID"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["Identifier"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["Name"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["LoadBalancing"] = new Dictionary<string, object> { ["type"] = "string", ["enum"] = new List<string> { "RoundRobin", "Random" } },
+                        ["TimeoutMs"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["BlockHttp10"] = new Dictionary<string, object> { ["type"] = "boolean" },
+                        ["MaxRequestBodySize"] = new Dictionary<string, object> { ["type"] = "integer", ["format"] = "int64" }
+                    }
+                },
+                ["EndpointRoute"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["Id"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["EndpointGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["HttpMethod"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["UrlPattern"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["RequiresAuthentication"] = new Dictionary<string, object> { ["type"] = "boolean" }
+                    }
+                },
+                ["EndpointOriginMapping"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["Id"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["EndpointGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["OriginGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" }
+                    }
+                },
+                ["UrlRewrite"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["Id"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["EndpointGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["HttpMethod"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["SourcePattern"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["TargetPattern"] = new Dictionary<string, object> { ["type"] = "string" }
+                    }
+                },
+                ["BlockedHeader"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["Id"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["HeaderName"] = new Dictionary<string, object> { ["type"] = "string" }
+                    }
+                },
+                ["UserMaster"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["GUID"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["Username"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["Email"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["FirstName"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["LastName"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["IsAdmin"] = new Dictionary<string, object> { ["type"] = "boolean" },
+                        ["Active"] = new Dictionary<string, object> { ["type"] = "boolean" }
+                    }
+                },
+                ["Credential"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["GUID"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["UserGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["Name"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["BearerToken"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["Active"] = new Dictionary<string, object> { ["type"] = "boolean" },
+                        ["IsReadOnly"] = new Dictionary<string, object> { ["type"] = "boolean" }
+                    }
+                },
+                ["RequestHistory"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["Id"] = new Dictionary<string, object> { ["type"] = "integer", ["format"] = "int64" },
+                        ["GUID"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["Timestamp"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "date-time" },
+                        ["EndpointGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["OriginGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["HttpMethod"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["RequestUrl"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["ResponseStatusCode"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["DurationMs"] = new Dictionary<string, object> { ["type"] = "integer", ["format"] = "int64" },
+                        ["Success"] = new Dictionary<string, object> { ["type"] = "boolean" }
+                    }
+                },
+                ["ApiErrorResponse"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["StatusCode"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["Error"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["Description"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["Context"] = new Dictionary<string, object> { ["type"] = "object" }
+                    }
+                },
+                ["HealthResponse"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["status"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["timestamp"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "date-time" },
+                        ["version"] = new Dictionary<string, object> { ["type"] = "string" }
+                    }
+                },
+                ["HistoryStats"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["totalRequests"] = new Dictionary<string, object> { ["type"] = "integer", ["format"] = "int64" },
+                        ["failedRequests"] = new Dictionary<string, object> { ["type"] = "integer", ["format"] = "int64" },
+                        ["successRate"] = new Dictionary<string, object> { ["type"] = "number", ["format"] = "double" }
+                    }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildManagementPaths(string basePath)
+        {
+            Dictionary<string, object> paths = new Dictionary<string, object>();
+
+            // Origins
+            AddCrudPaths(paths, basePath, "/origins", "Origins", "OriginServerConfig", "Origin server", "guid");
+
+            // Endpoints
+            AddCrudPaths(paths, basePath, "/endpoints", "Endpoints", "ApiEndpointConfig", "API endpoint", "guid");
+
+            // Routes
+            AddCrudPaths(paths, basePath, "/routes", "Routes", "EndpointRoute", "Endpoint route", "id");
+
+            // Mappings
+            paths[basePath + "/mappings"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildListOperation("Mappings", "EndpointOriginMapping", "List all endpoint-origin mappings"),
+                ["post"] = BuildCreateOperation("Mappings", "EndpointOriginMapping", "Create a new endpoint-origin mapping")
+            };
+            paths[basePath + "/mappings/{id}"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildGetOperation("Mappings", "EndpointOriginMapping", "Get endpoint-origin mapping by ID", "id"),
+                ["delete"] = BuildDeleteOperation("Mappings", "Delete endpoint-origin mapping", "id")
+            };
+
+            // Rewrites
+            AddCrudPaths(paths, basePath, "/rewrites", "Rewrites", "UrlRewrite", "URL rewrite rule", "id");
+
+            // Headers
+            paths[basePath + "/headers"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildListOperation("Headers", "BlockedHeader", "List all blocked headers"),
+                ["post"] = BuildCreateOperation("Headers", "BlockedHeader", "Create a new blocked header")
+            };
+            paths[basePath + "/headers/{id}"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildGetOperation("Headers", "BlockedHeader", "Get blocked header by ID", "id"),
+                ["delete"] = BuildDeleteOperation("Headers", "Delete blocked header", "id")
+            };
+
+            // Users
+            AddCrudPaths(paths, basePath, "/users", "Users", "UserMaster", "User", "guid");
+
+            // Credentials
+            AddCrudPaths(paths, basePath, "/credentials", "Credentials", "Credential", "Credential", "guid");
+            paths[basePath + "/credentials/{guid}/regenerate"] = new Dictionary<string, object>
+            {
+                ["post"] = BuildRegenerateOperation()
+            };
+
+            // Request History
+            paths[basePath + "/history"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildHistoryListOperation()
+            };
+            paths[basePath + "/history/recent"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildRecentHistoryOperation()
+            };
+            paths[basePath + "/history/failed"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildFailedHistoryOperation()
+            };
+            paths[basePath + "/history/stats"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildHistoryStatsOperation()
+            };
+            paths[basePath + "/history/cleanup"] = new Dictionary<string, object>
+            {
+                ["post"] = BuildHistoryCleanupOperation()
+            };
+            paths[basePath + "/history/{id}"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildGetOperation("History", "RequestHistory", "Get request history by ID or GUID", "id"),
+                ["delete"] = BuildDeleteOperation("History", "Delete request history record", "id")
+            };
+
+            // Health
+            paths[basePath + "/health"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildHealthOperation()
+            };
+
+            // Current user
+            paths[basePath + "/me"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildMeOperation()
+            };
+
+            return paths;
+        }
+
+        private void AddCrudPaths(Dictionary<string, object> paths, string basePath, string resource, string tag, string schema, string displayName, string paramName)
+        {
+            paths[basePath + resource] = new Dictionary<string, object>
+            {
+                ["get"] = BuildListOperation(tag, schema, $"List all {displayName.ToLower()}s"),
+                ["post"] = BuildCreateOperation(tag, schema, $"Create a new {displayName.ToLower()}")
+            };
+            paths[basePath + resource + "/{" + paramName + "}"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildGetOperation(tag, schema, $"Get {displayName.ToLower()} by {paramName.ToUpper()}", paramName),
+                ["put"] = BuildUpdateOperation(tag, schema, $"Update {displayName.ToLower()}", paramName),
+                ["delete"] = BuildDeleteOperation(tag, $"Delete {displayName.ToLower()}", paramName)
+            };
+        }
+
+        private Dictionary<string, object> BuildListOperation(string tag, string schema, string summary)
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { tag },
+                ["summary"] = summary,
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["parameters"] = new List<object>
+                {
+                    new Dictionary<string, object> { ["name"] = "search", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "string" }, ["description"] = "Search term for filtering" },
+                    new Dictionary<string, object> { ["name"] = "skip", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 0 }, ["description"] = "Number of records to skip" },
+                    new Dictionary<string, object> { ["name"] = "take", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "integer" }, ["description"] = "Maximum number of records to return" }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Successful response",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object>
+                                {
+                                    ["type"] = "array",
+                                    ["items"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/" + schema }
+                                }
+                            }
+                        }
+                    },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildCreateOperation(string tag, string schema, string summary)
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { tag },
+                ["summary"] = summary,
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["requestBody"] = new Dictionary<string, object>
+                {
+                    ["required"] = true,
+                    ["content"] = new Dictionary<string, object>
+                    {
+                        ["application/json"] = new Dictionary<string, object>
+                        {
+                            ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/" + schema }
+                        }
+                    }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["201"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Created successfully",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/" + schema }
+                            }
+                        }
+                    },
+                    ["400"] = new Dictionary<string, object> { ["description"] = "Bad request", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildGetOperation(string tag, string schema, string summary, string paramName)
+        {
+            string paramType = paramName == "guid" ? "uuid" : "integer";
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { tag },
+                ["summary"] = summary,
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["parameters"] = new List<object>
+                {
+                    new Dictionary<string, object>
+                    {
+                        ["name"] = paramName,
+                        ["in"] = "path",
+                        ["required"] = true,
+                        ["schema"] = paramType == "uuid"
+                            ? new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" }
+                            : new Dictionary<string, object> { ["type"] = "integer" }
+                    }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Successful response",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/" + schema }
+                            }
+                        }
+                    },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } },
+                    ["404"] = new Dictionary<string, object> { ["description"] = "Not found", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildUpdateOperation(string tag, string schema, string summary, string paramName)
+        {
+            string paramType = paramName == "guid" ? "uuid" : "integer";
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { tag },
+                ["summary"] = summary,
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["parameters"] = new List<object>
+                {
+                    new Dictionary<string, object>
+                    {
+                        ["name"] = paramName,
+                        ["in"] = "path",
+                        ["required"] = true,
+                        ["schema"] = paramType == "uuid"
+                            ? new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" }
+                            : new Dictionary<string, object> { ["type"] = "integer" }
+                    }
+                },
+                ["requestBody"] = new Dictionary<string, object>
+                {
+                    ["required"] = true,
+                    ["content"] = new Dictionary<string, object>
+                    {
+                        ["application/json"] = new Dictionary<string, object>
+                        {
+                            ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/" + schema }
+                        }
+                    }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Updated successfully",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/" + schema }
+                            }
+                        }
+                    },
+                    ["400"] = new Dictionary<string, object> { ["description"] = "Bad request", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } },
+                    ["404"] = new Dictionary<string, object> { ["description"] = "Not found", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildDeleteOperation(string tag, string summary, string paramName)
+        {
+            string paramType = paramName == "guid" ? "uuid" : "integer";
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { tag },
+                ["summary"] = summary,
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["parameters"] = new List<object>
+                {
+                    new Dictionary<string, object>
+                    {
+                        ["name"] = paramName,
+                        ["in"] = "path",
+                        ["required"] = true,
+                        ["schema"] = paramType == "uuid"
+                            ? new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" }
+                            : new Dictionary<string, object> { ["type"] = "integer" }
+                    }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["204"] = new Dictionary<string, object> { ["description"] = "Deleted successfully" },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } },
+                    ["404"] = new Dictionary<string, object> { ["description"] = "Not found", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildRegenerateOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "Credentials" },
+                ["summary"] = "Regenerate bearer token for credential",
+                ["description"] = "Generates a new bearer token for the specified credential. The old token will no longer be valid.",
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["parameters"] = new List<object>
+                {
+                    new Dictionary<string, object>
+                    {
+                        ["name"] = "guid",
+                        ["in"] = "path",
+                        ["required"] = true,
+                        ["schema"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" }
+                    }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Token regenerated successfully",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/Credential" }
+                            }
+                        }
+                    },
+                    ["400"] = new Dictionary<string, object> { ["description"] = "Bad request (e.g., credential is read-only)", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } },
+                    ["404"] = new Dictionary<string, object> { ["description"] = "Credential not found", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildHistoryListOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "History" },
+                ["summary"] = "List request history",
+                ["description"] = "Get request history with optional filtering by time range, endpoint, or origin.",
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["parameters"] = new List<object>
+                {
+                    new Dictionary<string, object> { ["name"] = "skip", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 0 }, ["description"] = "Number of records to skip" },
+                    new Dictionary<string, object> { ["name"] = "take", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "integer" }, ["description"] = "Maximum number of records to return" },
+                    new Dictionary<string, object> { ["name"] = "start", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "date-time" }, ["description"] = "Start of time range filter" },
+                    new Dictionary<string, object> { ["name"] = "end", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "date-time" }, ["description"] = "End of time range filter" },
+                    new Dictionary<string, object> { ["name"] = "endpoint", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" }, ["description"] = "Filter by endpoint GUID" },
+                    new Dictionary<string, object> { ["name"] = "origin", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" }, ["description"] = "Filter by origin GUID" }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Successful response",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object>
+                                {
+                                    ["type"] = "array",
+                                    ["items"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/RequestHistory" }
+                                }
+                            }
+                        }
+                    },
+                    ["400"] = new Dictionary<string, object> { ["description"] = "Bad request (e.g., invalid date format)", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildRecentHistoryOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "History" },
+                ["summary"] = "Get recent request history",
+                ["description"] = "Get the most recent request history records.",
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["parameters"] = new List<object>
+                {
+                    new Dictionary<string, object> { ["name"] = "count", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 100, ["minimum"] = 1, ["maximum"] = 1000 }, ["description"] = "Number of records to return" }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Successful response",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object>
+                                {
+                                    ["type"] = "array",
+                                    ["items"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/RequestHistory" }
+                                }
+                            }
+                        }
+                    },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildFailedHistoryOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "History" },
+                ["summary"] = "Get failed request history",
+                ["description"] = "Get request history for failed requests only.",
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["parameters"] = new List<object>
+                {
+                    new Dictionary<string, object> { ["name"] = "skip", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 0 }, ["description"] = "Number of records to skip" },
+                    new Dictionary<string, object> { ["name"] = "take", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "integer" }, ["description"] = "Maximum number of records to return" }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Successful response",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object>
+                                {
+                                    ["type"] = "array",
+                                    ["items"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/RequestHistory" }
+                                }
+                            }
+                        }
+                    },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildHistoryStatsOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "History" },
+                ["summary"] = "Get request history statistics",
+                ["description"] = "Get aggregate statistics about request history including total requests, failed requests, and success rate.",
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Successful response",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/HistoryStats" }
+                            }
+                        }
+                    },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildHistoryCleanupOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "History" },
+                ["summary"] = "Run history cleanup",
+                ["description"] = "Delete old request history records based on the specified number of days.",
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["parameters"] = new List<object>
+                {
+                    new Dictionary<string, object> { ["name"] = "days", ["in"] = "query", ["schema"] = new Dictionary<string, object> { ["type"] = "integer" }, ["description"] = "Delete records older than this many days" }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Cleanup completed",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object>
+                                {
+                                    ["type"] = "object",
+                                    ["properties"] = new Dictionary<string, object>
+                                    {
+                                        ["deletedRecords"] = new Dictionary<string, object> { ["type"] = "integer" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildHealthOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "System" },
+                ["summary"] = "Health check",
+                ["description"] = "Get the health status of the Switchboard server.",
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Server is healthy",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/HealthResponse" }
+                            }
+                        }
+                    },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildMeOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "System" },
+                ["summary"] = "Get current user",
+                ["description"] = "Get information about the currently authenticated user based on the bearer token.",
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Successful response",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object>
+                                {
+                                    ["type"] = "object",
+                                    ["properties"] = new Dictionary<string, object>
+                                    {
+                                        ["guid"] = new Dictionary<string, object> { ["type"] = "string" },
+                                        ["username"] = new Dictionary<string, object> { ["type"] = "string" },
+                                        ["email"] = new Dictionary<string, object> { ["type"] = "string" },
+                                        ["firstName"] = new Dictionary<string, object> { ["type"] = "string" },
+                                        ["lastName"] = new Dictionary<string, object> { ["type"] = "string" },
+                                        ["isAdmin"] = new Dictionary<string, object> { ["type"] = "boolean" },
+                                        ["active"] = new Dictionary<string, object> { ["type"] = "boolean" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
         }
 
         #endregion

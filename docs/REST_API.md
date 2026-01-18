@@ -78,6 +78,31 @@ http://localhost:8000/_sb/v1.0/
 
 ---
 
+## OpenAPI Documentation
+
+The Management API provides self-documenting endpoints for API discovery:
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /openapi.json` | OpenAPI 3.0.3 specification document |
+| `GET /swagger` | Interactive Swagger UI |
+
+These endpoints do not require authentication to allow API discoverability and tooling integration.
+
+### Swagger UI
+
+Access the interactive API documentation at:
+```
+http://localhost:8000/swagger
+```
+
+The Swagger UI allows you to:
+- Browse all available endpoints
+- View request/response schemas
+- Test API calls directly from the browser (with Bearer token authentication)
+
+---
+
 ## Common Response Formats
 
 ### Success Responses

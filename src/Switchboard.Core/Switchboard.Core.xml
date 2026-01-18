@@ -4279,11 +4279,12 @@
             <param name="client">Switchboard client.</param>
             <param name="logging">Logging module.</param>
         </member>
-        <member name="M:Switchboard.Core.Services.ManagementService.InitializeRoutes(WatsonWebserver.Webserver)">
+        <member name="M:Switchboard.Core.Services.ManagementService.InitializeRoutes(WatsonWebserver.Webserver,System.String)">
             <summary>
             Initialize routes on the webserver.
             </summary>
             <param name="webserver">Webserver instance.</param>
+            <param name="serverUrl">Server URL for OpenAPI documentation (e.g., "http://localhost:8000").</param>
         </member>
         <member name="M:Switchboard.Core.Services.ManagementService.Dispose">
             <summary>
@@ -4545,6 +4546,14 @@
             Generate an OpenAPI JSON document from the Switchboard settings.
             </summary>
             <param name="settings">Switchboard settings.</param>
+            <returns>OpenAPI JSON string.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.SwitchboardOpenApiDocumentGenerator.GenerateManagementApiDocument(System.String,System.String)">
+            <summary>
+            Generate an OpenAPI JSON document for the Switchboard Management API.
+            </summary>
+            <param name="basePath">Base path for the management API (e.g., "/_sb/v1.0").</param>
+            <param name="serverUrl">Server URL (e.g., "http://localhost:8000").</param>
             <returns>OpenAPI JSON string.</returns>
         </member>
         <member name="T:Switchboard.Core.Settings.DatabaseSettings">

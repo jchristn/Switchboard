@@ -2,11 +2,8 @@
 # Switchboard Dashboard
 # Multi-stage build: Node.js build + nginx serve
 #
-# This Dockerfile is for building from the repository root with context.
-# For standalone builds, use dashboard/Dockerfile instead.
-#
-# Build from repository root:
-#   docker build -f Docker/dashboard/Dockerfile -t jchristn77/switchboard-ui:v4.0.2 .
+# Build from the dashboard directory:
+#   docker build -t jchristn77/switchboard-ui:v4.0.2 .
 #
 
 #
@@ -16,13 +13,13 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copy package files
-COPY dashboard/package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
 
 # Copy source
-COPY dashboard/ .
+COPY . .
 
 # Build the application
 RUN npm run build
@@ -47,7 +44,7 @@ RUN apk add --no-cache \
     ca-certificates
 
 # Copy custom nginx config
-COPY Docker/dashboard/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built assets from build stage
 COPY --from=build /app/dist /usr/share/nginx/html

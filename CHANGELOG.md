@@ -2,7 +2,7 @@
 
 ## Current Version
 
-v4.0.0
+v4.0.2
 
 ### New Features
 
@@ -17,6 +17,8 @@ v4.0.0
   - Blocked headers management
   - User and credential management
   - Bearer token authentication
+  - OpenAPI 3.0.3 specification at `/openapi.json`
+  - Interactive Swagger UI at `/swagger`
 
 - **Web Dashboard** - React-based management interface
   - Visual configuration of origins and endpoints
@@ -31,9 +33,11 @@ v4.0.0
   - Statistics and metrics
 
 - **Docker Improvements**
-  - Dashboard container with nginx
+  - Separate Docker images: `jchristn77/switchboard` (server) and `jchristn77/switchboard-ui` (dashboard)
+  - Dashboard container with nginx serving React SPA
   - Database-specific compose files (SQLite, MySQL, PostgreSQL, SQL Server)
-  - Improved health checks
+  - Network troubleshooting tools included (curl, wget, dig, ping, vim, jq)
+  - Improved health checks for all services
 
 ### Configuration Changes
 

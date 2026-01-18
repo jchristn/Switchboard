@@ -78,7 +78,7 @@ Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers 
 ✅ **Smart Routing** – Parameterized URLs with wildcard matching (`/users/{id}`)
 ✅ **Header Management** – Automatic proxy headers and configurable blocking
 ✅ **Logging** – Built-in syslog integration with multiple severity levels
-✅ **Docker Ready** – Available on [Docker Hub](https://hub.docker.com/repository/docker/jchristn77/switchboard/general)
+✅ **Docker Ready** – Server and Dashboard available on Docker Hub ([switchboard](https://hub.docker.com/r/jchristn77/switchboard), [switchboard-ui](https://hub.docker.com/r/jchristn77/switchboard-ui))
 ✅ **Embeddable** – Integrate directly into your application via NuGet
 ✅ **OpenAPI Support** – Auto-generate OpenAPI 3.0.3 docs with Swagger UI
 ✅ **Management API** – RESTful API for runtime configuration changes
@@ -205,15 +205,21 @@ Or via Package Manager Console:
 Install-Package SwitchboardApplicationProxy
 ```
 
-### Docker Image
+### Docker Images
 
 Pull from Docker Hub:
 
 ```bash
-docker pull jchristn77/switchboard
+# Switchboard Server
+docker pull jchristn77/switchboard:v4.0.2
+
+# Switchboard Dashboard (Web UI)
+docker pull jchristn77/switchboard-ui:v4.0.2
 ```
 
-Docker image: **[jchristn77/switchboard](https://hub.docker.com/repository/docker/jchristn77/switchboard/general)**
+Docker images:
+- **Server**: [jchristn77/switchboard](https://hub.docker.com/r/jchristn77/switchboard)
+- **Dashboard**: [jchristn77/switchboard-ui](https://hub.docker.com/r/jchristn77/switchboard-ui)
 
 ### Build from Source
 
@@ -552,7 +558,7 @@ docker run -d \
   -v $(pwd)/sb.json:/app/sb.json \
   -v $(pwd)/logs:/app/logs \
   -v $(pwd)/data:/app/data \
-  jchristn77/switchboard:v4.0.0
+  jchristn77/switchboard:v4.0.2
 ```
 
 #### Building the Dashboard Image
@@ -561,7 +567,7 @@ The dashboard is built from source using a multi-stage Dockerfile:
 
 ```bash
 # From the repository root
-docker build -t switchboard-dashboard -f Docker/dashboard/Dockerfile .
+docker build -t jchristn77/switchboard-ui -f Docker/dashboard/Dockerfile .
 ```
 
 See [docs/DASHBOARD-GUIDE.md](docs/DASHBOARD-GUIDE.md) for dashboard usage details.

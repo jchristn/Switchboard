@@ -25,7 +25,7 @@ services:
 
   switchboard:
     container_name: 'switchboard'
-    image: 'jchristn77/switchboard:v4.0.0'
+    image: 'jchristn77/switchboard:v4.0.2'
     ports:
       - "8000:8000"
     volumes:
@@ -36,20 +36,23 @@ services:
         condition: service_healthy
     healthcheck:
       test: curl --fail http://localhost:8000/_sb/v1.0/health || exit 1
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 2
     restart: unless-stopped
 
-  dashboard:
-    container_name: 'switchboard-dashboard'
-    build:
-      context: ..
-      dockerfile: Docker/dashboard/Dockerfile
+  switchboard-ui:
+    container_name: 'switchboard-ui'
+    image: 'jchristn77/switchboard-ui:v4.0.2'
     ports:
       - "3000:80"
     depends_on:
       - switchboard
+    healthcheck:
+      test: curl --fail http://localhost/ || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 2
     restart: unless-stopped
 
 volumes:

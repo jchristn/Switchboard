@@ -33,6 +33,9 @@ namespace Switchboard.Core.Services
         private readonly LoggingModule _Logging;
         private readonly string _Header = "[ManagementService] ";
         private bool _Disposed = false;
+        private string? _CachedOpenApiDocument = null;
+        private string? _CachedSwaggerHtml = null;
+        private string _ServerUrl = "";
 
         private static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
@@ -68,7 +71,8 @@ namespace Switchboard.Core.Services
         /// Initialize routes on the webserver.
         /// </summary>
         /// <param name="webserver">Webserver instance.</param>
-        public void InitializeRoutes(Webserver webserver)
+        /// <param name="serverUrl">Server URL for OpenAPI documentation (e.g., "http://localhost:8000").</param>
+        public void InitializeRoutes(Webserver webserver, string serverUrl = "")
         {
             if (webserver == null)
                 throw new ArgumentNullException(nameof(webserver));
@@ -79,6 +83,7 @@ namespace Switchboard.Core.Services
                 return;
             }
 
+            _ServerUrl = serverUrl ?? "";
             string basePath = _Settings.BasePath.TrimEnd('/');
             _Logging.Info(_Header + "initializing routes at " + basePath);
 
@@ -152,7 +157,26 @@ namespace Switchboard.Core.Services
             // Current user
             webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, basePath + "/me", GetCurrentUserAsync);
 
+            // OpenAPI and Swagger UI for Management API (at root path for discoverability)
+            webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, "/openapi.json", GetManagementOpenApiAsync);
+            webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, "/swagger", GetManagementSwaggerUiAsync);
+
+            // Pre-generate OpenAPI document
+            try
+            {
+                SwitchboardOpenApiDocumentGenerator generator = new SwitchboardOpenApiDocumentGenerator();
+                _CachedOpenApiDocument = generator.GenerateManagementApiDocument(basePath, _ServerUrl);
+                _CachedSwaggerHtml = SwaggerUiHandler.GenerateHtml("/openapi.json", "Switchboard Management API");
+                _Logging.Debug(_Header + "Management API OpenAPI document generated successfully");
+            }
+            catch (Exception ex)
+            {
+                _Logging.Warn(_Header + "failed to generate Management API OpenAPI document: " + ex.Message);
+            }
+
             _Logging.Info(_Header + "routes initialized successfully");
+            _Logging.Info(_Header + "Management API OpenAPI document available at /openapi.json");
+            _Logging.Info(_Header + "Management API Swagger UI available at /swagger");
         }
 
         /// <summary>
@@ -1157,10 +1181,85 @@ namespace Switchboard.Core.Services
                 {
                     status = "healthy",
                     timestamp = DateTime.UtcNow.ToString("o"),
-                    version = "4.0.0"
+                    version = "4.0.2"
                 }).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
+        }
+
+        #endregion
+
+        #region Private-Methods-OpenApi
+
+        private async Task GetManagementOpenApiAsync(HttpContextBase ctx)
+        {
+            try
+            {
+                // OpenAPI document does not require authentication for discoverability
+                string? document = _CachedOpenApiDocument;
+
+                if (String.IsNullOrEmpty(document))
+                {
+                    // Try to regenerate if cache is empty
+                    try
+                    {
+                        SwitchboardOpenApiDocumentGenerator generator = new SwitchboardOpenApiDocumentGenerator();
+                        document = generator.GenerateManagementApiDocument(_Settings.BasePath, _ServerUrl);
+                        _CachedOpenApiDocument = document;
+                    }
+                    catch (Exception ex)
+                    {
+                        _Logging.Warn(_Header + "failed to generate Management API OpenAPI document: " + ex.Message);
+                        ctx.Response.StatusCode = 500;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send("{\"error\":\"Failed to generate OpenAPI document\"}").ConfigureAwait(false);
+                        return;
+                    }
+                }
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json; charset=utf-8";
+                ctx.Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+                ctx.Response.Headers.Add("Pragma", "no-cache");
+                ctx.Response.Headers.Add("Expires", "0");
+
+                await ctx.Response.Send(document).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _Logging.Warn(_Header + "exception in Management OpenAPI handler: " + ex.Message);
+                ctx.Response.StatusCode = 500;
+                await ctx.Response.Send("{\"error\":\"Internal server error\"}").ConfigureAwait(false);
+            }
+        }
+
+        private async Task GetManagementSwaggerUiAsync(HttpContextBase ctx)
+        {
+            try
+            {
+                // Swagger UI does not require authentication for discoverability
+                string? html = _CachedSwaggerHtml;
+
+                if (String.IsNullOrEmpty(html))
+                {
+                    html = SwaggerUiHandler.GenerateHtml("/openapi.json", "Switchboard Management API");
+                    _CachedSwaggerHtml = html;
+                }
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "text/html; charset=utf-8";
+                ctx.Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+                ctx.Response.Headers.Add("Pragma", "no-cache");
+                ctx.Response.Headers.Add("Expires", "0");
+
+                await ctx.Response.Send(html).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _Logging.Warn(_Header + "exception in Management Swagger UI handler: " + ex.Message);
+                ctx.Response.StatusCode = 500;
+                await ctx.Response.Send("<html><body><h1>Error</h1><p>Failed to load Swagger UI</p></body></html>").ConfigureAwait(false);
+            }
         }
 
         #endregion
