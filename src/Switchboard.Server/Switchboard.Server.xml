@@ -4,12 +4,12 @@
         <name>Switchboard.Server</name>
     </assembly>
     <members>
-        <member name="T:Switchboard.Server.Program">
+        <member name="T:Switchboard.Server.SwitchboardServer">
             <summary>
             Switchboard server.
             </summary>
         </member>
-        <member name="M:Switchboard.Server.Program.Main(System.String[])">
+        <member name="M:Switchboard.Server.SwitchboardServer.Main(System.String[])">
             <summary>
             Entry point.
             </summary>

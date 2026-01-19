@@ -224,9 +224,50 @@ namespace Switchboard.Core.Services
             }
         }
 
+        private bool HasWriteAccess(HttpContextBase ctx)
+        {
+            if (!_Settings.RequireAuthentication)
+                return true;
+
+            string? authHeader = ctx.Request.Headers.Get("Authorization");
+            if (String.IsNullOrWhiteSpace(authHeader))
+                return false;
+
+            if (!authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            string token = authHeader.Substring(7).Trim();
+            if (String.IsNullOrWhiteSpace(token))
+                return false;
+
+            // Admin token has full access
+            if (!String.IsNullOrWhiteSpace(_Settings.AdminToken) && token == _Settings.AdminToken)
+                return true;
+
+            // Check if the credential is read-only
+            try
+            {
+                Credential? credential = _Client.Credentials.ValidateBearerTokenAsync(token, ctx.Token).GetAwaiter().GetResult();
+                return credential != null && !credential.IsReadOnly;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private async Task SendUnauthorized(HttpContextBase ctx)
         {
             ApiErrorResponse error = new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed);
+            ctx.Response.StatusCode = error.StatusCode;
+            ctx.Response.ContentType = "application/json";
+            string response = JsonSerializer.Serialize(error, _JsonOptions);
+            await ctx.Response.Send(response).ConfigureAwait(false);
+        }
+
+        private async Task SendForbidden(HttpContextBase ctx, string message)
+        {
+            ApiErrorResponse error = new ApiErrorResponse(ApiErrorEnum.AuthorizationFailed, description: message);
             ctx.Response.StatusCode = error.StatusCode;
             ctx.Response.ContentType = "application/json";
             string response = JsonSerializer.Serialize(error, _JsonOptions);
@@ -295,15 +336,19 @@ namespace Switchboard.Core.Services
             try
             {
                 if (ctx.Request.Data == null || ctx.Request.ContentLength < 1)
+                {
+                    _Logging.Warn(_Header + "no request body found");
                     return null;
+                }
 
                 byte[] data = new byte[ctx.Request.ContentLength];
                 await ctx.Request.Data.ReadAsync(data, 0, (int)ctx.Request.ContentLength, ctx.Token).ConfigureAwait(false);
                 string json = System.Text.Encoding.UTF8.GetString(data);
                 return JsonSerializer.Deserialize<T>(json, _JsonOptions);
             }
-            catch
+            catch (Exception e)
             {
+                _Logging.Warn(_Header + "exception while reading request body:" + Environment.NewLine + e.ToString());
                 return null;
             }
         }
@@ -333,11 +378,14 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot create resources").ConfigureAwait(false); return; }
 
                 OriginServerConfig? config = await ReadBody<OriginServerConfig>(ctx).ConfigureAwait(false);
                 if (config == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
                 OriginServerConfig created = await _Client.OriginServers.CreateAsync(config, ctx.Token).ConfigureAwait(false);
+
+                _Logging.Info(_Header + "created origin server " + created.Identifier);
                 await SendCreated(ctx, created).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -365,6 +413,7 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot update resources").ConfigureAwait(false); return; }
 
                 string? guidStr = ctx.Request.Url.Parameters["guid"];
                 if (!Guid.TryParse(guidStr, out Guid guid)) { await SendBadRequest(ctx, "Invalid GUID").ConfigureAwait(false); return; }
@@ -374,6 +423,8 @@ namespace Switchboard.Core.Services
 
                 config.GUID = guid;
                 OriginServerConfig updated = await _Client.OriginServers.UpdateAsync(config, ctx.Token).ConfigureAwait(false);
+
+                _Logging.Info(_Header + "updated origin server " + updated.Identifier);
                 await SendOk(ctx, updated).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -384,11 +435,16 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot delete resources").ConfigureAwait(false); return; }
 
                 string? guidStr = ctx.Request.Url.Parameters["guid"];
                 if (!Guid.TryParse(guidStr, out Guid guid)) { await SendBadRequest(ctx, "Invalid GUID").ConfigureAwait(false); return; }
 
+                OriginServerConfig? existing = await _Client.OriginServers.GetByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
+                if (existing == null) { await SendNotFound(ctx, "Origin server not found").ConfigureAwait(false); return; }
+
                 await _Client.OriginServers.DeleteByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "deleted origin server " + existing.Identifier);
                 await SendNoContent(ctx).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -419,11 +475,13 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot create resources").ConfigureAwait(false); return; }
 
                 ApiEndpointConfig? config = await ReadBody<ApiEndpointConfig>(ctx).ConfigureAwait(false);
                 if (config == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
                 ApiEndpointConfig created = await _Client.ApiEndpoints.CreateAsync(config, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "created endpoint " + created.Identifier);
                 await SendCreated(ctx, created).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -451,6 +509,7 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot update resources").ConfigureAwait(false); return; }
 
                 string? guidStr = ctx.Request.Url.Parameters["guid"];
                 if (!Guid.TryParse(guidStr, out Guid guid)) { await SendBadRequest(ctx, "Invalid GUID").ConfigureAwait(false); return; }
@@ -460,6 +519,7 @@ namespace Switchboard.Core.Services
 
                 config.GUID = guid;
                 ApiEndpointConfig updated = await _Client.ApiEndpoints.UpdateAsync(config, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "updated endpoint " + updated.Identifier);
                 await SendOk(ctx, updated).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -470,11 +530,16 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot delete resources").ConfigureAwait(false); return; }
 
                 string? guidStr = ctx.Request.Url.Parameters["guid"];
                 if (!Guid.TryParse(guidStr, out Guid guid)) { await SendBadRequest(ctx, "Invalid GUID").ConfigureAwait(false); return; }
 
+                ApiEndpointConfig? existing = await _Client.ApiEndpoints.GetByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
+                if (existing == null) { await SendNotFound(ctx, "Endpoint not found").ConfigureAwait(false); return; }
+
                 await _Client.ApiEndpoints.DeleteByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "deleted endpoint " + existing.Identifier);
                 await SendNoContent(ctx).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -504,11 +569,13 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot create resources").ConfigureAwait(false); return; }
 
                 EndpointRoute? route = await ReadBody<EndpointRoute>(ctx).ConfigureAwait(false);
                 if (route == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
                 EndpointRoute created = await _Client.EndpointRoutes.CreateAsync(route, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "created route " + created.Id);
                 await SendCreated(ctx, created).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -536,6 +603,7 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot update resources").ConfigureAwait(false); return; }
 
                 string? idStr = ctx.Request.Url.Parameters["id"];
                 if (!Int32.TryParse(idStr, out int id)) { await SendBadRequest(ctx, "Invalid ID").ConfigureAwait(false); return; }
@@ -545,6 +613,7 @@ namespace Switchboard.Core.Services
 
                 route.Id = id;
                 EndpointRoute updated = await _Client.EndpointRoutes.UpdateAsync(route, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "updated route " + updated.Id);
                 await SendOk(ctx, updated).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -555,11 +624,16 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot delete resources").ConfigureAwait(false); return; }
 
                 string? idStr = ctx.Request.Url.Parameters["id"];
                 if (!Int32.TryParse(idStr, out int id)) { await SendBadRequest(ctx, "Invalid ID").ConfigureAwait(false); return; }
 
+                EndpointRoute? existing = await _Client.EndpointRoutes.GetByIdAsync(id, ctx.Token).ConfigureAwait(false);
+                if (existing == null) { await SendNotFound(ctx, "Route not found").ConfigureAwait(false); return; }
+
                 await _Client.EndpointRoutes.DeleteByIdAsync(id, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "deleted route " + existing.Id);
                 await SendNoContent(ctx).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -589,11 +663,13 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot create resources").ConfigureAwait(false); return; }
 
                 EndpointOriginMapping? mapping = await ReadBody<EndpointOriginMapping>(ctx).ConfigureAwait(false);
                 if (mapping == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
                 EndpointOriginMapping created = await _Client.EndpointOriginMappings.CreateAsync(mapping, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "created mapping " + created.Id);
                 await SendCreated(ctx, created).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -621,11 +697,16 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot delete resources").ConfigureAwait(false); return; }
 
                 string? idStr = ctx.Request.Url.Parameters["id"];
                 if (!Int32.TryParse(idStr, out int id)) { await SendBadRequest(ctx, "Invalid ID").ConfigureAwait(false); return; }
 
+                EndpointOriginMapping? existing = await _Client.EndpointOriginMappings.GetByIdAsync(id, ctx.Token).ConfigureAwait(false);
+                if (existing == null) { await SendNotFound(ctx, "Mapping not found").ConfigureAwait(false); return; }
+
                 await _Client.EndpointOriginMappings.DeleteByIdAsync(id, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "deleted mapping " + existing.Id);
                 await SendNoContent(ctx).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -655,11 +736,13 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot create resources").ConfigureAwait(false); return; }
 
                 UrlRewrite? rewrite = await ReadBody<UrlRewrite>(ctx).ConfigureAwait(false);
                 if (rewrite == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
                 UrlRewrite created = await _Client.UrlRewrites.CreateAsync(rewrite, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "created rewrite " + created.Id);
                 await SendCreated(ctx, created).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -687,6 +770,7 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot update resources").ConfigureAwait(false); return; }
 
                 string? idStr = ctx.Request.Url.Parameters["id"];
                 if (!Int32.TryParse(idStr, out int id)) { await SendBadRequest(ctx, "Invalid ID").ConfigureAwait(false); return; }
@@ -696,6 +780,7 @@ namespace Switchboard.Core.Services
 
                 rewrite.Id = id;
                 UrlRewrite updated = await _Client.UrlRewrites.UpdateAsync(rewrite, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "updated rewrite " + updated.Id);
                 await SendOk(ctx, updated).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -706,11 +791,16 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot delete resources").ConfigureAwait(false); return; }
 
                 string? idStr = ctx.Request.Url.Parameters["id"];
                 if (!Int32.TryParse(idStr, out int id)) { await SendBadRequest(ctx, "Invalid ID").ConfigureAwait(false); return; }
 
+                UrlRewrite? existing = await _Client.UrlRewrites.GetByIdAsync(id, ctx.Token).ConfigureAwait(false);
+                if (existing == null) { await SendNotFound(ctx, "Rewrite not found").ConfigureAwait(false); return; }
+
                 await _Client.UrlRewrites.DeleteByIdAsync(id, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "deleted rewrite " + existing.Id);
                 await SendNoContent(ctx).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -740,11 +830,13 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot create resources").ConfigureAwait(false); return; }
 
                 BlockedHeader? header = await ReadBody<BlockedHeader>(ctx).ConfigureAwait(false);
                 if (header == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
                 BlockedHeader created = await _Client.BlockedHeaders.CreateAsync(header, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "created blocked header " + created.Id);
                 await SendCreated(ctx, created).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -772,11 +864,16 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot delete resources").ConfigureAwait(false); return; }
 
                 string? idStr = ctx.Request.Url.Parameters["id"];
                 if (!Int32.TryParse(idStr, out int id)) { await SendBadRequest(ctx, "Invalid ID").ConfigureAwait(false); return; }
 
+                BlockedHeader? existing = await _Client.BlockedHeaders.GetByIdAsync(id, ctx.Token).ConfigureAwait(false);
+                if (existing == null) { await SendNotFound(ctx, "Blocked header not found").ConfigureAwait(false); return; }
+
                 await _Client.BlockedHeaders.DeleteByIdAsync(id, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "deleted blocked header " + existing.Id);
                 await SendNoContent(ctx).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -807,11 +904,13 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot create resources").ConfigureAwait(false); return; }
 
                 UserMaster? user = await ReadBody<UserMaster>(ctx).ConfigureAwait(false);
                 if (user == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
                 UserMaster created = await _Client.Users.CreateAsync(user, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "created user " + created.Username);
                 await SendCreated(ctx, created).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -839,6 +938,7 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot update resources").ConfigureAwait(false); return; }
 
                 string? guidStr = ctx.Request.Url.Parameters["guid"];
                 if (!Guid.TryParse(guidStr, out Guid guid)) { await SendBadRequest(ctx, "Invalid GUID").ConfigureAwait(false); return; }
@@ -848,6 +948,7 @@ namespace Switchboard.Core.Services
 
                 user.GUID = guid;
                 UserMaster updated = await _Client.Users.UpdateAsync(user, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "updated user " + updated.Username);
                 await SendOk(ctx, updated).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -858,11 +959,16 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot delete resources").ConfigureAwait(false); return; }
 
                 string? guidStr = ctx.Request.Url.Parameters["guid"];
                 if (!Guid.TryParse(guidStr, out Guid guid)) { await SendBadRequest(ctx, "Invalid GUID").ConfigureAwait(false); return; }
 
+                UserMaster? existing = await _Client.Users.GetByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
+                if (existing == null) { await SendNotFound(ctx, "User not found").ConfigureAwait(false); return; }
+
                 await _Client.Users.DeleteByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "deleted user " + existing.Username);
                 await SendNoContent(ctx).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -893,11 +999,13 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot create resources").ConfigureAwait(false); return; }
 
                 Credential? credential = await ReadBody<Credential>(ctx).ConfigureAwait(false);
                 if (credential == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
                 Credential created = await _Client.Credentials.CreateAsync(credential, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "created credential " + created.GUID);
                 await SendCreated(ctx, created).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -925,22 +1033,20 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot update resources").ConfigureAwait(false); return; }
 
                 string? guidStr = ctx.Request.Url.Parameters["guid"];
                 if (!Guid.TryParse(guidStr, out Guid guid)) { await SendBadRequest(ctx, "Invalid GUID").ConfigureAwait(false); return; }
 
-                // Check if credential is read-only
                 Credential? existingCredential = await _Client.Credentials.GetByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
                 if (existingCredential == null) { await SendNotFound(ctx, "Credential not found").ConfigureAwait(false); return; }
-                if (existingCredential.IsReadOnly) { await SendBadRequest(ctx, "This credential is read-only and cannot be modified").ConfigureAwait(false); return; }
 
                 Credential? credential = await ReadBody<Credential>(ctx).ConfigureAwait(false);
                 if (credential == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
                 credential.GUID = guid;
-                // Preserve the IsReadOnly flag from the existing record
-                credential.IsReadOnly = existingCredential.IsReadOnly;
                 Credential updated = await _Client.Credentials.UpdateAsync(credential, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "updated credential " + updated.GUID);
                 await SendOk(ctx, updated).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -951,16 +1057,16 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot delete resources").ConfigureAwait(false); return; }
 
                 string? guidStr = ctx.Request.Url.Parameters["guid"];
                 if (!Guid.TryParse(guidStr, out Guid guid)) { await SendBadRequest(ctx, "Invalid GUID").ConfigureAwait(false); return; }
 
-                // Check if credential is read-only
                 Credential? credential = await _Client.Credentials.GetByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
                 if (credential == null) { await SendNotFound(ctx, "Credential not found").ConfigureAwait(false); return; }
-                if (credential.IsReadOnly) { await SendBadRequest(ctx, "This credential is read-only and cannot be deleted").ConfigureAwait(false); return; }
 
                 await _Client.Credentials.DeleteByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "deleted credential " + credential.GUID);
                 await SendNoContent(ctx).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -971,16 +1077,16 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot update resources").ConfigureAwait(false); return; }
 
                 string? guidStr = ctx.Request.Url.Parameters["guid"];
                 if (!Guid.TryParse(guidStr, out Guid guid)) { await SendBadRequest(ctx, "Invalid GUID").ConfigureAwait(false); return; }
 
-                // Check if credential is read-only
                 Credential? credential = await _Client.Credentials.GetByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
                 if (credential == null) { await SendNotFound(ctx, "Credential not found").ConfigureAwait(false); return; }
-                if (credential.IsReadOnly) { await SendBadRequest(ctx, "This credential is read-only and its token cannot be regenerated").ConfigureAwait(false); return; }
 
                 Credential updated = await _Client.Credentials.RegenerateBearerTokenAsync(guid, ctx.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "regenerated credential " + updated.GUID);
                 await SendOk(ctx, updated).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -1104,6 +1210,7 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot delete resources").ConfigureAwait(false); return; }
 
                 string? idStr = ctx.Request.Url.Parameters["id"];
 
@@ -1132,6 +1239,7 @@ namespace Switchboard.Core.Services
             try
             {
                 if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot delete resources").ConfigureAwait(false); return; }
 
                 // Get optional days parameter
                 int days = Int32.TryParse(ctx.Request.Query.Elements["days"], out int daysVal) ? daysVal : 0;

@@ -81,7 +81,8 @@ namespace Switchboard.Core.Models
         public bool Active { get; set; } = true;
 
         /// <summary>
-        /// True if this credential is read-only and cannot be modified via API or dashboard.
+        /// True if this credential has read-only API access.
+        /// Read-only credentials can only perform GET operations and cannot create, update, or delete resources.
         /// </summary>
         public bool IsReadOnly { get; set; } = false;
 

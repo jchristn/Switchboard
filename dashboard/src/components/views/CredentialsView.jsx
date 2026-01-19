@@ -183,24 +183,21 @@ function CredentialsView() {
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => handleEdit(row)}
-            disabled={row.isReadOnly}
-            title={row.isReadOnly ? 'Read-only credentials cannot be edited' : 'Edit credential'}
+            title="Edit credential"
           >
             Edit
           </button>
           <button
             className="btn btn-warning btn-sm"
             onClick={() => handleRegenerateClick(row)}
-            disabled={row.isReadOnly}
-            title={row.isReadOnly ? 'Read-only credentials cannot have their tokens regenerated' : 'Regenerate token'}
+            title="Regenerate token"
           >
             Regenerate
           </button>
           <button
             className="btn btn-danger btn-sm"
             onClick={() => handleDeleteClick(row)}
-            disabled={row.isReadOnly}
-            title={row.isReadOnly ? 'Read-only credentials cannot be deleted' : 'Delete credential'}
+            title="Delete credential"
           >
             Delete
           </button>
@@ -281,18 +278,16 @@ function CredentialsView() {
                 Active
               </label>
             </div>
-            {!editingCredential && (
-              <div className="form-group">
-                <label className="form-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={formData.isReadOnly}
-                    onChange={(e) => setFormData({ ...formData, isReadOnly: e.target.checked })}
-                  />
-                  Read-only (cannot be edited or deleted after creation)
-                </label>
-              </div>
-            )}
+            <div className="form-group">
+              <label className="form-checkbox">
+                <input
+                  type="checkbox"
+                  checked={formData.isReadOnly}
+                  onChange={(e) => setFormData({ ...formData, isReadOnly: e.target.checked })}
+                />
+                Read-only API access (can only read data, cannot create/update/delete)
+              </label>
+            </div>
             <div className="modal-actions">
               <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                 Cancel

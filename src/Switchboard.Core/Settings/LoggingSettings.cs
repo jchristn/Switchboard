@@ -67,7 +67,7 @@
 
         #region Private-Members
 
-        private int _MinimumSeverity = 1;
+        private int _MinimumSeverity = 0;
         private List<SyslogServer> _Servers = new List<SyslogServer>
         {
             new SyslogServer("127.0.0.1", 514)

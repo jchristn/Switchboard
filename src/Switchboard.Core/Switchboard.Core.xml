@@ -3058,7 +3058,8 @@
         </member>
         <member name="P:Switchboard.Core.Models.Credential.IsReadOnly">
             <summary>
-            True if this credential is read-only and cannot be modified via API or dashboard.
+            True if this credential has read-only API access.
+            Read-only credentials can only perform GET operations and cannot create, update, or delete resources.
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.Credential.CreatedUtc">
@@ -5142,6 +5143,11 @@
             <summary>
             Switchboard client for database operations.
             Use this to seed or manage data programmatically.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardDaemon.Logging">
+            <summary>
+            Logging module.
             </summary>
         </member>
         <member name="M:Switchboard.Core.SwitchboardDaemon.#ctor(Switchboard.Core.SwitchboardSettings)">

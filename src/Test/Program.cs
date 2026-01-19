@@ -1810,7 +1810,7 @@
         private static void InitializeSettings()
         {
             _Settings = new SwitchboardSettings();
-            _Settings.Logging.MinimumSeverity = 1;
+            _Settings.Logging.MinimumSeverity = 0;
             _Settings.Logging.EnableColors = false;
 
             // Configure OpenAPI documentation
