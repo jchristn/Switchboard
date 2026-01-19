@@ -14,13 +14,22 @@ namespace Switchboard.Core.Services
     {
         #region Public-Members
 
+        /// <summary>
+        /// Logging module.
+        /// </summary>
+        public LoggingModule Logging
+        {
+            get => _Logging;
+            set => _Logging = value ?? throw new ArgumentNullException(nameof(Logging));
+        }
+
         #endregion
 
         #region Private-Members
 
         private readonly string _Header = "[OpenApiService] ";
         private readonly SwitchboardSettings _Settings;
-        private readonly LoggingModule _Logging;
+        private LoggingModule _Logging;
         private readonly SwitchboardOpenApiDocumentGenerator _Generator;
         private string _CachedDocument = null;
         private string _CachedSwaggerHtml = null;

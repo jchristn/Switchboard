@@ -28,6 +28,15 @@
 
         #region Public-Members
 
+        /// <summary>
+        /// Logging module.
+        /// </summary>
+        public LoggingModule Logging
+        {
+            get => _Logging;
+            set => _Logging = value ?? throw new ArgumentNullException(nameof(Logging));
+        }
+
         #endregion
 
         #region Private-Members

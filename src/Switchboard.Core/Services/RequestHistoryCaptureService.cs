@@ -25,13 +25,22 @@ namespace Switchboard.Core.Services
         /// </summary>
         public event EventHandler<RequestHistory>? RequestCaptured;
 
+        /// <summary>
+        /// Logging module.
+        /// </summary>
+        public LoggingModule Logging
+        {
+            get => _Logging;
+            set => _Logging = value ?? throw new ArgumentNullException(nameof(Logging));
+        }
+
         #endregion
 
         #region Private-Members
 
         private readonly RequestHistorySettings _Settings;
         private readonly SwitchboardClient _Client;
-        private readonly LoggingModule _Logging;
+        private LoggingModule _Logging;
         private readonly string _Header = "[RequestHistoryCaptureService] ";
         private readonly CancellationTokenSource _TokenSource;
         private readonly Task _CleanupTask;

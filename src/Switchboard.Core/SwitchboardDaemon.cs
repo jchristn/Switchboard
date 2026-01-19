@@ -57,11 +57,31 @@
 
         /// <summary>
         /// Logging module.
+        /// When set, propagates to all internal services.
         /// </summary>
-        public LoggingModule Logging 
+        public LoggingModule Logging
         {
             get => _Logging;
-            set => _Logging = value ?? throw new ArgumentNullException(nameof(Logging));
+            set
+            {
+                _Logging = value ?? throw new ArgumentNullException(nameof(Logging));
+
+                // Propagate to all services that hold a reference
+                if (_HealthCheckService != null)
+                    _HealthCheckService.Logging = value;
+
+                if (_GatewayService != null)
+                    _GatewayService.Logging = value;
+
+                if (_OpenApiService != null)
+                    _OpenApiService.Logging = value;
+
+                if (_RequestHistoryService != null)
+                    _RequestHistoryService.Logging = value;
+
+                if (_ManagementService != null)
+                    _ManagementService.Logging = value;
+            }
         }
 
         #endregion
@@ -358,8 +378,6 @@
 
             _Webserver = new Webserver(_Settings.Webserver, _GatewayService.DefaultRoute);
             _Webserver.Routes.Preflight = _GatewayService.OptionsRoute;
-            _Webserver.Routes.PreRouting = _GatewayService.PreRoutingHandler;
-            _Webserver.Routes.PostRouting = _GatewayService.PostRoutingHandler;
             _Webserver.Routes.AuthenticateRequest = _GatewayService.AuthenticateRequest;
 
             _GatewayService.InitializeRoutes(_Webserver);

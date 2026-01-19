@@ -35,6 +35,15 @@
         /// </summary>
         public RequestHistoryCaptureService RequestHistoryService { get; set; } = null;
 
+        /// <summary>
+        /// Logging module.
+        /// </summary>
+        public LoggingModule Logging
+        {
+            get => _Logging;
+            set => _Logging = value ?? throw new ArgumentNullException(nameof(Logging));
+        }
+
         #endregion
 
         #region Private-Members
@@ -166,24 +175,6 @@
             ctx.Response.Headers = responseHeaders;
             await ctx.Response.Send();
             return;
-        }
-
-        /// <summary>
-        /// Pre-routing handler.
-        /// </summary>
-        /// <param name="ctx">HTTP context.</param>
-        /// <returns>Task.</returns>
-        public async Task PreRoutingHandler(HttpContextBase ctx)
-        {
-        }
-
-        /// <summary>
-        /// Post-routing handler.
-        /// </summary>
-        /// <param name="ctx">HTTP context.</param>
-        /// <returns>Task.</returns>
-        public async Task PostRoutingHandler(HttpContextBase ctx)
-        {
         }
 
         /// <summary>

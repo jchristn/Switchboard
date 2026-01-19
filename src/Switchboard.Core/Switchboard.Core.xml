@@ -4181,6 +4181,11 @@
             If set, requests will be captured for history tracking.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.Services.GatewayService.Logging">
+            <summary>
+            Logging module.
+            </summary>
+        </member>
         <member name="M:Switchboard.Core.Services.GatewayService.#ctor(Switchboard.Core.SwitchboardSettings,Switchboard.Core.SwitchboardCallbacks,SyslogLogging.LoggingModule,SerializationHelper.Serializer)">
             <summary>
             Instantiate.
@@ -4214,20 +4219,6 @@
             <param name="ctx">HTTP context.</param>
             <returns>Task.</returns>
         </member>
-        <member name="M:Switchboard.Core.Services.GatewayService.PreRoutingHandler(WatsonWebserver.Core.HttpContextBase)">
-            <summary>
-            Pre-routing handler.
-            </summary>
-            <param name="ctx">HTTP context.</param>
-            <returns>Task.</returns>
-        </member>
-        <member name="M:Switchboard.Core.Services.GatewayService.PostRoutingHandler(WatsonWebserver.Core.HttpContextBase)">
-            <summary>
-            Post-routing handler.
-            </summary>
-            <param name="ctx">HTTP context.</param>
-            <returns>Task.</returns>
-        </member>
         <member name="M:Switchboard.Core.Services.GatewayService.AuthenticateRequest(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             Authenticate request.
@@ -4245,6 +4236,11 @@
         <member name="T:Switchboard.Core.Services.HealthCheckService">
             <summary>
             Health check service.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.HealthCheckService.Logging">
+            <summary>
+            Logging module.
             </summary>
         </member>
         <member name="M:Switchboard.Core.Services.HealthCheckService.#ctor(Switchboard.Core.SwitchboardSettings,SyslogLogging.LoggingModule,SerializationHelper.Serializer)">
@@ -4270,6 +4266,11 @@
             <summary>
             Management API service.
             Provides REST endpoints for managing Switchboard configuration.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ManagementService.Logging">
+            <summary>
+            Logging module.
             </summary>
         </member>
         <member name="M:Switchboard.Core.Services.ManagementService.#ctor(Switchboard.Core.Settings.ManagementSettings,Switchboard.Core.Client.SwitchboardClient,SyslogLogging.LoggingModule)">
@@ -4301,6 +4302,11 @@
         <member name="T:Switchboard.Core.Services.OpenApiService">
             <summary>
             Service for generating and serving OpenAPI documentation.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.OpenApiService.Logging">
+            <summary>
+            Logging module.
             </summary>
         </member>
         <member name="M:Switchboard.Core.Services.OpenApiService.#ctor(Switchboard.Core.SwitchboardSettings,SyslogLogging.LoggingModule)">
@@ -4469,6 +4475,11 @@
         <member name="E:Switchboard.Core.Services.RequestHistoryCaptureService.RequestCaptured">
             <summary>
             Event raised when a request is captured.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.RequestHistoryCaptureService.Logging">
+            <summary>
+            Logging module.
             </summary>
         </member>
         <member name="M:Switchboard.Core.Services.RequestHistoryCaptureService.#ctor(Switchboard.Core.Settings.RequestHistorySettings,Switchboard.Core.Client.SwitchboardClient,SyslogLogging.LoggingModule)">
@@ -5148,6 +5159,7 @@
         <member name="P:Switchboard.Core.SwitchboardDaemon.Logging">
             <summary>
             Logging module.
+            When set, propagates to all internal services.
             </summary>
         </member>
         <member name="M:Switchboard.Core.SwitchboardDaemon.#ctor(Switchboard.Core.SwitchboardSettings)">

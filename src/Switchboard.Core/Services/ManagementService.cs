@@ -24,13 +24,22 @@ namespace Switchboard.Core.Services
     {
         #region Public-Members
 
+        /// <summary>
+        /// Logging module.
+        /// </summary>
+        public LoggingModule Logging
+        {
+            get => _Logging;
+            set => _Logging = value ?? throw new ArgumentNullException(nameof(Logging));
+        }
+
         #endregion
 
         #region Private-Members
 
         private readonly ManagementSettings _Settings;
         private readonly SwitchboardClient _Client;
-        private readonly LoggingModule _Logging;
+        private LoggingModule _Logging;
         private readonly string _Header = "[ManagementService] ";
         private bool _Disposed = false;
         private string? _CachedOpenApiDocument = null;
