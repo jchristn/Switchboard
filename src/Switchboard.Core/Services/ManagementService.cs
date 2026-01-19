@@ -340,25 +340,25 @@ namespace Switchboard.Core.Services
             await ctx.Response.Send(response).ConfigureAwait(false);
         }
 
-        private async Task<T?> ReadBody<T>(HttpContextBase ctx) where T : class
+        private Task<T?> ReadBody<T>(HttpContextBase ctx) where T : class
         {
             try
             {
-                if (ctx.Request.Data == null || ctx.Request.ContentLength < 1)
+                // Use DataAsBytes which is already buffered (may have been read by middleware)
+                byte[] data = ctx.Request.DataAsBytes;
+                if (data == null || data.Length < 1)
                 {
                     _Logging.Warn(_Header + "no request body found");
-                    return null;
+                    return Task.FromResult<T?>(null);
                 }
 
-                byte[] data = new byte[ctx.Request.ContentLength];
-                await ctx.Request.Data.ReadAsync(data, 0, (int)ctx.Request.ContentLength, ctx.Token).ConfigureAwait(false);
                 string json = System.Text.Encoding.UTF8.GetString(data);
-                return JsonSerializer.Deserialize<T>(json, _JsonOptions);
+                return Task.FromResult(JsonSerializer.Deserialize<T>(json, _JsonOptions));
             }
             catch (Exception e)
             {
                 _Logging.Warn(_Header + "exception while reading request body:" + Environment.NewLine + e.ToString());
-                return null;
+                return Task.FromResult<T?>(null);
             }
         }
 
