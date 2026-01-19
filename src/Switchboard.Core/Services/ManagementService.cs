@@ -175,8 +175,8 @@ namespace Switchboard.Core.Services
             }
 
             _Logging.Info(_Header + "routes initialized successfully");
-            _Logging.Info(_Header + "Management API OpenAPI document available at /openapi.json");
-            _Logging.Info(_Header + "Management API Swagger UI available at /swagger");
+            _Logging.Info(_Header + "management API OpenAPI document available at /openapi.json");
+            _Logging.Info(_Header + "management API Swagger UI available at /swagger");
         }
 
         /// <summary>

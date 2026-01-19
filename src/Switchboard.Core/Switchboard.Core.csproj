@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<Title>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Title>
-		<Version>4.0.3</Version>
+		<Version>4.0.4</Version>
 		<Description>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Description>
 		<Copyright>(c)2026 Joel Christner</Copyright>
 		<PackageReleaseNotes>v4.0.3: Database backend support (SQLite, MySQL, PostgreSQL, SQL Server), Management REST API, Web Dashboard, Request History tracking</PackageReleaseNotes>
