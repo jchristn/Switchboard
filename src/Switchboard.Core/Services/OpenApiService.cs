@@ -1,10 +1,12 @@
 namespace Switchboard.Core.Services
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using SyslogLogging;
     using WatsonWebserver;
     using WatsonWebserver.Core;
+    using WatsonWebserver.Core.OpenApi;
     using Switchboard.Core.Settings;
 
     /// <summary>
@@ -59,7 +61,8 @@ namespace Switchboard.Core.Services
         /// Initialize OpenAPI routes on the webserver.
         /// </summary>
         /// <param name="webserver">Watson webserver instance.</param>
-        public void InitializeRoutes(Webserver webserver)
+        /// <param name="preflightHandler">Handler used for CORS preflight responses.</param>
+        public void InitializeRoutes(Webserver webserver, Func<HttpContextBase, Task> preflightHandler = null)
         {
             if (webserver == null) throw new ArgumentNullException(nameof(webserver));
 
@@ -93,7 +96,17 @@ namespace Switchboard.Core.Services
             webserver.Routes.PreAuthentication.Static.Add(
                 HttpMethod.GET,
                 documentPath,
-                OpenApiDocumentHandler);
+                OpenApiDocumentHandler,
+                openApiMetadata: BuildOpenApiDocumentMetadata());
+
+            if (preflightHandler != null)
+            {
+                webserver.Routes.PreAuthentication.Static.Add(
+                    HttpMethod.OPTIONS,
+                    documentPath,
+                    preflightHandler,
+                    openApiMetadata: BuildPreflightMetadata("OpenAPI document"));
+            }
 
             _Logging.Info(_Header + "OpenAPI document available at " + documentPath);
 
@@ -104,7 +117,17 @@ namespace Switchboard.Core.Services
                 webserver.Routes.PreAuthentication.Static.Add(
                     HttpMethod.GET,
                     swaggerPath,
-                    SwaggerUiRouteHandler);
+                    SwaggerUiRouteHandler,
+                    openApiMetadata: BuildSwaggerUiMetadata());
+
+                if (preflightHandler != null)
+                {
+                    webserver.Routes.PreAuthentication.Static.Add(
+                        HttpMethod.OPTIONS,
+                        swaggerPath,
+                        preflightHandler,
+                        openApiMetadata: BuildPreflightMetadata("Swagger UI"));
+                }
 
                 _Logging.Info(_Header + "Swagger UI available at " + swaggerPath);
             }
@@ -156,6 +179,63 @@ namespace Switchboard.Core.Services
 
                 _IsDisposed = true;
             }
+        }
+
+        private OpenApiRouteMetadata BuildOpenApiDocumentMetadata()
+        {
+            OpenApiRouteMetadata metadata = new OpenApiRouteMetadata();
+            metadata.Summary = "Get OpenAPI document";
+            metadata.Description = "Returns the generated OpenAPI 3.0 JSON document for the configured Switchboard routes.";
+            metadata.Tags = new List<string> { "Documentation" };
+            metadata.WithResponse(
+                200,
+                OpenApiResponseMetadata.Json(
+                    "OpenAPI document.",
+                    new OpenApiSchemaMetadata
+                    {
+                        Type = "object"
+                    }));
+            return metadata;
+        }
+
+        private OpenApiRouteMetadata BuildSwaggerUiMetadata()
+        {
+            OpenApiRouteMetadata metadata = new OpenApiRouteMetadata();
+            metadata.Summary = "Get Swagger UI";
+            metadata.Description = "Returns the built-in Swagger UI for the configured Switchboard routes.";
+            metadata.Tags = new List<string> { "Documentation" };
+            metadata.WithResponse(
+                200,
+                new OpenApiResponseMetadata
+                {
+                    Description = "Swagger UI HTML.",
+                    Content = new Dictionary<string, OpenApiMediaTypeMetadata>
+                    {
+                        ["text/html"] = new OpenApiMediaTypeMetadata
+                        {
+                            Schema = new OpenApiSchemaMetadata
+                            {
+                                Type = "string"
+                            }
+                        }
+                    }
+                });
+            return metadata;
+        }
+
+        private OpenApiRouteMetadata BuildPreflightMetadata(string surfaceName)
+        {
+            OpenApiRouteMetadata metadata = new OpenApiRouteMetadata();
+            metadata.Summary = "CORS preflight for " + surfaceName;
+            metadata.Description = "Returns the CORS headers required for browser preflight access to the " + surfaceName + ".";
+            metadata.Tags = new List<string> { "Documentation" };
+            metadata.WithResponse(
+                200,
+                new OpenApiResponseMetadata
+                {
+                    Description = "CORS preflight accepted."
+                });
+            return metadata;
         }
 
         private async Task OpenApiDocumentHandler(HttpContextBase ctx)

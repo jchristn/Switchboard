@@ -1,7 +1,5 @@
 #nullable enable
 
-using Switchboard;
-
 namespace Switchboard.Core.Services
 {
     using System;
@@ -11,10 +9,12 @@ namespace Switchboard.Core.Services
     using SyslogLogging;
     using WatsonWebserver;
     using WatsonWebserver.Core;
+    using WatsonWebserver.Core.OpenApi;
     using Switchboard.Core.Client;
     using Switchboard.Core.Client.Interfaces;
     using Switchboard.Core.Models;
     using Switchboard.Core.Settings;
+    using SwitchboardApiErrorResponse = Switchboard.Core.ApiErrorResponse;
 
     /// <summary>
     /// Management API service.
@@ -81,7 +81,8 @@ namespace Switchboard.Core.Services
         /// </summary>
         /// <param name="webserver">Webserver instance.</param>
         /// <param name="serverUrl">Server URL for OpenAPI documentation (e.g., "http://localhost:8000").</param>
-        public void InitializeRoutes(Webserver webserver, string serverUrl = "")
+        /// <param name="preflightHandler">Handler used for CORS preflight responses.</param>
+        public void InitializeRoutes(Webserver webserver, string serverUrl = "", Func<HttpContextBase, Task>? preflightHandler = null)
         {
             if (webserver == null)
                 throw new ArgumentNullException(nameof(webserver));
@@ -167,8 +168,30 @@ namespace Switchboard.Core.Services
             webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, basePath + "/me", GetCurrentUserAsync);
 
             // OpenAPI and Swagger UI for Management API (at root path for discoverability)
-            webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, "/openapi.json", GetManagementOpenApiAsync);
-            webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, "/swagger", GetManagementSwaggerUiAsync);
+            webserver.Routes.PreAuthentication.Static.Add(
+                HttpMethod.GET,
+                "/openapi.json",
+                GetManagementOpenApiAsync,
+                openApiMetadata: BuildOpenApiDocumentMetadata());
+            webserver.Routes.PreAuthentication.Static.Add(
+                HttpMethod.GET,
+                "/swagger",
+                GetManagementSwaggerUiAsync,
+                openApiMetadata: BuildSwaggerUiMetadata());
+
+            if (preflightHandler != null)
+            {
+                webserver.Routes.PreAuthentication.Static.Add(
+                    HttpMethod.OPTIONS,
+                    "/openapi.json",
+                    preflightHandler,
+                    openApiMetadata: BuildPreflightMetadata("OpenAPI document"));
+                webserver.Routes.PreAuthentication.Static.Add(
+                    HttpMethod.OPTIONS,
+                    "/swagger",
+                    preflightHandler,
+                    openApiMetadata: BuildPreflightMetadata("Swagger UI"));
+            }
 
             // Pre-generate OpenAPI document
             try
@@ -267,7 +290,7 @@ namespace Switchboard.Core.Services
 
         private async Task SendUnauthorized(HttpContextBase ctx)
         {
-            ApiErrorResponse error = new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed);
+            SwitchboardApiErrorResponse error = new SwitchboardApiErrorResponse(ApiErrorEnum.AuthenticationFailed);
             ctx.Response.StatusCode = error.StatusCode;
             ctx.Response.ContentType = "application/json";
             string response = JsonSerializer.Serialize(error, _JsonOptions);
@@ -276,7 +299,7 @@ namespace Switchboard.Core.Services
 
         private async Task SendForbidden(HttpContextBase ctx, string message)
         {
-            ApiErrorResponse error = new ApiErrorResponse(ApiErrorEnum.AuthorizationFailed, description: message);
+            SwitchboardApiErrorResponse error = new SwitchboardApiErrorResponse(ApiErrorEnum.AuthorizationFailed, description: message);
             ctx.Response.StatusCode = error.StatusCode;
             ctx.Response.ContentType = "application/json";
             string response = JsonSerializer.Serialize(error, _JsonOptions);
@@ -285,7 +308,7 @@ namespace Switchboard.Core.Services
 
         private async Task SendBadRequest(HttpContextBase ctx, string message)
         {
-            ApiErrorResponse error = new ApiErrorResponse(ApiErrorEnum.BadRequest, description: message);
+            SwitchboardApiErrorResponse error = new SwitchboardApiErrorResponse(ApiErrorEnum.BadRequest, description: message);
             ctx.Response.StatusCode = error.StatusCode;
             ctx.Response.ContentType = "application/json";
             string response = JsonSerializer.Serialize(error, _JsonOptions);
@@ -294,7 +317,7 @@ namespace Switchboard.Core.Services
 
         private async Task SendNotFound(HttpContextBase ctx, string message)
         {
-            ApiErrorResponse error = new ApiErrorResponse(ApiErrorEnum.NotFound, description: message);
+            SwitchboardApiErrorResponse error = new SwitchboardApiErrorResponse(ApiErrorEnum.NotFound, description: message);
             ctx.Response.StatusCode = error.StatusCode;
             ctx.Response.ContentType = "application/json";
             string response = JsonSerializer.Serialize(error, _JsonOptions);
@@ -333,7 +356,7 @@ namespace Switchboard.Core.Services
         private async Task SendError(HttpContextBase ctx, Exception ex)
         {
             _Logging.Warn(_Header + "exception: " + ex.Message);
-            ApiErrorResponse error = new ApiErrorResponse(ApiErrorEnum.InternalError, description: ex.Message);
+            SwitchboardApiErrorResponse error = new SwitchboardApiErrorResponse(ApiErrorEnum.InternalError, description: ex.Message);
             ctx.Response.StatusCode = error.StatusCode;
             ctx.Response.ContentType = "application/json";
             string response = JsonSerializer.Serialize(error, _JsonOptions);
@@ -1298,7 +1321,7 @@ namespace Switchboard.Core.Services
                 {
                     status = "healthy",
                     timestamp = DateTime.UtcNow.ToString("o"),
-                    version = "4.0.2"
+                    version = Constants.SoftwareVersion
                 }).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
@@ -1457,6 +1480,63 @@ namespace Switchboard.Core.Services
             {
                 _Disposed = true;
             }
+        }
+
+        private OpenApiRouteMetadata BuildOpenApiDocumentMetadata()
+        {
+            OpenApiRouteMetadata metadata = new OpenApiRouteMetadata();
+            metadata.Summary = "Get OpenAPI document";
+            metadata.Description = "Returns the generated OpenAPI 3.0 JSON document for the Switchboard management API.";
+            metadata.Tags = new List<string> { "Documentation" };
+            metadata.WithResponse(
+                200,
+                OpenApiResponseMetadata.Json(
+                    "OpenAPI document.",
+                    new OpenApiSchemaMetadata
+                    {
+                        Type = "object"
+                    }));
+            return metadata;
+        }
+
+        private OpenApiRouteMetadata BuildSwaggerUiMetadata()
+        {
+            OpenApiRouteMetadata metadata = new OpenApiRouteMetadata();
+            metadata.Summary = "Get Swagger UI";
+            metadata.Description = "Returns the built-in Swagger UI for the Switchboard management API.";
+            metadata.Tags = new List<string> { "Documentation" };
+            metadata.WithResponse(
+                200,
+                new OpenApiResponseMetadata
+                {
+                    Description = "Swagger UI HTML.",
+                    Content = new Dictionary<string, OpenApiMediaTypeMetadata>
+                    {
+                        ["text/html"] = new OpenApiMediaTypeMetadata
+                        {
+                            Schema = new OpenApiSchemaMetadata
+                            {
+                                Type = "string"
+                            }
+                        }
+                    }
+                });
+            return metadata;
+        }
+
+        private OpenApiRouteMetadata BuildPreflightMetadata(string surfaceName)
+        {
+            OpenApiRouteMetadata metadata = new OpenApiRouteMetadata();
+            metadata.Summary = "CORS preflight for " + surfaceName;
+            metadata.Description = "Returns the CORS headers required for browser preflight access to the " + surfaceName + ".";
+            metadata.Tags = new List<string> { "Documentation" };
+            metadata.WithResponse(
+                200,
+                new OpenApiResponseMetadata
+                {
+                    Description = "CORS preflight accepted."
+                });
+            return metadata;
         }
 
         #endregion

@@ -2,7 +2,7 @@
 
 if [ -z "$1" ]; then
     echo "Provide a tag argument for the build."
-    echo "Example: ./build-docker.sh v4.0.2"
+    echo "Example: ./build-docker.sh v4.0.9"
     exit 1
 fi
 

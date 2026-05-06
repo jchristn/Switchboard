@@ -27,7 +27,7 @@
 
         #region Private-Members
 
-        private static string _SoftwareVersion = "v1.0.0";
+        private static string _SoftwareVersion = "v" + Constants.SoftwareVersion;
         private static SwitchboardSettings _Settings = null;
         private static SwitchboardDaemon _Switchboard = null;
         private static Serializer _Serializer = new Serializer();

@@ -102,7 +102,12 @@ namespace Test.ServerSentEvents
                     {
                         // Wait for health checks
                         Console.WriteLine("Waiting for origin server to become healthy...");
-                        await Task.Delay(2000);
+                        DateTime waitStart = DateTime.UtcNow;
+                        while (!sbSettings.Origins[0].Healthy
+                            && DateTime.UtcNow - waitStart < TimeSpan.FromSeconds(10))
+                        {
+                            await Task.Delay(250);
+                        }
 
                         if (!sbSettings.Origins[0].Healthy)
                         {
@@ -429,6 +434,13 @@ namespace Test.ServerSentEvents
 
             try
             {
+                if (ctx.Request.Method == WatsonWebserver.Core.HttpMethod.GET && ctx.Request.Url.RawWithoutQuery == "/")
+                {
+                    ctx.Response.StatusCode = 200;
+                    await ctx.Response.Send().ConfigureAwait(false);
+                    return;
+                }
+
                 // Respond with Server-Sent Events
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "text/event-stream";

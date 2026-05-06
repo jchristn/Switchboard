@@ -1918,6 +1918,11 @@
             Constants.
             </summary>
         </member>
+        <member name="F:Switchboard.Core.Constants.SoftwareVersion">
+            <summary>
+            Current software version.
+            </summary>
+        </member>
         <member name="F:Switchboard.Core.Constants.Logo">
             <summary>
             Logo.
@@ -4281,12 +4286,13 @@
             <param name="client">Switchboard client.</param>
             <param name="logging">Logging module.</param>
         </member>
-        <member name="M:Switchboard.Core.Services.ManagementService.InitializeRoutes(WatsonWebserver.Webserver,System.String)">
+        <member name="M:Switchboard.Core.Services.ManagementService.InitializeRoutes(WatsonWebserver.Webserver,System.String,System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
             <summary>
             Initialize routes on the webserver.
             </summary>
             <param name="webserver">Webserver instance.</param>
             <param name="serverUrl">Server URL for OpenAPI documentation (e.g., "http://localhost:8000").</param>
+            <param name="preflightHandler">Handler used for CORS preflight responses.</param>
         </member>
         <member name="M:Switchboard.Core.Services.ManagementService.Dispose">
             <summary>
@@ -4316,11 +4322,12 @@
             <param name="settings">Switchboard settings.</param>
             <param name="logging">Logging module.</param>
         </member>
-        <member name="M:Switchboard.Core.Services.OpenApiService.InitializeRoutes(WatsonWebserver.Webserver)">
+        <member name="M:Switchboard.Core.Services.OpenApiService.InitializeRoutes(WatsonWebserver.Webserver,System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
             <summary>
             Initialize OpenAPI routes on the webserver.
             </summary>
             <param name="webserver">Watson webserver instance.</param>
+            <param name="preflightHandler">Handler used for CORS preflight responses.</param>
         </member>
         <member name="M:Switchboard.Core.Services.OpenApiService.RegenerateDocument">
             <summary>

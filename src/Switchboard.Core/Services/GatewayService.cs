@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.ComponentModel.Design;
+    using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Net.Sockets;
@@ -19,6 +20,9 @@
     using UrlMatcher;
     using WatsonWebserver;
     using WatsonWebserver.Core;
+    using SwitchboardApiErrorResponse = Switchboard.Core.ApiErrorResponse;
+    using SwitchboardAuthenticationResultEnum = Switchboard.Core.AuthenticationResultEnum;
+    using SwitchboardAuthorizationResultEnum = Switchboard.Core.AuthorizationResultEnum;
 
     /// <summary>
     /// Gateway service.
@@ -162,10 +166,11 @@
                 }
             }
 
-            responseHeaders.Add("Access-Control-Allow-Methods", "OPTIONS, HEAD, GET, PUT, POST, DELETE");
+            responseHeaders.Add("Access-Control-Allow-Methods", "OPTIONS, HEAD, GET, PUT, POST, DELETE, PATCH");
             responseHeaders.Add("Access-Control-Allow-Headers", "*, Content-Type, X-Requested-With, " + headers);
             responseHeaders.Add("Access-Control-Expose-Headers", "Content-Type, X-Requested-With, " + headers);
             responseHeaders.Add("Access-Control-Allow-Origin", "*");
+            responseHeaders.Add("Access-Control-Max-Age", "86400");
             responseHeaders.Add("Accept", "*/*");
             responseHeaders.Add("Accept-Language", "en-US, en");
             responseHeaders.Add("Accept-Charset", "ISO-8859-1, utf-8");
@@ -220,19 +225,6 @@
                     }
                 }
 
-                // Capture request body (will be filtered by size limits in EndCaptureAsync)
-                if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
-                {
-                    try
-                    {
-                        captureContext.RequestBody = Encoding.UTF8.GetString(ctx.Request.DataAsBytes);
-                    }
-                    catch
-                    {
-                        // Binary data that can't be converted to UTF-8
-                        captureContext.RequestBody = "[binary data: " + ctx.Request.DataAsBytes.Length + " bytes]";
-                    }
-                }
             }
 
             try
@@ -243,7 +235,7 @@
                     _Logging.Warn(_Header + "no API endpoint found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadRequest, null, "No matching API endpoint found"), true));
+                    await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.BadRequest, null, "No matching API endpoint found"), true));
 
                     if (captureContext != null)
                     {
@@ -267,7 +259,7 @@
                     _Logging.Debug(_Header + "denying HTTP/1.0 request due to API endpoint configuration");
                     ctx.Response.StatusCode = 505;
                     ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.UnsupportedHttpVersion), true));
+                    await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.UnsupportedHttpVersion), true));
 
                     if (captureContext != null)
                     {
@@ -284,7 +276,7 @@
                         _Logging.Warn(_Header + "API endpoint " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery + " requires auth but no auth callback set");
                         ctx.Response.StatusCode = 401;
                         ctx.Response.ContentType = Constants.JsonContentType;
-                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed), true));
+                        await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.AuthenticationFailed), true));
 
                         if (captureContext != null)
                         {
@@ -295,8 +287,8 @@
                     }
 
                     authContext = await _Callbacks.AuthenticateAndAuthorize(ctx);
-                    if (authContext.Authentication.Result != AuthenticationResultEnum.Success
-                        && authContext.Authorization.Result != AuthorizationResultEnum.Success)
+                    if (authContext.Authentication.Result != SwitchboardAuthenticationResultEnum.Success
+                        && authContext.Authorization.Result != SwitchboardAuthorizationResultEnum.Success)
                     {
                         _Logging.Warn(
                             _Header +
@@ -306,7 +298,7 @@
 
                         ctx.Response.StatusCode = 401;
                         ctx.Response.ContentType = Constants.JsonContentType;
-                        await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.AuthenticationFailed, null, authContext.FailureMessage), true));
+                        await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.AuthenticationFailed, null, authContext.FailureMessage), true));
 
                         if (captureContext != null)
                         {
@@ -328,7 +320,7 @@
                     _Logging.Warn(_Header + "no origin server found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
                     ctx.Response.StatusCode = 502;
                     ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway, null, "No origin servers are available to service your request"), true));
+                    await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.BadGateway, null, "No origin servers are available to service your request"), true));
 
                     if (captureContext != null)
                     {
@@ -344,12 +336,19 @@
                     captureContext.Origin = origin;
                 }
 
+                if (captureContext != null
+                    && !ctx.Request.ChunkedTransfer
+                    && (_Settings.RequestHistory.CaptureRequestBody || match.Endpoint.CaptureRequestBody || origin.CaptureRequestBody))
+                {
+                    CaptureBufferedRequestBody(captureContext, ctx.Request.DataAsBytes);
+                }
+
                 if (match.Endpoint.MaxRequestBodySize > 0 && ctx.Request.ContentLength > match.Endpoint.MaxRequestBodySize)
                 {
                     _Logging.Warn(_Header + "request too large from " + ctx.Request.Source.IpAddress + ": " + ctx.Request.ContentLength + " bytes");
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.TooLarge, null, "Your request was too large"), true));
+                    await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.TooLarge, null, "Your request was too large"), true));
 
                     if (captureContext != null)
                     {
@@ -368,7 +367,7 @@
                     _Logging.Warn(_Header + "too many active requests for origin " + origin.Identifier + ", sending 429 response to request from " + ctx.Request.Source.IpAddress);
                     ctx.Response.StatusCode = 429;
                     ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.SlowDown)));
+                    await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.SlowDown)));
 
                     if (captureContext != null)
                     {
@@ -393,7 +392,7 @@
                     _Logging.Warn(_Header + "no response or exception from " + origin.Identifier + " for API endpoint " + match.Endpoint.Identifier);
                     ctx.Response.StatusCode = 502;
                     ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new ApiErrorResponse(ApiErrorEnum.BadGateway), true));
+                    await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.BadGateway), true));
 
                     if (captureContext != null)
                     {
@@ -449,6 +448,150 @@
             Buffer.BlockCopy(newLine, 0, result, data.Length, newLine.Length);
 
             return result;
+        }
+
+        private void CaptureBufferedRequestBody(RequestCaptureContext captureContext, byte[] data)
+        {
+            if (captureContext == null) throw new ArgumentNullException(nameof(captureContext));
+            if (data == null || data.Length < 1) return;
+
+            try
+            {
+                captureContext.RequestBody = Encoding.UTF8.GetString(data);
+            }
+            catch
+            {
+                // Binary data that can't be converted to UTF-8
+                captureContext.RequestBody = "[binary data: " + data.Length + " bytes]";
+            }
+        }
+
+        private bool ShouldForwardRequestHeader(string key)
+        {
+            if (String.IsNullOrEmpty(key)) return false;
+
+            switch (key.ToLowerInvariant())
+            {
+                case "connection":
+                case "content-length":
+                case "host":
+                case "keep-alive":
+                case "proxy-connection":
+                case "te":
+                case "trailer":
+                case "transfer-encoding":
+                case "upgrade":
+                    return false;
+                default:
+                    return true;
+            }
+        }
+
+        private bool TryExtractChunkedPayload(byte[] data, out byte[] payload)
+        {
+            payload = null;
+            if (data == null || data.Length < 1) return false;
+
+            byte[] current = data;
+            bool extracted = false;
+
+            while (TryFlattenChunkedBody(current, out byte[] next))
+            {
+                current = next;
+                extracted = true;
+            }
+
+            if (!extracted) return false;
+
+            payload = current ?? Array.Empty<byte>();
+            return true;
+        }
+
+        private bool TryFlattenChunkedBody(byte[] data, out byte[] payload)
+        {
+            payload = null;
+            if (data == null || data.Length < 1) return false;
+
+            int offset = 0;
+            List<byte> flattened = new List<byte>();
+
+            while (offset < data.Length)
+            {
+                if (!TryReadAsciiLine(data, ref offset, out string lengthLine)) return false;
+                if (String.IsNullOrWhiteSpace(lengthLine)) continue;
+
+                string[] lengthParts = lengthLine.Split(';');
+                string lengthText = lengthParts[0].Trim();
+
+                if (!Int32.TryParse(lengthText, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int chunkLength)
+                    || chunkLength < 0)
+                {
+                    return false;
+                }
+
+                if (chunkLength == 0)
+                {
+                    payload = flattened.ToArray();
+                    return true;
+                }
+
+                if (offset + chunkLength > data.Length) return false;
+
+                for (int i = 0; i < chunkLength; i++)
+                {
+                    flattened.Add(data[offset + i]);
+                }
+
+                offset += chunkLength;
+
+                if (!ConsumeLineEnding(data, ref offset)) return false;
+            }
+
+            return false;
+        }
+
+        private bool TryReadAsciiLine(byte[] data, ref int offset, out string line)
+        {
+            line = null;
+            if (data == null || offset < 0 || offset >= data.Length) return false;
+
+            int start = offset;
+
+            while (offset < data.Length)
+            {
+                if (data[offset] == 0x0A)
+                {
+                    int length = offset - start;
+                    if (length > 0 && data[offset - 1] == 0x0D) length--;
+                    line = Encoding.ASCII.GetString(data, start, length);
+                    offset++;
+                    return true;
+                }
+
+                offset++;
+            }
+
+            return false;
+        }
+
+        private bool ConsumeLineEnding(byte[] data, ref int offset)
+        {
+            if (data == null || offset < 0 || offset >= data.Length) return false;
+
+            if (data[offset] == 0x0D)
+            {
+                if (offset + 1 >= data.Length || data[offset + 1] != 0x0A) return false;
+                offset += 2;
+                return true;
+            }
+
+            if (data[offset] == 0x0A)
+            {
+                offset++;
+                return true;
+            }
+
+            return false;
         }
 
         private async Task GetRootRoute(HttpContextBase ctx)
@@ -680,6 +823,9 @@
                         {
                             foreach (string key in ctx.Request.Headers.Keys)
                             {
+                                if (!ShouldForwardRequestHeader(key))
+                                    continue;
+
                                 if (!req.Headers.AllKeys.Contains(key))
                                 {
                                     string val = ctx.Request.Headers.Get(key);
@@ -701,11 +847,18 @@
 
                         if (endpoint.Endpoint.LogRequestBody || origin.LogRequestBody)
                         {
-                            _Logging.Debug(
-                                _Header
-                                + "request body (" + ctx.Request.DataAsBytes.Length + " bytes): "
-                                + Environment.NewLine
-                                + Encoding.UTF8.GetString(ctx.Request.DataAsBytes));
+                            if (ctx.Request.ChunkedTransfer)
+                            {
+                                _Logging.Debug(_Header + "request body logging skipped for chunked transfer request");
+                            }
+                            else if (ctx.Request.DataAsBytes != null)
+                            {
+                                _Logging.Debug(
+                                    _Header
+                                    + "request body (" + ctx.Request.DataAsBytes.Length + " bytes): "
+                                    + Environment.NewLine
+                                    + Encoding.UTF8.GetString(ctx.Request.DataAsBytes));
+                            }
 
                             _Logging.Debug(_Header + "using content-type: " + req.ContentType);
                         }
@@ -729,24 +882,34 @@
 
                             _Logging.Debug(_Header + "forwarding chunked request to " + origin.Identifier);
 
-                            // Read and forward chunks
-                            bool finalChunk = false;
-                            while (!finalChunk)
+                            if (TryExtractChunkedPayload(ctx.Request.DataAsBytes, out byte[] normalizedPayload))
                             {
-                                Chunk chunk = await ctx.Request.ReadChunk();
-                                finalChunk = (chunk.Length == 0); // Zero-length chunk indicates end
-
-                                _Logging.Debug(_Header + "forwarding chunk: " + chunk.Length + " bytes, final: " + finalChunk);
-
-                                if (chunk.Length > 0)
+                                _Logging.Debug(_Header + "forwarding normalized buffered chunked payload: " + normalizedPayload.Length + " bytes");
+                                resp = await req.SendChunkAsync(normalizedPayload, true);
+                            }
+                            else if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
+                            {
+                                _Logging.Debug(_Header + "forwarding buffered chunked request as a single chunk: " + ctx.Request.DataAsBytes.Length + " bytes");
+                                resp = await req.SendChunkAsync(ctx.Request.DataAsBytes, true);
+                            }
+                            else
+                            {
+                                bool finalChunk = false;
+                                while (!finalChunk)
                                 {
-                                    resp = await req.SendChunkAsync(chunk.Data, false);
-                                }
-                                else
-                                {
-                                    // Send final chunk
-                                    resp = await req.SendChunkAsync(Array.Empty<byte>(), true);
-                                    finalChunk = true;
+                                    Chunk chunk = await ctx.Request.ReadChunk();
+                                    finalChunk = (chunk != null && chunk.IsFinal);
+
+                                    _Logging.Debug(_Header + "forwarding streamed chunk: " + chunk?.Length + " bytes, final: " + finalChunk);
+
+                                    if (chunk != null && chunk.Length > 0)
+                                    {
+                                        resp = await req.SendChunkAsync(chunk.Data, finalChunk);
+                                    }
+                                    else if (finalChunk)
+                                    {
+                                        resp = await req.SendChunkAsync(Array.Empty<byte>(), true);
+                                    }
                                 }
                             }
 

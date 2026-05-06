@@ -17,6 +17,8 @@
     using Switchboard.Core.Settings;
     using WatsonWebserver;
     using WatsonWebserver.Core;
+    using SwitchboardAuthenticationResultEnum = Switchboard.Core.AuthenticationResultEnum;
+    using SwitchboardAuthorizationResultEnum = Switchboard.Core.AuthorizationResultEnum;
 
     public static class Program
     {
@@ -28,9 +30,19 @@
         private static SwitchboardSettings _Settings = null;
         private static Serializer _Serializer = new Serializer();
         private static LoadBalancingMode _LoadBalancingMode = LoadBalancingMode.RoundRobin;
+        private const int SWITCHBOARD_PORT = 9200;
+        private const int ORIGIN1_PORT = 9201;
+        private const int ORIGIN2_PORT = 9202;
+        private const int ORIGIN3_PORT = 9203;
+        private const int ORIGIN4_PORT = 9204;
 
         private static List<TestResult> _TestResults = new List<TestResult>();
         private static Stopwatch _OverallStopwatch = new Stopwatch();
+
+        private static string SwitchboardUrl(string pathAndQuery)
+        {
+            return "http://localhost:" + SWITCHBOARD_PORT + pathAndQuery;
+        }
 
         private static WebserverSettings _Server1Settings = null;
         private static Webserver _Server1 = null;
@@ -70,7 +82,7 @@
             Console.WriteLine("- Unauthenticated URL : GET /unauthenticated");
             Console.WriteLine("- Authenticated URL   : GET /authenticated");
             Console.WriteLine("- Load Balancing      : Round Robin");
-            Console.WriteLine("- Origin Servers      : 4 (ports 8001-8004)");
+            Console.WriteLine("- Origin Servers      : 4 (ports " + ORIGIN1_PORT + "-" + ORIGIN4_PORT + ")");
             Console.WriteLine("- OpenAPI Document    : /openapi.json");
             Console.WriteLine("- Swagger UI          : /swagger");
             Console.WriteLine("");
@@ -121,7 +133,7 @@
 
                                 await RunTest("OpenAPI Document - JSON Endpoint", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/openapi.json"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/openapi.json")))
                                     {
                                         using (RestResponse resp = await req.SendAsync())
                                         {
@@ -160,7 +172,7 @@
 
                                 await RunTest("OpenAPI Document - Contains Endpoint Paths", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/openapi.json"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/openapi.json")))
                                     {
                                         using (RestResponse resp = await req.SendAsync())
                                         {
@@ -182,12 +194,24 @@
                                             if (!json.Contains("/authenticated"))
                                                 throw new Exception("Missing /authenticated path");
 
+                                            if (!json.Contains("/openapi.json"))
+                                                throw new Exception("Missing /openapi.json path");
+
+                                            if (!json.Contains("/swagger"))
+                                                throw new Exception("Missing /swagger path");
+
                                             // Verify HTTP methods
                                             if (!json.Contains("\"get\""))
                                                 throw new Exception("Missing GET method documentation");
 
                                             if (!json.Contains("\"post\""))
                                                 throw new Exception("Missing POST method documentation");
+
+                                            if (!json.Contains("Get OpenAPI document"))
+                                                throw new Exception("Missing OpenAPI document metadata");
+
+                                            if (!json.Contains("CORS preflight for Swagger UI"))
+                                                throw new Exception("Missing Swagger UI preflight metadata");
 
                                             Console.WriteLine("  All expected paths and methods found in OpenAPI document");
                                             return "OpenAPI document contains all expected endpoint paths";
@@ -197,7 +221,7 @@
 
                                 await RunTest("OpenAPI Document - Security Schemes", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/openapi.json"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/openapi.json")))
                                     {
                                         using (RestResponse resp = await req.SendAsync())
                                         {
@@ -228,7 +252,7 @@
 
                                 await RunTest("OpenAPI Document - Custom Route Documentation", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/openapi.json"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/openapi.json")))
                                     {
                                         using (RestResponse resp = await req.SendAsync())
                                         {
@@ -265,7 +289,7 @@
 
                                 await RunTest("Swagger UI - HTML Page", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/swagger"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/swagger")))
                                     {
                                         using (RestResponse resp = await req.SendAsync())
                                         {
@@ -301,7 +325,7 @@
 
                                 await RunTest("OpenAPI Document - Auto-Generated Path Parameters", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/openapi.json"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/openapi.json")))
                                     {
                                         using (RestResponse resp = await req.SendAsync())
                                         {
@@ -333,7 +357,7 @@
                                     int successCount = 0;
                                     for (int i = 0; i < _NumRequests; i++)
                                     {
-                                        url = "http://localhost:8000/unauthenticated";
+                                        url = SwitchboardUrl("/unauthenticated");
                                         if (i % 2 == 0) url += "?foo=bar";
                                         Console.WriteLine($"  Request {i}: {url}");
 
@@ -359,7 +383,7 @@
 
                                 await RunTest("Invalid URL - Negative Case", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/undefined"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/undefined")))
                                     {
                                         using (RestResponse resp = await req.SendAsync())
                                         {
@@ -390,7 +414,7 @@
                                         if (shouldSucceed) expectedSuccesses++;
                                         else expectedFailures++;
 
-                                        url = "http://localhost:8000/authenticated";
+                                        url = SwitchboardUrl("/authenticated");
                                         if (i % 2 == 0) url += "?foo=bar";
                                         Console.WriteLine($"  Request {i} (expecting {(shouldSucceed ? "success" : "failure")}): {url}");
 
@@ -428,7 +452,7 @@
                                 await RunTest("URL Rewriting - Path Parameter Transformation", async () =>
                                 {
                                     // Request to /api/v2/users/12345 should be rewritten to /v1/users/12345 at origin
-                                    url = "http://localhost:8000/api/v2/users/12345";
+                                    url = SwitchboardUrl("/api/v2/users/12345");
                                     Console.WriteLine($"  Requesting: {url}");
                                     Console.WriteLine($"  Expected origin to receive: /v1/users/12345");
 
@@ -499,7 +523,7 @@
 
                                     for (int i = 0; i < totalRequests; i++)
                                     {
-                                        url = "http://localhost:8000/unauthenticated";
+                                        url = SwitchboardUrl("/unauthenticated");
                                         Console.WriteLine($"  Request {i} (expecting 502): {url}");
 
                                         using (RestRequest req = new RestRequest(url))
@@ -541,7 +565,7 @@
                                         expectedErrors++;
                                         Console.WriteLine($"  Testing {method} method (expecting 400 - no endpoint match)");
 
-                                        using (RestRequest req = new RestRequest("http://localhost:8000/unauthenticated", new System.Net.Http.HttpMethod(method)))
+                                        using (RestRequest req = new RestRequest(SwitchboardUrl("/unauthenticated"), new System.Net.Http.HttpMethod(method)))
                                         {
                                             using (RestResponse resp = await req.SendAsync())
                                             {
@@ -586,7 +610,7 @@
 
                                     for (int i = 0; i < totalRequests; i++)
                                     {
-                                        url = "http://localhost:8000/unauthenticated";
+                                        url = SwitchboardUrl("/unauthenticated");
                                         Console.WriteLine($"  Request {i} (expecting success): {url}");
 
                                         using (RestRequest req = new RestRequest(url))
@@ -649,7 +673,7 @@
                                         int index = i;
                                         tasks[i] = Task.Run(async () =>
                                         {
-                                            using (RestRequest req = new RestRequest("http://localhost:8000/unauthenticated"))
+                                            using (RestRequest req = new RestRequest(SwitchboardUrl("/unauthenticated")))
                                             {
                                                 if (index > 0) await Task.Delay(10);
 
@@ -706,7 +730,7 @@
 
                                     string jsonPayload = _Serializer.SerializeJson(payload, false);
 
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/users", System.Net.Http.HttpMethod.Post))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/api/users"), System.Net.Http.HttpMethod.Post))
                                     {
                                         req.ContentType = "application/json";
                                         using (RestResponse resp = await req.SendAsync(jsonPayload))
@@ -736,7 +760,7 @@
 
                                     string jsonPayload = _Serializer.SerializeJson(updatePayload, false);
 
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/users/123", System.Net.Http.HttpMethod.Put))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/api/users/123"), System.Net.Http.HttpMethod.Put))
                                     {
                                         req.ContentType = "application/json";
                                         using (RestResponse resp = await req.SendAsync(jsonPayload))
@@ -763,7 +787,7 @@
 
                                     string jsonPayload = _Serializer.SerializeJson(patchPayload, false);
 
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/users/123", System.Net.Http.HttpMethod.Patch))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/api/users/123"), System.Net.Http.HttpMethod.Patch))
                                     {
                                         req.ContentType = "application/json";
                                         using (RestResponse resp = await req.SendAsync(jsonPayload))
@@ -780,7 +804,7 @@
 
                                 await RunTest("REST API - DELETE Request", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/users/123", System.Net.Http.HttpMethod.Delete))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/api/users/123"), System.Net.Http.HttpMethod.Delete))
                                     {
                                         using (RestResponse resp = await req.SendAsync())
                                         {
@@ -796,7 +820,7 @@
 
                                 await RunTest("REST API - GET with Complex Query Parameters", async () =>
                                 {
-                                    string complexUrl = "http://localhost:8000/api/data?filter=active&sort=name&page=1&limit=10&fields=id,name,email";
+                                    string complexUrl = SwitchboardUrl("/api/data?filter=active&sort=name&page=1&limit=10&fields=id,name,email");
 
                                     using (RestRequest req = new RestRequest(complexUrl))
                                     {
@@ -834,7 +858,7 @@
 
                                     // Test basic connectivity first
                                     Console.WriteLine("  Testing basic connectivity to /api/upload endpoint...");
-                                    using (RestRequest testReq = new RestRequest("http://localhost:8000/api/upload", System.Net.Http.HttpMethod.Post))
+                                    using (RestRequest testReq = new RestRequest(SwitchboardUrl("/api/upload"), System.Net.Http.HttpMethod.Post))
                                     {
                                         testReq.ContentType = "application/json";
                                         using (RestResponse testResp = await testReq.SendAsync("{\"test\":\"connectivity\"}"))
@@ -857,7 +881,7 @@
 
                                     Console.WriteLine($"  Sending {chunks.Length} chunks using RestWrapper ChunkedTransfer");
 
-                                    RestRequest req = new RestRequest("http://localhost:8000/api/upload", System.Net.Http.HttpMethod.Post);
+                                    RestRequest req = new RestRequest(SwitchboardUrl("/api/upload"), System.Net.Http.HttpMethod.Post);
                                     req.ContentType = "text/plain";
                                     req.ChunkedTransfer = true; // Enable chunked transfer in RestWrapper
 
@@ -930,7 +954,7 @@
                                         throw new Exception("Cannot test server-side chunked - some servers are unhealthy");
                                     }
 
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/upload", System.Net.Http.HttpMethod.Post))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/api/upload"), System.Net.Http.HttpMethod.Post))
                                     {
                                         req.ContentType = "application/json";
                                         string smallPayload = "{\"test\":\"chunked response\"}";
@@ -965,7 +989,7 @@
                                         throw new Exception("Cannot test SSE - some servers are unhealthy");
                                     }
 
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/events"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/events")))
                                     {
                                         req.Headers.Add("Accept", "text/event-stream");
                                         req.Headers.Add("Cache-Control", "no-cache");
@@ -1043,7 +1067,7 @@
                                         int connectionId = i;
                                         eventTasks[i] = Task.Run(async () =>
                                         {
-                                            using (RestRequest req = new RestRequest("http://localhost:8000/events"))
+                                            using (RestRequest req = new RestRequest(SwitchboardUrl("/events")))
                                             {
                                                 req.Headers.Add("Accept", "text/event-stream");
 
@@ -1098,7 +1122,7 @@
 
                                     for (int i = 0; i < totalRequests; i++)
                                     {
-                                        using (RestRequest req = new RestRequest("http://localhost:8000/unauthenticated"))
+                                        using (RestRequest req = new RestRequest(SwitchboardUrl("/unauthenticated")))
                                         {
                                             using (RestResponse resp = await req.SendAsync())
                                             {
@@ -1136,7 +1160,7 @@
 
                                 await RunTest("Request Headers Validation - Custom Headers Forwarded", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/headers-test"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/api/headers-test")))
                                     {
                                         req.Headers.Add("X-Custom-Header", "test-value-123");
                                         req.Headers.Add("X-Test-Client", "switchboard-test-v2");
@@ -1169,7 +1193,7 @@
                                 await RunTest("Querystring Parameter Handling - Verified Forwarding", async () =>
                                 {
                                     // Test case 1: Simple parameter
-                                    using (RestRequest req1 = new RestRequest("http://localhost:8000/unauthenticated?param1=value1"))
+                                    using (RestRequest req1 = new RestRequest(SwitchboardUrl("/unauthenticated?param1=value1")))
                                     {
                                         using (RestResponse resp1 = await req1.SendAsync())
                                         {
@@ -1182,7 +1206,7 @@
                                     }
 
                                     // Test case 2: Multiple parameters
-                                    using (RestRequest req2 = new RestRequest("http://localhost:8000/api/query-test?param1=value1&param2=value2"))
+                                    using (RestRequest req2 = new RestRequest(SwitchboardUrl("/api/query-test?param1=value1&param2=value2")))
                                     {
                                         using (RestResponse resp2 = await req2.SendAsync())
                                         {
@@ -1197,7 +1221,7 @@
                                     }
 
                                     // Test case 3: Special characters
-                                    using (RestRequest req3 = new RestRequest("http://localhost:8000/api/query-test?special=%20%21%40%23"))
+                                    using (RestRequest req3 = new RestRequest(SwitchboardUrl("/api/query-test?special=%20%21%40%23")))
                                     {
                                         using (RestResponse resp3 = await req3.SendAsync())
                                         {
@@ -1218,7 +1242,7 @@
 
                                 await RunTest("CORS - OPTIONS Preflight Request", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/cors-test", System.Net.Http.HttpMethod.Options))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/api/cors-test"), System.Net.Http.HttpMethod.Options))
                                     {
                                         req.Headers.Add("Access-Control-Request-Method", "POST");
                                         req.Headers.Add("Access-Control-Request-Headers", "Content-Type");
@@ -1243,9 +1267,37 @@
                                     }
                                 });
 
+                                await RunTest("Documentation Routes - OPTIONS Preflight", async () =>
+                                {
+                                    foreach (string path in new[] { "/openapi.json", "/swagger" })
+                                    {
+                                        using (RestRequest req = new RestRequest(SwitchboardUrl(path), System.Net.Http.HttpMethod.Options))
+                                        {
+                                            req.Headers.Add("Access-Control-Request-Method", "GET");
+                                            req.Headers.Add("Access-Control-Request-Headers", "Content-Type");
+                                            req.Headers.Add("Origin", "http://example.com");
+
+                                            using (RestResponse resp = await req.SendAsync())
+                                            {
+                                                if (resp.StatusCode != 200)
+                                                    throw new Exception($"Expected 200 OK for {path}, got {resp.StatusCode}");
+
+                                                string allowMethods = resp.Headers.Get("Access-Control-Allow-Methods");
+                                                if (String.IsNullOrEmpty(allowMethods))
+                                                    throw new Exception("Missing Access-Control-Allow-Methods header");
+
+                                                if (!allowMethods.Contains("OPTIONS") || !allowMethods.Contains("GET"))
+                                                    throw new Exception($"Access-Control-Allow-Methods missing expected values for {path}: {allowMethods}");
+                                            }
+                                        }
+                                    }
+
+                                    return "Documentation preflight successful for OpenAPI and Swagger routes";
+                                });
+
                                 await RunTest("Authentication - Header Forwarding to Origin", async () =>
                                 {
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/api/secure"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/api/secure")))
                                     {
                                         req.Authorization.BearerToken = "test-token-12345";
 
@@ -1288,7 +1340,7 @@
                                         largeChunks[i] = new string((char)('A' + i), 1000) + $" Chunk {i}\n";
                                     }
 
-                                    RestRequest req = new RestRequest("http://localhost:8000/api/upload", System.Net.Http.HttpMethod.Post);
+                                    RestRequest req = new RestRequest(SwitchboardUrl("/api/upload"), System.Net.Http.HttpMethod.Post);
                                     req.ContentType = "text/plain";
                                     req.ChunkedTransfer = true;
 
@@ -1320,7 +1372,7 @@
                                     if (_Settings.Origins.Any(o => !o.Healthy))
                                         throw new Exception("Cannot test SSE - some servers are unhealthy");
 
-                                    using (RestRequest req = new RestRequest("http://localhost:8000/events"))
+                                    using (RestRequest req = new RestRequest(SwitchboardUrl("/events")))
                                     {
                                         req.Headers.Add("Accept", "text/event-stream");
 
@@ -1367,7 +1419,7 @@
 
                                         for (int i = 0; i < totalRequests; i++)
                                         {
-                                            using (RestRequest req = new RestRequest("http://localhost:8000/unauthenticated"))
+                                            using (RestRequest req = new RestRequest(SwitchboardUrl("/unauthenticated")))
                                             {
                                                 using (RestResponse resp = await req.SendAsync())
                                                 {
@@ -1424,7 +1476,7 @@
                                         {
                                             requestCount++;
 
-                                            using (RestRequest req = new RestRequest("http://localhost:8000/unauthenticated"))
+                                            using (RestRequest req = new RestRequest(SwitchboardUrl("/unauthenticated")))
                                             {
                                                 using (RestResponse resp = await req.SendAsync())
                                                 {
@@ -1530,8 +1582,8 @@
             Console.WriteLine("======================================");
             Console.WriteLine("");
             Console.WriteLine("Configuration:");
-            Console.WriteLine("- Switchboard       : http://localhost:8000");
-            Console.WriteLine("- Origin Servers    : 4 (ports 8001-8004)");
+            Console.WriteLine("- Switchboard       : " + SwitchboardUrl(String.Empty));
+            Console.WriteLine("- Origin Servers    : 4 (ports " + ORIGIN1_PORT + "-" + ORIGIN4_PORT + ")");
             Console.WriteLine("- Load Balancing    : Round Robin");
             Console.WriteLine("- OpenAPI Document  : /openapi.json");
             Console.WriteLine("- Swagger UI        : /swagger");
@@ -1624,7 +1676,7 @@
                     Identifier = originIdentifiers[i],
                     Name = $"Server {i + 1}",
                     Hostname = "localhost",
-                    Port = 8001 + i,
+                    Port = ORIGIN1_PORT + i,
                     Ssl = false,
                     HealthCheckIntervalMs = 1000,
                     HealthCheckMethod = "HEAD",
@@ -1757,7 +1809,7 @@
                 {
                     Authentication = new AuthenticationContext
                     {
-                        Result = AuthenticationResultEnum.Success,
+                        Result = SwitchboardAuthenticationResultEnum.Success,
                         Metadata = new Dictionary<string, string>()
                         {
                             { "Authenticated", "true" }
@@ -1765,7 +1817,7 @@
                     },
                     Authorization = new AuthorizationContext
                     {
-                        Result = AuthorizationResultEnum.Success,
+                        Result = SwitchboardAuthorizationResultEnum.Success,
                         Metadata = new Dictionary<string, string>()
                         {
                             { "Authorized", "true" }
@@ -1783,7 +1835,7 @@
                 {
                     Authentication = new AuthenticationContext
                     {
-                        Result = AuthenticationResultEnum.Denied,
+                        Result = SwitchboardAuthenticationResultEnum.Denied,
                         Metadata = new Dictionary<string, string>()
                         {
                             { "Authenticated", "false" }
@@ -1791,7 +1843,7 @@
                     },
                     Authorization = new AuthorizationContext
                     {
-                        Result = AuthorizationResultEnum.Denied,
+                        Result = SwitchboardAuthorizationResultEnum.Denied,
                         Metadata = new Dictionary<string, string>()
                         {
                             { "Authorized", "false" }
@@ -1810,6 +1862,8 @@
         private static void InitializeSettings()
         {
             _Settings = new SwitchboardSettings();
+            _Settings.Webserver.Hostname = "localhost";
+            _Settings.Webserver.Port = SWITCHBOARD_PORT;
             _Settings.Logging.MinimumSeverity = 0;
             _Settings.Logging.EnableColors = false;
 
@@ -1972,7 +2026,7 @@
                 Identifier = "server1",
                 Name = "Server 1",
                 Hostname = "localhost",
-                Port = 8001,
+                Port = ORIGIN1_PORT,
                 Ssl = false,
                 HealthCheckIntervalMs = 1000,  // Check every second for faster testing
                 UnhealthyThreshold = 2,        // 2 failures = unhealthy
@@ -1986,7 +2040,7 @@
                 Identifier = "server2",
                 Name = "Server 2",
                 Hostname = "localhost",
-                Port = 8002,
+                Port = ORIGIN2_PORT,
                 Ssl = false,
                 HealthCheckIntervalMs = 1000,
                 UnhealthyThreshold = 2,
@@ -2000,7 +2054,7 @@
                 Identifier = "server3",
                 Name = "Server 3",
                 Hostname = "localhost",
-                Port = 8003,
+                Port = ORIGIN3_PORT,
                 Ssl = false,
                 HealthCheckIntervalMs = 1000,
                 UnhealthyThreshold = 2,
@@ -2014,7 +2068,7 @@
                 Identifier = "server4",
                 Name = "Server 4",
                 Hostname = "localhost",
-                Port = 8004,
+                Port = ORIGIN4_PORT,
                 Ssl = false,
                 HealthCheckIntervalMs = 1000,
                 UnhealthyThreshold = 2,
@@ -2030,19 +2084,19 @@
         {
             _Server1Settings = new WebserverSettings();
             _Server1Settings.Hostname = "localhost";
-            _Server1Settings.Port = 8001;
+            _Server1Settings.Port = ORIGIN1_PORT;
 
             _Server2Settings = new WebserverSettings();
             _Server2Settings.Hostname = "localhost";
-            _Server2Settings.Port = 8002;
+            _Server2Settings.Port = ORIGIN2_PORT;
 
             _Server3Settings = new WebserverSettings();
             _Server3Settings.Hostname = "localhost";
-            _Server3Settings.Port = 8003;
+            _Server3Settings.Port = ORIGIN3_PORT;
 
             _Server4Settings = new WebserverSettings();
             _Server4Settings.Hostname = "localhost";
-            _Server4Settings.Port = 8004;
+            _Server4Settings.Port = ORIGIN4_PORT;
         }
 
         private static async Task Server1Route(HttpContextBase ctx)
@@ -2152,24 +2206,33 @@
 
             if (ctx.Request.ChunkedTransfer)
             {
-                // Handle chunked transfer by reading chunks
-                List<byte> allData = new List<byte>();
-                bool finalChunk = false;
-
-                while (!finalChunk)
+                if (TryExtractChunkedPayload(ctx.Request.DataAsBytes, out byte[] normalizedPayload))
                 {
-                    var chunk = await ctx.Request.ReadChunk();
-                    if (chunk.Length == 0)
-                    {
-                        finalChunk = true;
-                    }
-                    else
-                    {
-                        allData.AddRange(chunk.Data);
-                    }
+                    requestData = normalizedPayload;
                 }
+                else if (ctx.Request.Data != null && ctx.Request.DataAsBytes != null)
+                {
+                    requestData = ctx.Request.DataAsBytes;
+                }
+                else
+                {
+                    // Fallback for streaming implementations that do not buffer request bodies.
+                    List<byte> allData = new List<byte>();
+                    bool finalChunk = false;
 
-                requestData = allData.ToArray();
+                    while (!finalChunk)
+                    {
+                        var chunk = await ctx.Request.ReadChunk();
+                        finalChunk = (chunk != null && chunk.IsFinal);
+
+                        if (chunk != null && chunk.Length > 0)
+                        {
+                            allData.AddRange(chunk.Data);
+                        }
+                    }
+
+                    requestData = allData.ToArray();
+                }
             }
             else if (ctx.Request.Data != null && ctx.Request.DataAsBytes != null)
             {
@@ -2201,6 +2264,113 @@
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send($"{{\"error\":\"No data received\",\"server\":\"{serverName}\"}}");
             }
+        }
+
+        private static bool TryExtractChunkedPayload(byte[] data, out byte[] payload)
+        {
+            payload = null;
+            if (data == null || data.Length < 1) return false;
+
+            byte[] current = data;
+            bool extracted = false;
+
+            while (TryFlattenChunkedBody(current, out byte[] next))
+            {
+                current = next;
+                extracted = true;
+            }
+
+            if (!extracted) return false;
+
+            payload = current ?? Array.Empty<byte>();
+            return true;
+        }
+
+        private static bool TryFlattenChunkedBody(byte[] data, out byte[] payload)
+        {
+            payload = null;
+            if (data == null || data.Length < 1) return false;
+
+            int offset = 0;
+            List<byte> flattened = new List<byte>();
+
+            while (offset < data.Length)
+            {
+                if (!TryReadAsciiLine(data, ref offset, out string lengthLine)) return false;
+                if (String.IsNullOrWhiteSpace(lengthLine)) continue;
+
+                string[] lengthParts = lengthLine.Split(';');
+                string lengthText = lengthParts[0].Trim();
+
+                if (!Int32.TryParse(lengthText, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out int chunkLength)
+                    || chunkLength < 0)
+                {
+                    return false;
+                }
+
+                if (chunkLength == 0)
+                {
+                    payload = flattened.ToArray();
+                    return true;
+                }
+
+                if (offset + chunkLength > data.Length) return false;
+
+                for (int i = 0; i < chunkLength; i++)
+                {
+                    flattened.Add(data[offset + i]);
+                }
+
+                offset += chunkLength;
+
+                if (!ConsumeLineEnding(data, ref offset)) return false;
+            }
+
+            return false;
+        }
+
+        private static bool TryReadAsciiLine(byte[] data, ref int offset, out string line)
+        {
+            line = null;
+            if (data == null || offset < 0 || offset >= data.Length) return false;
+
+            int start = offset;
+
+            while (offset < data.Length)
+            {
+                if (data[offset] == 0x0A)
+                {
+                    int length = offset - start;
+                    if (length > 0 && data[offset - 1] == 0x0D) length--;
+                    line = Encoding.ASCII.GetString(data, start, length);
+                    offset++;
+                    return true;
+                }
+
+                offset++;
+            }
+
+            return false;
+        }
+
+        private static bool ConsumeLineEnding(byte[] data, ref int offset)
+        {
+            if (data == null || offset < 0 || offset >= data.Length) return false;
+
+            if (data[offset] == 0x0D)
+            {
+                if (offset + 1 >= data.Length || data[offset + 1] != 0x0A) return false;
+                offset += 2;
+                return true;
+            }
+
+            if (data[offset] == 0x0A)
+            {
+                offset++;
+                return true;
+            }
+
+            return false;
         }
 
         private static async Task HandleRestRequest(HttpContextBase ctx, string serverName)
@@ -2249,7 +2419,7 @@
                     {
                         if (key != null && (key.StartsWith("X-") || key.Equals("Authorization", StringComparison.OrdinalIgnoreCase)))
                         {
-                            receivedHeaders[key] = ctx.Request.Headers.Get(key);
+                            receivedHeaders[key] = ctx.Request.Headers.Get(key) ?? String.Empty;
                         }
                     }
                 }

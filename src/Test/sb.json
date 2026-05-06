@@ -203,7 +203,7 @@
     "SwaggerUiPath": "/swagger",
     "Title": "Switchboard API",
     "Description": "API Gateway managed by Switchboard",
-    "Version": "4.0.2"
+    "Version": "4.0.9"
   },
   "Webserver": {
     "Hostname": "localhost",

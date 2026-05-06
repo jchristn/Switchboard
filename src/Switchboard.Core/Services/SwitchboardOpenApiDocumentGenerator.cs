@@ -53,12 +53,17 @@ namespace Switchboard.Core.Services
         public string Generate(SwitchboardSettings settings)
         {
             if (settings == null) throw new ArgumentNullException(nameof(settings));
+            Dictionary<string, object> paths = BuildPaths(settings);
+            AddDocumentationPaths(
+                paths,
+                settings.OpenApi.DocumentPath ?? "/openapi.json",
+                settings.OpenApi.EnableSwaggerUi ? settings.OpenApi.SwaggerUiPath ?? "/swagger" : null);
 
             Dictionary<string, object> document = new Dictionary<string, object>
             {
                 ["openapi"] = "3.0.3",
                 ["info"] = BuildInfo(settings.OpenApi),
-                ["paths"] = BuildPaths(settings)
+                ["paths"] = paths
             };
 
             if (settings.OpenApi.Servers != null && settings.OpenApi.Servers.Count > 0)
@@ -66,9 +71,10 @@ namespace Switchboard.Core.Services
                 document["servers"] = BuildServers(settings.OpenApi);
             }
 
-            if (settings.OpenApi.Tags != null && settings.OpenApi.Tags.Count > 0)
+            List<object> tags = BuildTags(settings.OpenApi);
+            if (tags.Count > 0)
             {
-                document["tags"] = BuildTags(settings.OpenApi);
+                document["tags"] = tags;
             }
 
             Dictionary<string, object> components = BuildComponents(settings.OpenApi);
@@ -97,7 +103,7 @@ namespace Switchboard.Core.Services
                 ["info"] = new Dictionary<string, object>
                 {
                     ["title"] = "Switchboard Management API",
-                    ["version"] = "4.0.2",
+                    ["version"] = Constants.SoftwareVersion,
                     ["description"] = "REST API for managing Switchboard configuration including origin servers, API endpoints, routes, mappings, URL rewrites, blocked headers, users, credentials, and request history."
                 },
                 ["paths"] = BuildManagementPaths(basePath),
@@ -184,16 +190,21 @@ namespace Switchboard.Core.Services
         private List<object> BuildTags(OpenApiDocumentSettings settings)
         {
             List<object> tags = new List<object>();
-            foreach (OpenApiTagSettings tag in settings.Tags)
+            if (settings.Tags != null)
             {
-                Dictionary<string, object> tagObj = new Dictionary<string, object>
+                foreach (OpenApiTagSettings tag in settings.Tags)
                 {
-                    ["name"] = tag.Name
-                };
-                if (!String.IsNullOrEmpty(tag.Description))
-                    tagObj["description"] = tag.Description;
-                tags.Add(tagObj);
+                    Dictionary<string, object> tagObj = new Dictionary<string, object>
+                    {
+                        ["name"] = tag.Name
+                    };
+                    if (!String.IsNullOrEmpty(tag.Description))
+                        tagObj["description"] = tag.Description;
+                    tags.Add(tagObj);
+                }
             }
+
+            AddTagIfMissing(tags, "Documentation", "OpenAPI, Swagger UI, and CORS preflight discovery surfaces");
             return tags;
         }
 
@@ -601,7 +612,8 @@ namespace Switchboard.Core.Services
                 new Dictionary<string, object> { ["name"] = "Users", ["description"] = "User management" },
                 new Dictionary<string, object> { ["name"] = "Credentials", ["description"] = "Credential and bearer token management" },
                 new Dictionary<string, object> { ["name"] = "History", ["description"] = "Request history and statistics" },
-                new Dictionary<string, object> { ["name"] = "System", ["description"] = "Health check and system information" }
+                new Dictionary<string, object> { ["name"] = "System", ["description"] = "Health check and system information" },
+                new Dictionary<string, object> { ["name"] = "Documentation", ["description"] = "OpenAPI, Swagger UI, and CORS preflight discovery surfaces" }
             };
         }
 
@@ -786,6 +798,8 @@ namespace Switchboard.Core.Services
         {
             Dictionary<string, object> paths = new Dictionary<string, object>();
 
+            AddDocumentationPaths(paths, "/openapi.json", "/swagger");
+
             // Origins
             AddCrudPaths(paths, basePath, "/origins", "Origins", "OriginServerConfig", "Origin server", "guid");
 
@@ -874,6 +888,47 @@ namespace Switchboard.Core.Services
             return paths;
         }
 
+        private void AddDocumentationPaths(Dictionary<string, object> paths, string documentPath, string swaggerPath)
+        {
+            if (String.IsNullOrEmpty(documentPath))
+                documentPath = "/openapi.json";
+
+            paths[documentPath] = new Dictionary<string, object>
+            {
+                ["get"] = BuildOpenApiDocumentOperation(),
+                ["options"] = BuildDocumentationPreflightOperation("OpenAPI document")
+            };
+
+            if (!String.IsNullOrEmpty(swaggerPath))
+            {
+                paths[swaggerPath] = new Dictionary<string, object>
+                {
+                    ["get"] = BuildSwaggerUiOperation(),
+                    ["options"] = BuildDocumentationPreflightOperation("Swagger UI")
+                };
+            }
+        }
+
+        private void AddTagIfMissing(List<object> tags, string name, string description)
+        {
+            foreach (object tagObj in tags)
+            {
+                if (tagObj is Dictionary<string, object> tagDict
+                    && tagDict.TryGetValue("name", out object existingNameObj)
+                    && existingNameObj is string existingName
+                    && String.Equals(existingName, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            tags.Add(new Dictionary<string, object>
+            {
+                ["name"] = name,
+                ["description"] = description
+            });
+        }
+
         private void AddCrudPaths(Dictionary<string, object> paths, string basePath, string resource, string tag, string schema, string displayName, string paramName)
         {
             paths[basePath + resource] = new Dictionary<string, object>
@@ -886,6 +941,77 @@ namespace Switchboard.Core.Services
                 ["get"] = BuildGetOperation(tag, schema, $"Get {displayName.ToLower()} by {paramName.ToUpper()}", paramName),
                 ["put"] = BuildUpdateOperation(tag, schema, $"Update {displayName.ToLower()}", paramName),
                 ["delete"] = BuildDeleteOperation(tag, $"Delete {displayName.ToLower()}", paramName)
+            };
+        }
+
+        private Dictionary<string, object> BuildOpenApiDocumentOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "Documentation" },
+                ["summary"] = "Get OpenAPI document",
+                ["description"] = "Returns the generated OpenAPI 3.0 JSON document for the current Switchboard API surface.",
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "OpenAPI document.",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object>
+                                {
+                                    ["type"] = "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildSwaggerUiOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "Documentation" },
+                ["summary"] = "Get Swagger UI",
+                ["description"] = "Returns the built-in Swagger UI for the current Switchboard API surface.",
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Swagger UI HTML.",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["text/html"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object>
+                                {
+                                    ["type"] = "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildDocumentationPreflightOperation(string surfaceName)
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "Documentation" },
+                ["summary"] = "CORS preflight for " + surfaceName,
+                ["description"] = "Returns the CORS headers required for browser preflight access to the " + surfaceName + ".",
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "CORS preflight accepted."
+                    }
+                }
             };
         }
 

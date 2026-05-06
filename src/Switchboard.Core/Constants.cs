@@ -7,6 +7,15 @@ namespace Switchboard.Core
     /// </summary>
     public static class Constants
     {
+        #region Versioning
+
+        /// <summary>
+        /// Current software version.
+        /// </summary>
+        public const string SoftwareVersion = "4.0.9";
+
+        #endregion
+
         #region Logo
 
         /// <summary>

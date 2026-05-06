@@ -2,7 +2,14 @@
 
 ## Current Version
 
-v4.0.2
+v4.0.9
+
+### Changes in v4.0.9
+
+- Upgraded `Switchboard.Core` to `Watson` `7.0.14`
+- Added explicit OpenAPI / Swagger route metadata for documentation endpoints
+- Added documented CORS preflight coverage for OpenAPI and Swagger surfaces
+- Expanded integration coverage to validate documentation preflight behavior and metadata
 
 ### New Features
 

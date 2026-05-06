@@ -12,6 +12,8 @@ namespace Test.Automated
     using Switchboard.Core.Settings;
     using WatsonWebserver;
     using WatsonWebserver.Core;
+    using SwitchboardAuthenticationResultEnum = Switchboard.Core.AuthenticationResultEnum;
+    using SwitchboardAuthorizationResultEnum = Switchboard.Core.AuthorizationResultEnum;
 
     public static class Program
     {
@@ -946,6 +948,25 @@ namespace Test.Automated
                 }
             });
 
+            await RunTest("Documentation Routes - OPTIONS Preflight", async () =>
+            {
+                foreach (string path in new[] { "/openapi.json", "/swagger" })
+                {
+                    using (RestRequest req = new RestRequest("http://localhost:" + SWITCHBOARD_PORT + path, System.Net.Http.HttpMethod.Options))
+                    using (RestResponse resp = await req.SendAsync())
+                    {
+                        if (resp.StatusCode != 200)
+                            throw new Exception("Expected 200 for OPTIONS " + path + ", got " + resp.StatusCode);
+
+                        string allowMethods = resp.Headers.Get("Access-Control-Allow-Methods") ?? "";
+                        if (!allowMethods.Contains("OPTIONS") || !allowMethods.Contains("GET"))
+                            throw new Exception("Documentation preflight missing expected allow methods for " + path + ": " + allowMethods);
+                    }
+                }
+
+                return "Documentation preflight succeeded for OpenAPI and Swagger routes";
+            });
+
             // Test 15: Random Load Balancing
             await RunTest("Load Balancing - Random Algorithm", async () =>
             {
@@ -1216,12 +1237,24 @@ namespace Test.Automated
                     if (!json.Contains("/sse"))
                         throw new Exception("Missing /sse path");
 
+                    if (!json.Contains("/openapi.json"))
+                        throw new Exception("Missing /openapi.json path");
+
+                    if (!json.Contains("/swagger"))
+                        throw new Exception("Missing /swagger path");
+
                     // Verify HTTP methods
                     if (!json.Contains("\"get\""))
                         throw new Exception("Missing GET method documentation");
 
                     if (!json.Contains("\"post\""))
                         throw new Exception("Missing POST method documentation");
+
+                    if (!json.Contains("Get OpenAPI document"))
+                        throw new Exception("Missing OpenAPI document metadata");
+
+                    if (!json.Contains("CORS preflight for Swagger UI"))
+                        throw new Exception("Missing Swagger UI preflight metadata");
 
                     return "All expected paths found in OpenAPI document";
                 }
@@ -1457,11 +1490,11 @@ namespace Test.Automated
                     {
                         Authentication = new AuthenticationContext
                         {
-                            Result = AuthenticationResultEnum.Success
+                            Result = SwitchboardAuthenticationResultEnum.Success
                         },
                         Authorization = new AuthorizationContext
                         {
-                            Result = AuthorizationResultEnum.Denied
+                            Result = SwitchboardAuthorizationResultEnum.Denied
                         },
                         FailureMessage = "User authenticated but not authorized for this resource"
                     };
@@ -1472,11 +1505,11 @@ namespace Test.Automated
                 {
                     Authentication = new AuthenticationContext
                     {
-                        Result = AuthenticationResultEnum.Success
+                        Result = SwitchboardAuthenticationResultEnum.Success
                     },
                     Authorization = new AuthorizationContext
                     {
-                        Result = AuthorizationResultEnum.Success
+                        Result = SwitchboardAuthorizationResultEnum.Success
                     },
                     Metadata = new { UserId = "test-user", Role = "admin" }
                 };
@@ -1486,11 +1519,11 @@ namespace Test.Automated
             {
                 Authentication = new AuthenticationContext
                 {
-                    Result = AuthenticationResultEnum.Denied
+                    Result = SwitchboardAuthenticationResultEnum.Denied
                 },
                 Authorization = new AuthorizationContext
                 {
-                    Result = AuthorizationResultEnum.Denied
+                    Result = SwitchboardAuthorizationResultEnum.Denied
                 },
                 FailureMessage = "Missing or invalid authorization header"
             };

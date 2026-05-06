@@ -381,14 +381,14 @@
             _Webserver.Routes.AuthenticateRequest = _GatewayService.AuthenticateRequest;
 
             _GatewayService.InitializeRoutes(_Webserver);
-            _OpenApiService.InitializeRoutes(_Webserver);
+            _OpenApiService.InitializeRoutes(_Webserver, _GatewayService.OptionsRoute);
 
             if (_ManagementService != null)
             {
                 string serverUrl = (_Settings.Webserver.Ssl.Enable ? "https://" : "http://")
                     + _Settings.Webserver.Hostname
                     + ":" + _Settings.Webserver.Port;
-                _ManagementService.InitializeRoutes(_Webserver, serverUrl);
+                _ManagementService.InitializeRoutes(_Webserver, serverUrl, _GatewayService.OptionsRoute);
             }
 
             _Webserver.Start();

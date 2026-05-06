@@ -101,7 +101,12 @@ namespace Test.ChunkedTransfer
                     {
                         // Wait for health checks
                         Console.WriteLine("Waiting for origin server to become healthy...");
-                        await Task.Delay(2000);
+                        DateTime waitStart = DateTime.UtcNow;
+                        while (!sbSettings.Origins[0].Healthy
+                            && DateTime.UtcNow - waitStart < TimeSpan.FromSeconds(10))
+                        {
+                            await Task.Delay(250);
+                        }
 
                         if (!sbSettings.Origins[0].Healthy)
                         {
@@ -145,6 +150,13 @@ namespace Test.ChunkedTransfer
 
             try
             {
+                if (ctx.Request.Method == WatsonWebserver.Core.HttpMethod.GET && ctx.Request.Url.RawWithoutQuery == "/")
+                {
+                    ctx.Response.StatusCode = 200;
+                    await ctx.Response.Send().ConfigureAwait(false);
+                    return;
+                }
+
                 // Respond with chunked transfer encoding
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "text/plain";
