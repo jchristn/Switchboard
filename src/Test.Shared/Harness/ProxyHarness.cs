@@ -1,0 +1,341 @@
+namespace Test.Shared.Harness
+{
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using Switchboard.Core;
+    using Switchboard.Core.Settings;
+    using WatsonWebserver.Core;
+
+    /// <summary>
+    /// Boots a <see cref="SwitchboardDaemon"/> in front of one or more <see cref="OriginHost"/>
+    /// backends on real localhost ports, and waits for the origins to become healthy. Starting is
+    /// idempotent and thread-safe so the same instance can back many test cases regardless of the
+    /// runner (console, xUnit, NUnit) and regardless of whether suite lifecycle hooks fire.
+    /// </summary>
+    public sealed class ProxyHarness : IDisposable
+    {
+        private readonly int _ProxyPort;
+        private readonly IReadOnlyList<KeyValuePair<string, int>> _OriginPorts;
+        private readonly int _MaxParallelRequests;
+        private readonly int _RateLimitThreshold;
+        private readonly string _DbPath;
+        private readonly SemaphoreSlim _StartLock = new SemaphoreSlim(1, 1);
+        private readonly List<OriginHost> _Origins = new List<OriginHost>();
+
+        private SwitchboardSettings _Settings = null!;
+        private SwitchboardDaemon? _Daemon;
+        private bool _Started;
+        private bool _Disposed;
+
+        /// <summary>
+        /// Initialize a harness definition. No ports are bound until <see cref="StartAsync"/> runs.
+        /// </summary>
+        /// <param name="proxyPort">Port the Switchboard proxy listens on.</param>
+        /// <param name="originPorts">Origin server name/port pairs.</param>
+        /// <param name="maxParallelRequests">Per-origin parallel request cap.</param>
+        /// <param name="rateLimitThreshold">Per-origin rate limit threshold.</param>
+        public ProxyHarness(
+            int proxyPort,
+            IReadOnlyList<KeyValuePair<string, int>> originPorts,
+            int maxParallelRequests = 100,
+            int rateLimitThreshold = 1000)
+        {
+            _ProxyPort = proxyPort;
+            _OriginPorts = originPorts ?? throw new ArgumentNullException(nameof(originPorts));
+            _MaxParallelRequests = maxParallelRequests;
+            _RateLimitThreshold = rateLimitThreshold;
+            _DbPath = Path.Combine(Path.GetTempPath(), "switchboard_harness_" + Guid.NewGuid().ToString("N") + ".db");
+        }
+
+        /// <summary>
+        /// The settings the daemon was constructed with. Populated after <see cref="StartAsync"/>.
+        /// </summary>
+        public SwitchboardSettings Settings
+        {
+            get { return _Settings; }
+        }
+
+        /// <summary>
+        /// The running origin hosts.
+        /// </summary>
+        public IReadOnlyList<OriginHost> Origins
+        {
+            get { return _Origins; }
+        }
+
+        /// <summary>
+        /// The running daemon. Populated after <see cref="StartAsync"/>.
+        /// </summary>
+        public SwitchboardDaemon? Daemon
+        {
+            get { return _Daemon; }
+        }
+
+        /// <summary>
+        /// Build an absolute proxy URL for the given path (and optional query).
+        /// </summary>
+        /// <param name="pathAndQuery">Path beginning with '/'.</param>
+        /// <returns>Absolute URL against the proxy.</returns>
+        public string Url(string pathAndQuery)
+        {
+            return "http://localhost:" + _ProxyPort + pathAndQuery;
+        }
+
+        /// <summary>
+        /// Start the origins and daemon (idempotent) and wait for all origins to become healthy.
+        /// </summary>
+        /// <param name="token">Cancellation token.</param>
+        public async Task StartAsync(CancellationToken token = default)
+        {
+            if (_Started) return;
+
+            await _StartLock.WaitAsync(token).ConfigureAwait(false);
+            try
+            {
+                if (_Started) return;
+
+                _Settings = BuildSettings();
+
+                foreach (KeyValuePair<string, int> kvp in _OriginPorts)
+                {
+                    OriginHost origin = new OriginHost(kvp.Key, kvp.Value);
+                    origin.Start();
+                    _Origins.Add(origin);
+                }
+
+                _Daemon = new SwitchboardDaemon(_Settings);
+                _Daemon.Callbacks.AuthenticateAndAuthorize = AuthCallbacks.AuthenticateAndAuthorize;
+
+                await WaitForAllHealthyAsync(TimeSpan.FromSeconds(30), token).ConfigureAwait(false);
+
+                _Started = true;
+            }
+            finally
+            {
+                _StartLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// Wait until every origin is reported healthy, or throw on timeout.
+        /// </summary>
+        /// <param name="timeout">Maximum time to wait.</param>
+        /// <param name="token">Cancellation token.</param>
+        public async Task WaitForAllHealthyAsync(TimeSpan timeout, CancellationToken token = default)
+        {
+            DateTime deadline = DateTime.UtcNow.Add(timeout);
+            while (_Settings.Origins.Any(o => !o.Healthy))
+            {
+                if (DateTime.UtcNow > deadline)
+                    throw new TimeoutException("Not all origin servers became healthy within " + timeout.TotalSeconds + "s.");
+                await Task.Delay(250, token).ConfigureAwait(false);
+            }
+        }
+
+        private SwitchboardSettings BuildSettings()
+        {
+            SwitchboardSettings settings = new SwitchboardSettings();
+
+            settings.Webserver.Hostname = "localhost";
+            settings.Webserver.Port = _ProxyPort;
+
+            settings.Logging.ConsoleLogging = false;
+            settings.Logging.EnableColors = false;
+            settings.Logging.MinimumSeverity = 7;
+
+            settings.Database.Type = Switchboard.Core.Database.DatabaseTypeEnum.Sqlite;
+            settings.Database.Filename = _DbPath;
+
+            settings.Management.Enable = false;
+            settings.RequestHistory.Enable = false;
+
+            settings.OpenApi = new OpenApiDocumentSettings
+            {
+                Enable = true,
+                EnableSwaggerUi = true,
+                DocumentPath = "/openapi.json",
+                SwaggerUiPath = "/swagger",
+                Title = "Switchboard Test API",
+                Version = "1.0.0",
+                Description = "Test API for Switchboard reverse proxy",
+                Contact = new OpenApiContactSettings { Name = "Test Support", Email = "test@example.com" },
+                SecuritySchemes = new Dictionary<string, OpenApiSecuritySchemeSettings>
+                {
+                    ["bearerAuth"] = new OpenApiSecuritySchemeSettings
+                    {
+                        Type = "http",
+                        Scheme = "bearer",
+                        BearerFormat = "JWT",
+                        Description = "JWT Bearer token authentication"
+                    }
+                },
+                Tags = new List<OpenApiTagSettings>
+                {
+                    new OpenApiTagSettings { Name = "Users", Description = "User management operations" },
+                    new OpenApiTagSettings { Name = "Data", Description = "Data operations" },
+                    new OpenApiTagSettings { Name = "Events", Description = "Server-Sent Events" }
+                }
+            };
+
+            List<string> originIds = _OriginPorts.Select(o => o.Key).ToList();
+
+            settings.Endpoints.Add(new ApiEndpoint
+            {
+                Identifier = "test-endpoint",
+                Name = "Test Endpoint",
+                LoadBalancing = LoadBalancingMode.RoundRobin,
+                AuthContextHeader = Constants.AuthContextHeader,
+                IncludeAuthContextHeader = true,
+                TimeoutMs = 30000,
+                MaxRequestBodySize = 10485760,
+                BlockHttp10 = false,
+                Unauthenticated = new ApiEndpointGroup
+                {
+                    ParameterizedUrls = new Dictionary<string, List<string>>
+                    {
+                        { "GET", new List<string> { "/unauthenticated", "/api/users", "/api/data", "/events", "/chunked-download", "/api/v2/users/{userId}", "/api/headers-test", "/api/query-test", "/api/timeout-test", "/api/large-body-test" } },
+                        { "POST", new List<string> { "/api/users", "/api/data", "/api/upload", "/api/large-body-test" } },
+                        { "PUT", new List<string> { "/api/users/{id}", "/api/data/{id}" } },
+                        { "DELETE", new List<string> { "/api/users/{id}", "/api/data/{id}" } },
+                        { "PATCH", new List<string> { "/api/users/{id}" } },
+                        { "OPTIONS", new List<string> { "/api/cors-test" } }
+                    }
+                },
+                Authenticated = new ApiEndpointGroup
+                {
+                    ParameterizedUrls = new Dictionary<string, List<string>>
+                    {
+                        { "GET", new List<string> { "/authenticated", "/api/secure" } },
+                        { "POST", new List<string> { "/api/secure" } },
+                        { "PUT", new List<string> { "/api/secure/{id}" } },
+                        { "DELETE", new List<string> { "/api/secure/{id}" } }
+                    }
+                },
+                RewriteUrls = new Dictionary<string, Dictionary<string, string>>
+                {
+                    { "GET", new Dictionary<string, string> { { "/api/v2/users/{userId}", "/v1/users/{userId}" } } }
+                },
+                OriginServers = originIds,
+                OpenApiDocumentation = new OpenApiEndpointMetadata
+                {
+                    Routes = new Dictionary<string, Dictionary<string, OpenApiRouteDocumentation>>
+                    {
+                        ["GET"] = new Dictionary<string, OpenApiRouteDocumentation>
+                        {
+                            ["/api/users"] = new OpenApiRouteDocumentation
+                            {
+                                OperationId = "getUsers",
+                                Summary = "List all users",
+                                Description = "Returns a list of all users in the system",
+                                Tags = new List<string> { "Users" },
+                                Responses = new Dictionary<string, OpenApiResponseDocumentation>
+                                {
+                                    ["200"] = new OpenApiResponseDocumentation
+                                    {
+                                        Description = "Successful response",
+                                        Content = new Dictionary<string, OpenApiMediaTypeDocumentation>
+                                        {
+                                            ["application/json"] = new OpenApiMediaTypeDocumentation { SchemaType = "array" }
+                                        }
+                                    }
+                                }
+                            },
+                            ["/events"] = new OpenApiRouteDocumentation
+                            {
+                                OperationId = "getEvents",
+                                Summary = "Subscribe to event stream",
+                                Description = "Opens a Server-Sent Events connection",
+                                Tags = new List<string> { "Events" },
+                                Responses = new Dictionary<string, OpenApiResponseDocumentation>
+                                {
+                                    ["200"] = new OpenApiResponseDocumentation { Description = "Event stream opened" }
+                                }
+                            }
+                        },
+                        ["POST"] = new Dictionary<string, OpenApiRouteDocumentation>
+                        {
+                            ["/api/users"] = new OpenApiRouteDocumentation
+                            {
+                                OperationId = "createUser",
+                                Summary = "Create a new user",
+                                Description = "Creates a new user account",
+                                Tags = new List<string> { "Users" },
+                                RequestBody = new OpenApiRequestBodyDocumentation
+                                {
+                                    Description = "User data",
+                                    Required = true,
+                                    Content = new Dictionary<string, OpenApiMediaTypeDocumentation>
+                                    {
+                                        ["application/json"] = new OpenApiMediaTypeDocumentation { SchemaType = "object" }
+                                    }
+                                },
+                                Responses = new Dictionary<string, OpenApiResponseDocumentation>
+                                {
+                                    ["201"] = new OpenApiResponseDocumentation { Description = "User created" },
+                                    ["400"] = new OpenApiResponseDocumentation { Description = "Invalid request" }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            foreach (KeyValuePair<string, int> kvp in _OriginPorts)
+            {
+                settings.Origins.Add(new OriginServer
+                {
+                    Identifier = kvp.Key,
+                    Name = kvp.Key,
+                    Hostname = "localhost",
+                    Port = kvp.Value,
+                    Ssl = false,
+                    HealthCheckIntervalMs = 1000,
+                    UnhealthyThreshold = 2,
+                    HealthyThreshold = 2,
+                    MaxParallelRequests = _MaxParallelRequests,
+                    RateLimitRequestsThreshold = _RateLimitThreshold
+                });
+            }
+
+            return settings;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            if (_Disposed) return;
+            _Disposed = true;
+
+            try
+            {
+                _Daemon?.Dispose();
+            }
+            catch (Exception)
+            {
+                // ignore
+            }
+
+            foreach (OriginHost origin in _Origins)
+            {
+                origin.Dispose();
+            }
+
+            _Origins.Clear();
+            _StartLock.Dispose();
+
+            try
+            {
+                if (File.Exists(_DbPath)) File.Delete(_DbPath);
+            }
+            catch (Exception)
+            {
+                // best-effort cleanup
+            }
+        }
+    }
+}

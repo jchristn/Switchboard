@@ -11,15 +11,27 @@ dotnet build Switchboard.sln
 ```
 
 ### Run Tests
-```bash
-# Run comprehensive test suite (includes authentication, health checks, rate limiting, chunked transfer, SSE)
-cd Test
-dotnet run
 
-# Run URL rewrite test
-cd Test.UrlRewrite
-dotnet run
+Tests use the [Touchstone](https://github.com/jchristn/touchstone) runner-agnostic descriptor
+framework. All test cases live once in **Test.Shared** and are executed through three runners:
+
+```bash
+# Console runner (colored, tabular output; optional JSON export)
+dotnet run --project Test.Automated
+dotnet run --project Test.Automated -- --results results.json
+dotnet run --project Test.Automated -- --unit      # network-free suites only (fast)
+
+# xUnit runner (fact-style + per-case theory rows)
+dotnet test Test.Xunit
+
+# NUnit runner (fact-style + TestCaseSource rows)
+dotnet test Test.Nunit
 ```
+
+Integration suites bind real localhost TCP ports (9200-9204 for the shared proxy/origins, plus
+9230-9254 for health/rate-limit scenarios), so runner parallelization is disabled. The `--unit`
+flag runs only the model, settings, URL-rewrite, error-response, auth-context, and settings-import
+suites, which bind no ports.
 
 ### Run Switchboard Server (Standalone)
 ```bash
@@ -61,8 +73,10 @@ Switchboard is a lightweight application proxy that combines reverse proxy and A
 
 - **Switchboard.Core**: The main library containing all proxy logic, designed to be embedded in applications or used standalone
 - **Switchboard.Server**: A standalone executable server that uses Switchboard.Core
-- **Test**: Example integration showing how to use Switchboard.Core with custom authentication/authorization
-- **Test.UrlRewrite**: Example demonstrating URL rewriting capabilities
+- **Test.Shared**: All test suite descriptors (Touchstone.Core only) plus the integration harness (proxy daemon + origin hosts). Single source of truth for coverage.
+- **Test.Automated**: Console test runner using Touchstone.Cli
+- **Test.Xunit**: xUnit host over the shared descriptors (Touchstone xUnit adapter)
+- **Test.Nunit**: NUnit host over the shared descriptors (Touchstone NUnit adapter)
 
 ### Key Classes
 

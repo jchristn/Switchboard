@@ -340,3 +340,5 @@ paket-files/
 __pycache__/
 *.pyc
  
+# Switchboard test runtime artifacts
+**/switchboard.log*

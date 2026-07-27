@@ -1,0 +1,55 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Restore
+        run: dotnet restore src/Switchboard.sln
+
+      - name: Build
+        run: dotnet build src/Switchboard.sln --configuration Debug --no-restore
+
+      # Authoritative full run (unit + database + integration) through the Touchstone console runner.
+      # Integration suites bind real localhost ports, so they are not parallelized. Pinned to a single
+      # target framework so the two TFMs never contend for the same ports.
+      - name: Console runner (full, net8.0)
+        run: dotnet run --project src/Test.Automated --configuration Debug --framework net8.0 --no-build -- --results results-net8.json
+
+      # Verify the net10.0 runtime path with the fast, port-free subset.
+      - name: Console runner (unit-only, net10.0)
+        run: dotnet run --project src/Test.Automated --configuration Debug --framework net10.0 --no-build -- --unit --results results-net10-unit.json
+
+      # Exercise the xUnit and NUnit adapters over the same shared descriptors (single TFM to avoid
+      # port contention between frameworks).
+      - name: xUnit adapter (net8.0)
+        run: dotnet test src/Test.Xunit --configuration Debug --framework net8.0 --no-build
+
+      - name: NUnit adapter (net8.0)
+        run: dotnet test src/Test.Nunit --configuration Debug --framework net8.0 --no-build
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            results-net8.json
+            results-net10-unit.json
