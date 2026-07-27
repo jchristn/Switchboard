@@ -1,0 +1,30 @@
+.sb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-8) var(--spacing-4);
+  text-align: center;
+}
+
+.sb-empty__icon {
+  color: var(--color-text-subtle);
+  margin-block-end: var(--spacing-1);
+}
+
+.sb-empty__message {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.sb-empty__hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  max-width: 42ch;
+}
+
+.sb-empty__action {
+  margin-block-start: var(--spacing-3);
+}

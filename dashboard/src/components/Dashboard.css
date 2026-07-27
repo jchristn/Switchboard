@@ -1,43 +1,35 @@
-.dashboard {
+.sb-shell {
+  display: flex;
   min-height: 100vh;
-  display: grid;
-  grid-template-areas:
-    "header header"
-    "sidebar main";
-  grid-template-columns: var(--sidebar-width) 1fr;
-  grid-template-rows: var(--header-height) 1fr;
+  background-color: var(--color-surface-alt);
 }
 
-.dashboard.sidebar-collapsed {
-  grid-template-columns: var(--sidebar-collapsed-width) 1fr;
+.sb-main-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.dashboard-main {
-  grid-area: main;
-  padding: var(--spacing-6);
-  background-color: var(--color-bg-secondary);
+.sb-content {
+  flex: 1;
+  min-width: 0;
   overflow-y: auto;
+  padding: var(--spacing-6);
 }
 
-.toast-container {
+.sb-toast-container {
   position: fixed;
   top: calc(var(--header-height) + var(--spacing-4));
-  right: var(--spacing-4);
-  z-index: 1000;
+  inset-inline-end: var(--spacing-4);
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
 }
 
 @media (max-width: 768px) {
-  .dashboard {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "header"
-      "main";
-  }
-
-  .dashboard-main {
+  .sb-content {
     padding: var(--spacing-4);
   }
 }

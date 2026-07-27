@@ -1,36 +1,26 @@
-import axios from 'axios';
+// Single hand-rolled API client for the Switchboard management API. Every view goes through this;
+// no component calls fetch directly. The server speaks PascalCase JSON, so request bodies are
+// converted to PascalCase and responses back to camelCase at the boundary.
 
-// Convert PascalCase to camelCase, handling acronyms like GUID
 function toCamelCase(str) {
-  // Handle all-caps strings like "GUID" -> "guid"
-  if (str === str.toUpperCase() && str.length > 1) {
-    return str.toLowerCase();
-  }
-  // Handle mixed case with trailing acronym like "EndpointGUID" -> "endpointGuid"
-  // First lowercase the first char, then fix any trailing all-caps sequences
+  if (str === str.toUpperCase() && str.length > 1) return str.toLowerCase();
   let result = str.charAt(0).toLowerCase() + str.slice(1);
-  // Convert trailing GUID to Guid (e.g., "endpointGUID" -> "endpointGuid")
   result = result.replace(/GUID$/, 'Guid');
   result = result.replace(/ID$/, 'Id');
   result = result.replace(/URL$/, 'Url');
   return result;
 }
 
-// Convert camelCase to PascalCase, handling acronyms
 function toPascalCase(str) {
   let result = str.charAt(0).toUpperCase() + str.slice(1);
-  // Convert trailing Guid back to GUID for server
   result = result.replace(/Guid$/, 'GUID');
   result = result.replace(/Id$/, 'ID');
   result = result.replace(/Url$/, 'URL');
   return result;
 }
 
-// Recursively transform object keys to camelCase
 function keysToCamelCase(obj) {
-  if (Array.isArray(obj)) {
-    return obj.map(keysToCamelCase);
-  }
+  if (Array.isArray(obj)) return obj.map(keysToCamelCase);
   if (obj !== null && typeof obj === 'object') {
     return Object.keys(obj).reduce((result, key) => {
       result[toCamelCase(key)] = keysToCamelCase(obj[key]);
@@ -40,11 +30,8 @@ function keysToCamelCase(obj) {
   return obj;
 }
 
-// Recursively transform object keys to PascalCase
 function keysToPascalCase(obj) {
-  if (Array.isArray(obj)) {
-    return obj.map(keysToPascalCase);
-  }
+  if (Array.isArray(obj)) return obj.map(keysToPascalCase);
   if (obj !== null && typeof obj === 'object') {
     return Object.keys(obj).reduce((result, key) => {
       result[toPascalCase(key)] = keysToPascalCase(obj[key]);
@@ -54,58 +41,93 @@ function keysToPascalCase(obj) {
   return obj;
 }
 
+/**
+ * Error thrown for non-2xx responses. Carries the HTTP status and the parsed error body.
+ */
+export class ApiError extends Error {
+  constructor(status, body, message) {
+    super(message || (body && (body.description || body.message || body.error)) || `HTTP ${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.body = body;
+    this.isNetworkError = status === 0;
+  }
+}
+
+function buildQuery(params) {
+  if (!params) return '';
+  const usp = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') usp.append(key, value);
+  });
+  const qs = usp.toString();
+  return qs ? `?${qs}` : '';
+}
+
 export class ApiClient {
   constructor(baseUrl, token, basePath = '/_sb/v1.0') {
-    this.baseUrl = baseUrl.replace(/\/$/, '');
+    this.baseUrl = (baseUrl || '').replace(/\/$/, '');
     this.token = token;
     this.basePath = basePath.replace(/\/$/, '');
-
-    this.client = axios.create({
-      baseURL: `${this.baseUrl}${this.basePath}`,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    // Request interceptor to convert camelCase to PascalCase
-    this.client.interceptors.request.use(
-      config => {
-        if (config.data && typeof config.data === 'object') {
-          config.data = keysToPascalCase(config.data);
-        }
-        return config;
-      },
-      error => Promise.reject(error)
-    );
-
-    // Response interceptor for PascalCase to camelCase conversion and error handling
-    this.client.interceptors.response.use(
-      response => {
-        if (response.data) {
-          response.data = keysToCamelCase(response.data);
-        }
-        return response;
-      },
-      error => {
-        if (error.response) {
-          // Handle ApiErrorResponse format (with description, message, error fields)
-          const data = error.response.data;
-          const message = data?.description || data?.Description ||
-                          data?.message || data?.Message ||
-                          data?.error || data?.Error ||
-                          error.message;
-          throw new Error(message);
-        } else if (error.request) {
-          throw new Error('No response from server');
-        } else {
-          throw new Error(error.message);
-        }
-      }
-    );
   }
 
-  // Token validation
+  _headers(extra) {
+    return {
+      Authorization: `Bearer ${this.token}`,
+      'Content-Type': 'application/json',
+      ...(extra || {}),
+    };
+  }
+
+  async _request(method, path, { query, body } = {}) {
+    const url = `${this.baseUrl}${this.basePath}${path}${buildQuery(query)}`;
+    let response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers: this._headers(),
+        body: body !== undefined ? JSON.stringify(keysToPascalCase(body)) : undefined,
+      });
+    } catch (err) {
+      throw new ApiError(0, null, err.message || 'No response from server');
+    }
+
+    if (response.status === 401) {
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+    }
+
+    if (response.status === 204) return null;
+
+    let payload = null;
+    const text = await response.text();
+    if (text) {
+      try {
+        payload = keysToCamelCase(JSON.parse(text));
+      } catch {
+        payload = text;
+      }
+    }
+
+    if (!response.ok) {
+      throw new ApiError(response.status, payload);
+    }
+    return payload;
+  }
+
+  get(path, query) {
+    return this._request('GET', path, { query });
+  }
+  post(path, body, query) {
+    return this._request('POST', path, { body, query });
+  }
+  put(path, body) {
+    return this._request('PUT', path, { body });
+  }
+  del(path) {
+    return this._request('DELETE', path);
+  }
+
+  // ---- Session ----
   async validateToken() {
     try {
       await this.getHealth();
@@ -114,290 +136,217 @@ export class ApiClient {
       return false;
     }
   }
-
-  // Get current user
-  async getMe() {
-    const response = await this.client.get('/me');
-    return response.data;
+  getMe() {
+    return this.get('/me');
+  }
+  getHealth() {
+    return this.get('/health');
   }
 
-  // ==================== Origins ====================
-
-  async getOrigins(options = {}) {
-    const params = new URLSearchParams();
-    if (options.skip) params.append('skip', options.skip);
-    if (options.take) params.append('take', options.take);
-    if (options.search) params.append('search', options.search);
-    const response = await this.client.get(`/origins?${params}`);
-    return response.data;
+  // ---- Origins ----
+  getOrigins(options = {}) {
+    return this.get('/origins', options);
+  }
+  getOrigin(guid) {
+    return this.get(`/origins/${guid}`);
+  }
+  createOrigin(data) {
+    return this.post('/origins', data);
+  }
+  updateOrigin(guid, data) {
+    return this.put(`/origins/${guid}`, data);
+  }
+  deleteOrigin(guid) {
+    return this.del(`/origins/${guid}`);
   }
 
-  async getOrigin(guid) {
-    const response = await this.client.get(`/origins/${guid}`);
-    return response.data;
+  // ---- Endpoints ----
+  getEndpoints(options = {}) {
+    return this.get('/endpoints', options);
+  }
+  getEndpoint(guid) {
+    return this.get(`/endpoints/${guid}`);
+  }
+  createEndpoint(data) {
+    return this.post('/endpoints', data);
+  }
+  updateEndpoint(guid, data) {
+    return this.put(`/endpoints/${guid}`, data);
+  }
+  deleteEndpoint(guid) {
+    return this.del(`/endpoints/${guid}`);
   }
 
-  async createOrigin(data) {
-    const response = await this.client.post('/origins', data);
-    return response.data;
+  // ---- Routes ----
+  getRoutes(options = {}) {
+    return this.get('/routes', options);
+  }
+  getRoute(id) {
+    return this.get(`/routes/${id}`);
+  }
+  createRoute(data) {
+    return this.post('/routes', data);
+  }
+  updateRoute(id, data) {
+    return this.put(`/routes/${id}`, data);
+  }
+  deleteRoute(id) {
+    return this.del(`/routes/${id}`);
   }
 
-  async updateOrigin(guid, data) {
-    const response = await this.client.put(`/origins/${guid}`, data);
-    return response.data;
+  // ---- Mappings ----
+  getMappings(options = {}) {
+    return this.get('/mappings', options);
+  }
+  createMapping(data) {
+    return this.post('/mappings', data);
+  }
+  deleteMapping(id) {
+    return this.del(`/mappings/${id}`);
   }
 
-  async deleteOrigin(guid) {
-    await this.client.delete(`/origins/${guid}`);
+  // ---- URL Rewrites ----
+  getRewrites(options = {}) {
+    return this.get('/rewrites', options);
+  }
+  getRewrite(id) {
+    return this.get(`/rewrites/${id}`);
+  }
+  createRewrite(data) {
+    return this.post('/rewrites', data);
+  }
+  updateRewrite(id, data) {
+    return this.put(`/rewrites/${id}`, data);
+  }
+  deleteRewrite(id) {
+    return this.del(`/rewrites/${id}`);
   }
 
-  // ==================== Endpoints ====================
-
-  async getEndpoints(options = {}) {
-    const params = new URLSearchParams();
-    if (options.skip) params.append('skip', options.skip);
-    if (options.take) params.append('take', options.take);
-    if (options.search) params.append('search', options.search);
-    const response = await this.client.get(`/endpoints?${params}`);
-    return response.data;
+  // ---- Blocked Headers ----
+  getBlockedHeaders(options = {}) {
+    return this.get('/headers', options);
+  }
+  createBlockedHeader(data) {
+    return this.post('/headers', data);
+  }
+  deleteBlockedHeader(id) {
+    return this.del(`/headers/${id}`);
   }
 
-  async getEndpoint(guid) {
-    const response = await this.client.get(`/endpoints/${guid}`);
-    return response.data;
+  // ---- Users ----
+  getUsers(options = {}) {
+    return this.get('/users', options);
+  }
+  getUser(guid) {
+    return this.get(`/users/${guid}`);
+  }
+  createUser(data) {
+    return this.post('/users', data);
+  }
+  updateUser(guid, data) {
+    return this.put(`/users/${guid}`, data);
+  }
+  deleteUser(guid) {
+    return this.del(`/users/${guid}`);
   }
 
-  async createEndpoint(data) {
-    const response = await this.client.post('/endpoints', data);
-    return response.data;
+  // ---- Credentials ----
+  getCredentials(options = {}) {
+    return this.get('/credentials', options);
+  }
+  getCredential(guid) {
+    return this.get(`/credentials/${guid}`);
+  }
+  createCredential(data) {
+    return this.post('/credentials', data);
+  }
+  updateCredential(guid, data) {
+    return this.put(`/credentials/${guid}`, data);
+  }
+  deleteCredential(guid) {
+    return this.del(`/credentials/${guid}`);
+  }
+  regenerateCredential(guid) {
+    return this.post(`/credentials/${guid}/regenerate`);
   }
 
-  async updateEndpoint(guid, data) {
-    const response = await this.client.put(`/endpoints/${guid}`, data);
-    return response.data;
+  // ---- Request History ----
+  getHistory(filters = {}) {
+    return this.get('/history', filters);
+  }
+  getRecentHistory(count = 100) {
+    return this.get('/history/recent', { count });
+  }
+  getFailedHistory(options = {}) {
+    return this.get('/history/failed', options);
+  }
+  getHistoryDetail(id) {
+    return this.get(`/history/${id}`);
+  }
+  deleteHistory(id) {
+    return this.del(`/history/${id}`);
+  }
+  runHistoryCleanup(days = 0) {
+    return this.post('/history/cleanup', undefined, { days });
+  }
+  getHistoryStats() {
+    return this.get('/history/stats');
+  }
+  // B1 — bucketed activity for the chart. start/end are ISO8601 UTC; intervalMinutes is the bucket size.
+  getHistoryTimeseries({ start, end, intervalMinutes } = {}) {
+    return this.get('/history/timeseries', { start, end, intervalMinutes });
   }
 
-  async deleteEndpoint(guid) {
-    await this.client.delete(`/endpoints/${guid}`);
+  // ---- Settings (B2/B3) ----
+  getSettings() {
+    return this.get('/settings');
+  }
+  updateSettings(data) {
+    return this.put('/settings', data);
   }
 
-  // ==================== Routes ====================
-
-  async getRoutes(options = {}) {
-    const params = new URLSearchParams();
-    if (options.skip) params.append('skip', options.skip);
-    if (options.take) params.append('take', options.take);
-    const response = await this.client.get(`/routes?${params}`);
-    return response.data;
+  // ---- System (B4/B5) ----
+  restartServer() {
+    return this.post('/system/restart');
+  }
+  validateConfig(config) {
+    return this.post('/config/validate', config);
   }
 
-  async getRoute(id) {
-    const response = await this.client.get(`/routes/${id}`);
-    return response.data;
+  // ---- API Explorer ----
+  // The management OpenAPI document is served at the server root, not under basePath.
+  async getOpenApiSpec() {
+    const res = await fetch(`${this.baseUrl}/openapi.json`, {
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    if (!res.ok) throw new ApiError(res.status, null);
+    return res.json();
   }
 
-  async createRoute(data) {
-    const response = await this.client.post('/routes', data);
-    return response.data;
-  }
-
-  async updateRoute(id, data) {
-    const response = await this.client.put(`/routes/${id}`, data);
-    return response.data;
-  }
-
-  async deleteRoute(id) {
-    await this.client.delete(`/routes/${id}`);
-  }
-
-  // ==================== Mappings ====================
-
-  async getMappings(options = {}) {
-    const params = new URLSearchParams();
-    if (options.skip) params.append('skip', options.skip);
-    if (options.take) params.append('take', options.take);
-    const response = await this.client.get(`/mappings?${params}`);
-    return response.data;
-  }
-
-  async getMapping(id) {
-    const response = await this.client.get(`/mappings/${id}`);
-    return response.data;
-  }
-
-  async createMapping(data) {
-    const response = await this.client.post('/mappings', data);
-    return response.data;
-  }
-
-  async deleteMapping(id) {
-    await this.client.delete(`/mappings/${id}`);
-  }
-
-  // ==================== URL Rewrites ====================
-
-  async getRewrites(options = {}) {
-    const params = new URLSearchParams();
-    if (options.skip) params.append('skip', options.skip);
-    if (options.take) params.append('take', options.take);
-    const response = await this.client.get(`/rewrites?${params}`);
-    return response.data;
-  }
-
-  async getRewrite(id) {
-    const response = await this.client.get(`/rewrites/${id}`);
-    return response.data;
-  }
-
-  async createRewrite(data) {
-    const response = await this.client.post('/rewrites', data);
-    return response.data;
-  }
-
-  async updateRewrite(id, data) {
-    const response = await this.client.put(`/rewrites/${id}`, data);
-    return response.data;
-  }
-
-  async deleteRewrite(id) {
-    await this.client.delete(`/rewrites/${id}`);
-  }
-
-  // ==================== Blocked Headers ====================
-
-  async getBlockedHeaders(options = {}) {
-    const params = new URLSearchParams();
-    if (options.skip) params.append('skip', options.skip);
-    if (options.take) params.append('take', options.take);
-    const response = await this.client.get(`/headers?${params}`);
-    return response.data;
-  }
-
-  async createBlockedHeader(data) {
-    const response = await this.client.post('/headers', data);
-    return response.data;
-  }
-
-  async deleteBlockedHeader(id) {
-    await this.client.delete(`/headers/${id}`);
-  }
-
-  // ==================== Users ====================
-
-  async getUsers(options = {}) {
-    const params = new URLSearchParams();
-    if (options.skip) params.append('skip', options.skip);
-    if (options.take) params.append('take', options.take);
-    if (options.search) params.append('search', options.search);
-    const response = await this.client.get(`/users?${params}`);
-    return response.data;
-  }
-
-  async getUser(guid) {
-    const response = await this.client.get(`/users/${guid}`);
-    return response.data;
-  }
-
-  async createUser(data) {
-    const response = await this.client.post('/users', data);
-    return response.data;
-  }
-
-  async updateUser(guid, data) {
-    const response = await this.client.put(`/users/${guid}`, data);
-    return response.data;
-  }
-
-  async deleteUser(guid) {
-    await this.client.delete(`/users/${guid}`);
-  }
-
-  // ==================== Credentials ====================
-
-  async getCredentials(options = {}) {
-    const params = new URLSearchParams();
-    if (options.skip) params.append('skip', options.skip);
-    if (options.take) params.append('take', options.take);
-    if (options.search) params.append('search', options.search);
-    const response = await this.client.get(`/credentials?${params}`);
-    return response.data;
-  }
-
-  async getCredential(guid) {
-    const response = await this.client.get(`/credentials/${guid}`);
-    return response.data;
-  }
-
-  async createCredential(data) {
-    const response = await this.client.post('/credentials', data);
-    return response.data;
-  }
-
-  async updateCredential(guid, data) {
-    const response = await this.client.put(`/credentials/${guid}`, data);
-    return response.data;
-  }
-
-  async deleteCredential(guid) {
-    await this.client.delete(`/credentials/${guid}`);
-  }
-
-  async regenerateCredential(guid) {
-    const response = await this.client.post(`/credentials/${guid}/regenerate`);
-    return response.data;
-  }
-
-  // ==================== Request History ====================
-
-  async getHistory(filters = {}) {
-    const params = new URLSearchParams();
-    if (filters.skip) params.append('skip', filters.skip);
-    if (filters.take) params.append('take', filters.take);
-    if (filters.start) params.append('start', filters.start);
-    if (filters.end) params.append('end', filters.end);
-    if (filters.endpoint) params.append('endpoint', filters.endpoint);
-    if (filters.origin) params.append('origin', filters.origin);
-    const response = await this.client.get(`/history?${params}`);
-    return response.data;
-  }
-
-  async getRecentHistory(count = 100) {
-    const response = await this.client.get(`/history/recent?count=${count}`);
-    return response.data;
-  }
-
-  async getFailedHistory(options = {}) {
-    const params = new URLSearchParams();
-    if (options.skip) params.append('skip', options.skip);
-    if (options.take) params.append('take', options.take);
-    const response = await this.client.get(`/history/failed?${params}`);
-    return response.data;
-  }
-
-  async getHistoryDetail(id) {
-    const response = await this.client.get(`/history/${id}`);
-    return response.data;
-  }
-
-  async deleteHistory(id) {
-    await this.client.delete(`/history/${id}`);
-  }
-
-  async runHistoryCleanup(days = 0) {
-    const response = await this.client.post(`/history/cleanup?days=${days}`);
-    return response.data;
-  }
-
-  async getHistoryStats() {
-    const response = await this.client.get('/history/stats');
-    return response.data;
-  }
-
-  // ==================== Health ====================
-
-  async getHealth() {
-    const response = await this.client.get('/health');
-    return response.data;
+  // Execute an arbitrary request against the server for the API Explorer, returning raw response
+  // metadata (status, headers, body text, timing, size). Path is relative to the server root.
+  async execute(method, path, { headers, body } = {}) {
+    const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+    const started = performance.now();
+    const res = await fetch(url, {
+      method,
+      headers: { Authorization: `Bearer ${this.token}`, ...(headers || {}) },
+      body,
+    });
+    const text = await res.text();
+    const durationMs = Math.round(performance.now() - started);
+    const respHeaders = {};
+    res.headers.forEach((v, k) => {
+      respHeaders[k] = v;
+    });
+    return {
+      status: res.status,
+      statusText: res.statusText,
+      headers: respHeaders,
+      body: text,
+      durationMs,
+      bytes: new Blob([text]).size,
+    };
   }
 }
 

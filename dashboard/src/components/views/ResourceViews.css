@@ -1,0 +1,130 @@
+/* Shared layout styles for the standard resource views (Origins, Users,
+   Credentials, Blocked Headers, URL Rewrites). Layout helpers only — form fields
+   reuse the global .form-group/.form-label/.form-input/.btn classes. All spacing
+   uses logical properties so the layout mirrors correctly under RTL. */
+
+.rv-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+/* ---- Forms ---- */
+
+.rv-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--spacing-4);
+}
+
+.rv-form-grid .form-group {
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .rv-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rv-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.rv-check input {
+  margin-block-start: 3px;
+  flex-shrink: 0;
+}
+
+.rv-form-section-title {
+  margin-block: var(--spacing-4) var(--spacing-2);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* ---- Read-only detail grid ---- */
+
+.rv-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-4);
+}
+
+.rv-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  min-width: 0;
+}
+
+.rv-detail-item--full {
+  grid-column: 1 / -1;
+}
+
+.rv-detail-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-tertiary);
+}
+
+.rv-detail-value {
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+
+.rv-detail-value--mono {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--font-size-sm);
+}
+
+.rv-badge-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  align-items: center;
+}
+
+/* ---- Inline add form (blocked headers) ---- */
+
+.rv-inline-form {
+  display: flex;
+  gap: var(--spacing-2);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.rv-inline-form .form-group {
+  margin-bottom: 0;
+  flex: 1 1 260px;
+}
+
+/* ---- Show-once token ---- */
+
+.rv-token-note {
+  margin-block-end: var(--spacing-3);
+  color: var(--color-warning);
+  font-size: var(--font-size-sm);
+}
+
+.rv-token-box {
+  display: flex;
+  gap: var(--spacing-2);
+  align-items: center;
+}
+
+.rv-token-box .form-input {
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.rv-mono {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--font-size-sm);
+}

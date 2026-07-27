@@ -56,6 +56,15 @@
         }
 
         /// <summary>
+        /// Management service. Null when the management API is disabled.
+        /// Exposed so hosts and tests can access management-service seams (for example the restart action).
+        /// </summary>
+        public ManagementService ManagementService
+        {
+            get => _ManagementService;
+        }
+
+        /// <summary>
         /// Logging module.
         /// When set, propagates to all internal services.
         /// </summary>
@@ -366,7 +375,9 @@
                     _ManagementService = new ManagementService(
                         _Settings.Management,
                         _Client,
-                        _Logging);
+                        _Logging,
+                        _Settings,
+                        Constants.SettingsFile);
 
                     _Logging.Info(_Header + "management API enabled at " + _Settings.Management.BasePath);
                 }

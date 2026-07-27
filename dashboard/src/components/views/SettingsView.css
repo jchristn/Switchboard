@@ -1,0 +1,247 @@
+/* Settings — global server configuration editor. */
+
+.settings-view {
+  /* Leave room for the sticky footer. */
+  padding-block-end: 72px;
+}
+
+.settings-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+/* Read-only notice for non-admins. */
+.settings-notice {
+  margin-block-end: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-4);
+  border: 1px solid var(--color-border);
+  border-inline-start: 3px solid var(--color-info);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Persistent "changes pending restart" banner. */
+.settings-pending {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  margin-block-end: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-4);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.settings-pending__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.settings-pending__text strong {
+  color: var(--color-text-primary);
+}
+
+.settings-pending__text span {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Section stack. */
+.settings-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.settings-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-4) var(--spacing-6);
+}
+
+/* Toggle rows span the full width so their annotation aligns to the far edge. */
+.settings-field--toggle {
+  grid-column: 1 / -1;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.settings-field .form-label {
+  margin-block-end: 0;
+}
+
+.settings-field__labelrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+}
+
+.settings-field__live {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* Toggle switch. */
+.settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  cursor: pointer;
+}
+
+.settings-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.settings-toggle__track {
+  position: relative;
+  flex: 0 0 auto;
+  inline-size: 38px;
+  block-size: 22px;
+  border-radius: 999px;
+  background-color: var(--color-border);
+  transition: background-color var(--transition-fast);
+}
+
+.settings-toggle__thumb {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-start: 2px;
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: var(--shadow-sm);
+  transition: inset-inline-start var(--transition-fast);
+}
+
+.settings-toggle input:checked + .settings-toggle__track {
+  background-color: var(--color-primary);
+}
+
+.settings-toggle input:checked + .settings-toggle__track .settings-toggle__thumb {
+  inset-inline-start: 18px;
+}
+
+.settings-toggle input:focus-visible + .settings-toggle__track {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.settings-toggle input:disabled + .settings-toggle__track {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-toggle__label {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+/* Blocked headers editor. */
+.settings-header-add {
+  display: flex;
+  gap: var(--spacing-2);
+  margin-block-end: var(--spacing-4);
+}
+
+.settings-header-add .form-input {
+  flex: 1 1 auto;
+}
+
+.settings-header-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.settings-header-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-alt);
+}
+
+.settings-header-item code {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.settings-header-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-1);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-tertiary);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.settings-header-remove:hover {
+  color: var(--color-danger);
+  background-color: var(--color-surface-sunken);
+}
+
+/* Sticky save footer. */
+.settings-footer {
+  position: sticky;
+  inset-block-end: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-3);
+  margin-block-start: var(--spacing-6);
+  padding: var(--spacing-3) 0;
+  background-color: var(--color-bg-secondary);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.settings-footer__dirty {
+  font-size: var(--font-size-sm);
+  color: var(--color-warning);
+}
+
+/* Restart overlay. */
+.settings-restart-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(15, 23, 42, 0.6);
+}
+
+.settings-restart-overlay__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-8);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-lg);
+}

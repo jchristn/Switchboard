@@ -1,133 +1,330 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
-import { useApp } from '../../context/AppContext';
-import './Views.css';
+import { useFormatters } from '../../hooks/useFormatters';
+import {
+  PageHeader,
+  Metric,
+  ActivityChart,
+  TIME_RANGES,
+  EmptyState,
+  Icons,
+} from '../ui';
+import './OverviewView.css';
+
+const POLL_MS = 30000;
+
+// Pull the value out of a Promise.allSettled result, or null when it rejected.
+function settled(result) {
+  return result && result.status === 'fulfilled' ? result.value : null;
+}
+
+// Success-rate → tone. successRate is a 0-100 percentage.
+function rateTone(rate) {
+  if (rate == null) return 'neutral';
+  if (rate >= 99) return 'success';
+  if (rate >= 90) return 'warning';
+  return 'danger';
+}
 
 function OverviewView() {
   const { apiClient } = useAuth();
-  const { showError } = useApp();
+  const { t } = useTranslation();
+  const fmt = useFormatters();
+  const navigate = useNavigate();
+
+  const [rangeId, setRangeId] = useState('hour');
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    origins: 0,
-    endpoints: 0,
-    totalRequests: 0,
-    failedRequests: 0,
-    successRate: 0,
+  const [chartLoading, setChartLoading] = useState(false);
+  const [lastLoaded, setLastLoaded] = useState(null);
+  const [timeseries, setTimeseries] = useState([]);
+  const [data, setData] = useState({
+    origins: null,
+    endpoints: null,
+    stats: null,
+    credentials: null,
+    blockedHeaders: null,
   });
 
+  // Keep a mounted flag so async completions after unmount don't set state.
+  const mountedRef = useRef(true);
   useEffect(() => {
-    loadStats();
-    const interval = setInterval(loadStats, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
-  const loadStats = async () => {
-    try {
-      const [origins, endpoints, historyStats] = await Promise.all([
+  const loadData = useCallback(
+    async (range) => {
+      setChartLoading(true);
+      const rangeCfg = TIME_RANGES[range] || TIME_RANGES.hour;
+      const now = Date.now();
+      const timeseriesArgs = {
+        start: new Date(now - rangeCfg.windowMs).toISOString(),
+        end: new Date(now).toISOString(),
+        intervalMinutes: Math.max(1, Math.round(rangeCfg.bucketMs / 60000)),
+      };
+
+      const results = await Promise.allSettled([
         apiClient.getOrigins(),
         apiClient.getEndpoints(),
         apiClient.getHistoryStats(),
+        apiClient.getCredentials(),
+        apiClient.getBlockedHeaders(),
+        apiClient.getHistoryTimeseries(timeseriesArgs),
       ]);
 
-      setStats({
-        origins: origins.length,
-        endpoints: endpoints.length,
-        totalRequests: historyStats.totalRequests || 0,
-        failedRequests: historyStats.failedRequests || 0,
-        successRate: historyStats.successRate || 0,
-      });
-    } catch (err) {
-      showError('Failed to load statistics: ' + err.message);
-    } finally {
+      if (!mountedRef.current) return;
+
+      const [origins, endpoints, stats, credentials, blockedHeaders, series] = results;
+
+      setData((prev) => ({
+        origins: settled(origins) ?? prev.origins,
+        endpoints: settled(endpoints) ?? prev.endpoints,
+        stats: settled(stats) ?? prev.stats,
+        credentials: settled(credentials) ?? prev.credentials,
+        blockedHeaders: settled(blockedHeaders) ?? prev.blockedHeaders,
+      }));
+
+      // Timeseries endpoint is new; if it 404s (rejected) show the chart empty
+      // rather than surfacing an error on the page.
+      const seriesValue = settled(series);
+      setTimeseries(Array.isArray(seriesValue) ? seriesValue : []);
+
+      setLastLoaded(new Date());
       setLoading(false);
+      setChartLoading(false);
+    },
+    [apiClient]
+  );
+
+  // Load on mount and whenever the range changes; poll every 30s. Changing the
+  // range resets the interval and triggers an immediate reload for that window.
+  useEffect(() => {
+    loadData(rangeId);
+    const interval = setInterval(() => loadData(rangeId), POLL_MS);
+    return () => clearInterval(interval);
+  }, [rangeId, loadData]);
+
+  const {
+    origins,
+    endpoints,
+    stats,
+    credentials,
+    blockedHeaders,
+  } = data;
+
+  const originCount = origins ? origins.length : null;
+  const healthyOrigins = origins ? origins.filter((o) => o.healthy === true).length : 0;
+  const unhealthyOrigins = useMemo(
+    () => (origins ? origins.filter((o) => o.healthy === false) : []),
+    [origins]
+  );
+  const endpointCount = endpoints ? endpoints.length : null;
+  const totalRequests = stats ? stats.totalRequests ?? 0 : null;
+  const failedRequests = stats ? stats.failedRequests ?? 0 : null;
+  const successRate = stats ? stats.successRate ?? null : null;
+  const credentialCount = credentials ? credentials.length : null;
+  const blockedHeaderCount = blockedHeaders ? blockedHeaders.length : null;
+
+  const num = (v) => (v == null ? '—' : fmt.number(v));
+
+  // Attention alerts: known-unhealthy origins and non-zero failures.
+  const alerts = useMemo(() => {
+    const list = [];
+    unhealthyOrigins.forEach((o) => {
+      list.push({
+        id: `origin-${o.identifier}`,
+        message: t('overview.attnUnhealthyOrigin', { name: o.name || o.identifier }),
+        to: '/dashboard/origins',
+      });
+    });
+    if (failedRequests > 0) {
+      list.push({
+        id: 'failures',
+        message: t('overview.attnFailures', { count: failedRequests }),
+        to: '/dashboard/history?failed=1',
+      });
     }
-  };
+    return list;
+  }, [unhealthyOrigins, failedRequests, t]);
+
+  const quickActions = [
+    {
+      id: 'add-origin',
+      icon: <Icons.Server size={20} />,
+      title: t('overview.qaAddOrigin'),
+      hint: t('overview.qaAddOriginHint'),
+      to: '/dashboard/origins',
+    },
+    {
+      id: 'add-endpoint',
+      icon: <Icons.Route size={20} />,
+      title: t('overview.qaAddEndpoint'),
+      hint: t('overview.qaAddEndpointHint'),
+      to: '/dashboard/endpoints',
+    },
+    {
+      id: 'api-explorer',
+      icon: <Icons.Terminal size={20} />,
+      title: t('overview.qaApiExplorer'),
+      hint: t('overview.qaApiExplorerHint'),
+      to: '/dashboard/api-explorer',
+    },
+    {
+      id: 'view-failures',
+      icon: <Icons.Warning size={20} />,
+      title: t('overview.qaViewFailures'),
+      hint: t('overview.qaViewFailuresHint'),
+      to: '/dashboard/history?failed=1',
+    },
+  ];
 
   if (loading) {
     return (
-      <div className="view-loading">
-        <div className="spinner"></div>
-        <p>Loading...</p>
+      <div className="ov">
+        <PageHeader title={t('overview.title')} subtitle={t('overview.subtitle')} />
+        <div className="ov-loading" role="status" aria-live="polite">
+          <span className="ov-spinner" aria-hidden="true" />
+          <span>{t('common.loading')}</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="view">
-      <div className="view-header">
-        <h2 className="view-title">Overview</h2>
+    <div className="ov">
+      <PageHeader title={t('overview.title')} subtitle={t('overview.subtitle')} />
+
+      {/* KPI tiles */}
+      <div className="ov-kpis">
+        <Metric
+          label={t('overview.kpiOrigins')}
+          value={num(originCount)}
+          note={
+            originCount != null
+              ? t('overview.kpiOriginsNote', { healthy: healthyOrigins, total: originCount })
+              : null
+          }
+          tone={unhealthyOrigins.length > 0 ? 'danger' : 'neutral'}
+          icon={<Icons.Server size={18} />}
+          onClick={() => navigate('/dashboard/origins')}
+        />
+        <Metric
+          label={t('overview.kpiEndpoints')}
+          value={num(endpointCount)}
+          icon={<Icons.Route size={18} />}
+          onClick={() => navigate('/dashboard/endpoints')}
+        />
+        <Metric
+          label={t('overview.kpiRequests')}
+          value={num(totalRequests)}
+          icon={<Icons.History size={18} />}
+          onClick={() => navigate('/dashboard/history')}
+        />
+        <Metric
+          label={t('overview.kpiFailures')}
+          value={num(failedRequests)}
+          tone={failedRequests > 0 ? 'danger' : 'neutral'}
+          icon={<Icons.Warning size={18} />}
+          onClick={() => navigate('/dashboard/history?failed=1')}
+        />
+        <Metric
+          label={t('overview.kpiSuccessRate')}
+          value={successRate != null ? fmt.percent(successRate) : '—'}
+          tone={rateTone(successRate)}
+          icon={<Icons.Gauge size={18} />}
+        />
+        <Metric
+          label={t('overview.kpiCredentials')}
+          value={num(credentialCount)}
+          icon={<Icons.Key size={18} />}
+          onClick={() => navigate('/dashboard/credentials')}
+        />
+        <Metric
+          label={t('overview.kpiBlockedHeaders')}
+          value={num(blockedHeaderCount)}
+          icon={<Icons.Shield size={18} />}
+          onClick={() => navigate('/dashboard/blocked-headers')}
+        />
       </div>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-blue">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-            </svg>
+      <div className="ov-columns">
+        {/* Quick actions */}
+        <section className="ov-panel" aria-label={t('overview.quickActions')}>
+          <h2 className="ov-panel__title">{t('overview.quickActions')}</h2>
+          <div className="ov-actions">
+            {quickActions.map((qa) => (
+              <button
+                key={qa.id}
+                type="button"
+                className="ov-action"
+                onClick={() => navigate(qa.to)}
+              >
+                <span className="ov-action__icon" aria-hidden="true">{qa.icon}</span>
+                <span className="ov-action__body">
+                  <span className="ov-action__title">{qa.title}</span>
+                  <span className="ov-action__hint">{qa.hint}</span>
+                </span>
+                <span className="ov-action__arrow" aria-hidden="true">
+                  <Icons.ArrowRight size={16} />
+                </span>
+              </button>
+            ))}
           </div>
-          <div className="stat-content">
-            <p className="stat-value">{stats.origins}</p>
-            <p className="stat-label">Origin Servers</p>
-          </div>
-        </div>
+        </section>
 
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-purple">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <polyline points="22,6 12,13 2,6"></polyline>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <p className="stat-value">{stats.endpoints}</p>
-            <p className="stat-label">API Endpoints</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-green">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <p className="stat-value">{stats.totalRequests.toLocaleString()}</p>
-            <p className="stat-label">Total Requests</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-red">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <p className="stat-value">{stats.failedRequests.toLocaleString()}</p>
-            <p className="stat-label">Failed Requests</p>
-          </div>
-        </div>
+        {/* Attention */}
+        <section className="ov-panel" aria-label={t('overview.attention')}>
+          <h2 className="ov-panel__title">{t('overview.attention')}</h2>
+          {alerts.length === 0 ? (
+            <EmptyState
+              icon={<Icons.Check size={28} />}
+              message={t('overview.attentionNone')}
+            />
+          ) : (
+            <ul className="ov-alerts">
+              {alerts.map((alert) => (
+                <li key={alert.id}>
+                  <button
+                    type="button"
+                    className="ov-alert"
+                    onClick={() => navigate(alert.to)}
+                  >
+                    <span className="ov-alert__icon" aria-hidden="true">
+                      <Icons.Warning size={18} />
+                    </span>
+                    <span className="ov-alert__message">{alert.message}</span>
+                    <span className="ov-alert__arrow" aria-hidden="true">
+                      <Icons.ArrowRight size={16} />
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
-      <div className="overview-section">
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">Success Rate</h3>
+      {/* Request activity chart */}
+      <section className="ov-panel" aria-label={t('chart.title')}>
+        <ActivityChart
+          data={timeseries}
+          rangeId={rangeId}
+          onRangeChange={setRangeId}
+          onBucketClick={() => navigate('/dashboard/history')}
+          onRefresh={() => loadData(rangeId)}
+          loading={chartLoading}
+          title={t('chart.title')}
+        />
+        {lastLoaded && (
+          <div className="ov-updated">
+            {t('overview.lastUpdated', { time: fmt.relative(lastLoaded) })}
           </div>
-          <div className="success-rate">
-            <div className="success-rate-value">{stats.successRate}%</div>
-            <div className="success-rate-bar">
-              <div
-                className="success-rate-fill"
-                style={{ width: `${stats.successRate}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
+        )}
+      </section>
     </div>
   );
 }

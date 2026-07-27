@@ -3018,6 +3018,43 @@
             </summary>
             <param name="headerName">Header name.</param>
         </member>
+        <member name="T:Switchboard.Core.Models.ConfigValidationRequest">
+            <summary>
+            Optional request body for the configuration validation endpoint. When supplied with any
+            content, the posted configuration is validated instead of the configuration currently stored
+            in the database.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ConfigValidationRequest.Endpoints">
+            <summary>
+            API endpoints to validate.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ConfigValidationRequest.Origins">
+            <summary>
+            Origin servers to validate.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ConfigValidationRequest.Routes">
+            <summary>
+            Endpoint routes to validate.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ConfigValidationRequest.Mappings">
+            <summary>
+            Endpoint-to-origin mappings to validate.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ConfigValidationRequest.HasAny">
+            <summary>
+            True when any configuration collection contains at least one element.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.ConfigValidationRequest.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.Models.Credential">
             <summary>
             User credential (bearer token).
@@ -3703,6 +3740,43 @@
             <param name="version">Version number.</param>
             <param name="description">Description.</param>
         </member>
+        <member name="T:Switchboard.Core.Models.TimeSeriesBucket">
+            <summary>
+            A single fixed-width time bucket of aggregated request history statistics.
+            Used by the management timeseries endpoint. Empty buckets are zero-filled.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.TimeSeriesBucket.BucketStartUtc">
+            <summary>
+            Inclusive start of the bucket window (UTC).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.TimeSeriesBucket.Total">
+            <summary>
+            Total number of requests that fall in this bucket.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.TimeSeriesBucket.Success">
+            <summary>
+            Number of successful requests in this bucket.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.TimeSeriesBucket.Failure">
+            <summary>
+            Number of failed requests in this bucket.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.TimeSeriesBucket.AvgDurationMs">
+            <summary>
+            Average request duration in milliseconds for requests in this bucket.
+            Zero when the bucket is empty.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.TimeSeriesBucket.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.Models.UrlRewrite">
             <summary>
             URL rewrite rule for an API endpoint.
@@ -4278,13 +4352,41 @@
             Logging module.
             </summary>
         </member>
-        <member name="M:Switchboard.Core.Services.ManagementService.#ctor(Switchboard.Core.Settings.ManagementSettings,Switchboard.Core.Client.SwitchboardClient,SyslogLogging.LoggingModule)">
+        <member name="P:Switchboard.Core.Services.ManagementService.RestartAction">
+            <summary>
+            Action invoked to trigger a process restart. Overridable so tests can substitute a no-op
+            in place of the real <see cref="M:System.Environment.Exit(System.Int32)"/> call.
+            Never null.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Services.ManagementService._RestartRequiredSettings">
+            <summary>
+            Configuration paths that only take effect after a full process restart.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Services.ManagementService._RuntimeEditableSettings">
+            <summary>
+            Configuration paths that hot-swap live without a process restart.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.ManagementService.#ctor(Switchboard.Core.Settings.ManagementSettings,Switchboard.Core.Client.SwitchboardClient,SyslogLogging.LoggingModule,Switchboard.Core.SwitchboardSettings,System.String)">
             <summary>
             Instantiate management service.
             </summary>
             <param name="settings">Management settings.</param>
             <param name="client">Switchboard client.</param>
             <param name="logging">Logging module.</param>
+            <param name="switchboardSettings">
+            Live global settings object. When supplied, the settings GET/PUT endpoints are able to read
+            and hot-swap runtime-editable configuration in place. May be null when the service is hosted
+            without global settings, in which case the settings endpoints return 400.
+            </param>
+            <param name="settingsFilePath">
+            Optional path to the settings file (e.g. sb.json). When supplied and the file already exists,
+            a settings PUT persists the mutated settings back to disk. Persistence is a best-effort,
+            file-only operation: when no settings file exists on disk (for example when the daemon is
+            hosted embedded), PUT changes apply live but are not persisted across a restart.
+            </param>
         </member>
         <member name="M:Switchboard.Core.Services.ManagementService.InitializeRoutes(WatsonWebserver.Webserver,System.String,System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
             <summary>
@@ -4297,6 +4399,28 @@
         <member name="M:Switchboard.Core.Services.ManagementService.Dispose">
             <summary>
             Dispose.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.ManagementService.BuildTimeSeries(System.Collections.Generic.List{Switchboard.Core.Models.RequestHistory},System.DateTime,System.DateTime,System.Int32)">
+            <summary>
+            Aggregate request history rows into fixed-width, zero-filled time buckets. Pure function
+            with no I/O so it can be unit tested. Rows outside [<paramref name="start"/>,
+            <paramref name="end"/>) are ignored. Each row is bucketed by flooring its
+            <c>TimestampUtc</c> to the interval boundary measured from <paramref name="start"/>.
+            </summary>
+            <param name="rows">Request history rows to aggregate. Null is treated as empty.</param>
+            <param name="start">Inclusive window start (UTC).</param>
+            <param name="end">Exclusive window end (UTC).</param>
+            <param name="intervalMinutes">Bucket width in minutes. Values below 1 are treated as 1.</param>
+            <returns>Ordered list of buckets covering the window; empty buckets are zero-filled.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.ManagementService.ApplySettings(Switchboard.Core.SwitchboardSettings)">
+            <summary>
+            Apply an incoming settings tree onto the live settings object. Runtime-editable fields are
+            mutated in place on the existing sub-objects (so services holding references see the change);
+            restart-required sections are replaced by reference (they take effect only after a restart,
+            but the new values are reflected on subsequent reads and persisted). Masked secrets in the
+            incoming payload are preserved from the existing stored values.
             </summary>
         </member>
         <member name="M:Switchboard.Core.Services.ManagementService.Dispose(System.Boolean)">
@@ -5161,6 +5285,12 @@
             <summary>
             Switchboard client for database operations.
             Use this to seed or manage data programmatically.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.SwitchboardDaemon.ManagementService">
+            <summary>
+            Management service. Null when the management API is disabled.
+            Exposed so hosts and tests can access management-service seams (for example the restart action).
             </summary>
         </member>
         <member name="P:Switchboard.Core.SwitchboardDaemon.Logging">

@@ -1,0 +1,27 @@
+.sb-json__subtitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.sb-json__bytes {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  font-family: var(--font-family-mono);
+}
+
+.json-view {
+  margin: 0;
+  padding: var(--spacing-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  line-height: 1.6;
+  white-space: pre;
+  overflow: auto;
+  max-height: 60vh;
+}

@@ -1,928 +1,1011 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
-import DataTable from '../common/DataTable';
-import Modal from '../common/Modal';
-import ConfirmModal from '../common/ConfirmModal';
-import './Views.css';
+import { useTranslation } from 'react-i18next';
+import {
+  PageHeader,
+  DataTable,
+  TablePagination,
+  ActionMenu,
+  entityActions,
+  Modal,
+  ConfirmModal,
+  JsonViewerModal,
+  Badge,
+  MethodBadge,
+  Segmented,
+  CopyableId,
+  EmptyState,
+  Icons,
+} from '../ui';
+import './EndpointsView.css';
+
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+
+const EMPTY_ENDPOINT = {
+  identifier: '',
+  name: '',
+  loadBalancingMode: 'RoundRobin',
+  timeoutMs: 60000,
+  blockHttp10: false,
+  maxRequestBodySize: 536870912,
+  includeAuthContextHeader: false,
+  authContextHeader: '',
+  useGlobalBlockedHeaders: true,
+};
+
+// Normalize an endpoint record into the editable form shape.
+function endpointToForm(e) {
+  if (!e) return { ...EMPTY_ENDPOINT };
+  return {
+    identifier: e.identifier || '',
+    name: e.name || '',
+    loadBalancingMode: e.loadBalancingMode || 'RoundRobin',
+    timeoutMs: e.timeoutMs ?? 60000,
+    blockHttp10: e.blockHttp10 || false,
+    maxRequestBodySize: e.maxRequestBodySize ?? 536870912,
+    includeAuthContextHeader: e.includeAuthContextHeader || false,
+    authContextHeader: e.authContextHeader || '',
+    useGlobalBlockedHeaders: e.useGlobalBlockedHeaders !== false,
+  };
+}
 
 function EndpointsView() {
-  const { apiClient } = useAuth();
+  const { apiClient, isAdmin } = useAuth();
   const { showSuccess, showError } = useApp();
+  const { t } = useTranslation();
   const location = useLocation();
+
+  // ---- Master list ----
   const [endpoints, setEndpoints] = useState([]);
-  const [routes, setRoutes] = useState([]);
-  const [origins, setOrigins] = useState([]);
-  const [mappings, setMappings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEndpoint, setSelectedEndpoint] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // ---- Create / edit endpoint modal ----
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingGuid, setEditingGuid] = useState(null);
+  const [form, setForm] = useState({ ...EMPTY_ENDPOINT });
+  const [saving, setSaving] = useState(false);
+
+  // ---- JSON + delete ----
+  const [jsonRow, setJsonRow] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // ---- Detail modal ----
+  const [detail, setDetail] = useState(null); // the endpoint being inspected
   const [activeTab, setActiveTab] = useState('routes');
-  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  const [pendingAction, setPendingAction] = useState(null);
-  const [newRoute, setNewRoute] = useState({
-    httpMethod: 'GET',
-    urlPattern: '/',
-    requiresAuthentication: false,
-  });
-  const [formData, setFormData] = useState({
-    identifier: '',
-    name: '',
-    timeoutMs: 60000,
-    loadBalancingMode: 'RoundRobin',
-    blockHttp10: false,
-    maxRequestBodySize: 536870912,
-    captureRequestBody: false,
-    captureResponseBody: false,
-    captureRequestHeaders: true,
-    captureResponseHeaders: true,
-    maxCaptureRequestBodySize: 65536,
-    maxCaptureResponseBodySize: 65536,
-  });
-  const [deleteEndpointConfirm, setDeleteEndpointConfirm] = useState({ show: false });
-  const [deleteRouteConfirm, setDeleteRouteConfirm] = useState({ show: false, route: null });
-  const [removeOriginConfirm, setRemoveOriginConfirm] = useState({ show: false, mapping: null });
-  const selectedEndpointGuidRef = useRef(null);
-  const pendingSelectIdentifier = useRef(location.state?.selectIdentifier || null);
+  const [routes, setRoutes] = useState([]);
+  const [mappings, setMappings] = useState([]);
+  const [origins, setOrigins] = useState([]);
+  const [settingsForm, setSettingsForm] = useState({ ...EMPTY_ENDPOINT });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // ---- Route / mapping mutations ----
+  const [newRoute, setNewRoute] = useState({ httpMethod: 'GET', urlPattern: '/', requiresAuthentication: false });
+  const [editingRoute, setEditingRoute] = useState(null); // { id, ... } while editing
+  const [deleteRoute, setDeleteRoute] = useState(null);
+  const [detachTarget, setDetachTarget] = useState(null);
+  const [attachValue, setAttachValue] = useState('');
 
-  // Handle navigation state to select endpoint by identifier
-  useEffect(() => {
-    if (pendingSelectIdentifier.current && endpoints.length > 0) {
-      const endpoint = endpoints.find(e => e.identifier === pendingSelectIdentifier.current);
-      if (endpoint) {
-        handleSelectEndpoint(endpoint);
-      }
-      pendingSelectIdentifier.current = null;
-    }
-  }, [endpoints]);
+  const pendingSelect = useRef(location.state?.selectIdentifier || null);
 
-  const loadData = async () => {
+  const loadEndpoints = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const [endpointsData, routesData, originsData, mappingsData] = await Promise.all([
-        apiClient.getEndpoints(),
-        apiClient.getRoutes(),
-        apiClient.getOrigins(),
-        apiClient.getMappings()
-      ]);
-      setEndpoints(endpointsData);
-      setRoutes(routesData);
-      setOrigins(originsData);
-      setMappings(mappingsData);
-
-      // Update selected endpoint if it still exists (use ref to avoid stale closure)
-      if (selectedEndpointGuidRef.current) {
-        const updated = endpointsData.find(e => e.guid === selectedEndpointGuidRef.current);
-        if (updated) {
-          setSelectedEndpoint(updated);
-          // Also update form data to match the refreshed endpoint
-          setFormData({
-            identifier: updated.identifier || '',
-            name: updated.name || '',
-            timeoutMs: updated.timeoutMs || 60000,
-            loadBalancingMode: updated.loadBalancingMode || 'RoundRobin',
-            blockHttp10: updated.blockHttp10 || false,
-            maxRequestBodySize: updated.maxRequestBodySize || 536870912,
-            captureRequestBody: updated.captureRequestBody || false,
-            captureResponseBody: updated.captureResponseBody || false,
-            captureRequestHeaders: updated.captureRequestHeaders !== false,
-            captureResponseHeaders: updated.captureResponseHeaders !== false,
-            maxCaptureRequestBodySize: updated.maxCaptureRequestBodySize || 65536,
-            maxCaptureResponseBodySize: updated.maxCaptureResponseBodySize || 65536,
-          });
-        } else {
-          setSelectedEndpoint(null);
-          selectedEndpointGuidRef.current = null;
-        }
-      }
+      const data = await apiClient.getEndpoints({ search: search || undefined });
+      setEndpoints(Array.isArray(data) ? data : []);
     } catch (err) {
-      showError('Failed to load data: ' + err.message);
+      setError(err.message || t('endpoints.loadError'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiClient, search, t]);
 
-  const getRoutesForEndpoint = (endpointIdentifier) => {
-    return routes.filter(r => r.endpointIdentifier === endpointIdentifier);
-  };
+  useEffect(() => {
+    loadEndpoints();
+  }, [loadEndpoints]);
 
-  const getMappingsForEndpoint = (endpointIdentifier) => {
-    return mappings.filter(m => m.endpointIdentifier === endpointIdentifier);
-  };
+  // ---- Detail data ----
+  const loadDetailData = useCallback(
+    async (identifier) => {
+      try {
+        const [routesData, mappingsData, originsData] = await Promise.all([
+          apiClient.getRoutes(),
+          apiClient.getMappings(),
+          apiClient.getOrigins(),
+        ]);
+        setRoutes((Array.isArray(routesData) ? routesData : []).filter((r) => r.endpointIdentifier === identifier));
+        setMappings((Array.isArray(mappingsData) ? mappingsData : []).filter((m) => m.endpointIdentifier === identifier));
+        setOrigins(Array.isArray(originsData) ? originsData : []);
+      } catch (err) {
+        showError(err.message || t('endpoints.loadError'));
+      }
+    },
+    [apiClient, showError, t]
+  );
 
-  const getOriginByIdentifier = (identifier) => {
-    return origins.find(o => o.identifier === identifier);
-  };
-
-  const getUnmappedOrigins = (endpointIdentifier) => {
-    const mappedIdentifiers = getMappingsForEndpoint(endpointIdentifier).map(m => m.originIdentifier);
-    return origins.filter(o => !mappedIdentifiers.includes(o.identifier));
-  };
-
-  // Check if there are unsaved changes in settings
-  const hasUnsavedChanges = () => {
-    if (!selectedEndpoint) return false;
-    return (
-      formData.name !== (selectedEndpoint.name || '') ||
-      formData.timeoutMs !== (selectedEndpoint.timeoutMs || 60000) ||
-      formData.loadBalancingMode !== (selectedEndpoint.loadBalancingMode || 'RoundRobin') ||
-      formData.blockHttp10 !== (selectedEndpoint.blockHttp10 || false) ||
-      formData.maxRequestBodySize !== (selectedEndpoint.maxRequestBodySize || 536870912) ||
-      formData.captureRequestBody !== (selectedEndpoint.captureRequestBody || false) ||
-      formData.captureResponseBody !== (selectedEndpoint.captureResponseBody || false) ||
-      formData.captureRequestHeaders !== (selectedEndpoint.captureRequestHeaders !== false) ||
-      formData.captureResponseHeaders !== (selectedEndpoint.captureResponseHeaders !== false) ||
-      formData.maxCaptureRequestBodySize !== (selectedEndpoint.maxCaptureRequestBodySize || 65536) ||
-      formData.maxCaptureResponseBodySize !== (selectedEndpoint.maxCaptureResponseBodySize || 65536)
-    );
-  };
-
-  // Handle actions that might lose unsaved changes
-  const handleWithUnsavedCheck = (action) => {
-    if (hasUnsavedChanges()) {
-      setPendingAction(() => action);
-      setShowUnsavedWarning(true);
-    } else {
-      action();
-    }
-  };
-
-  const handleSelectEndpoint = (endpoint) => {
-    const doSelect = () => {
-      setSelectedEndpoint(endpoint);
-      selectedEndpointGuidRef.current = endpoint?.guid || null;
+  const openDetail = useCallback(
+    (endpoint) => {
+      setDetail(endpoint);
       setActiveTab('routes');
-      setFormData({
-        identifier: endpoint.identifier || '',
-        name: endpoint.name || '',
-        timeoutMs: endpoint.timeoutMs || 60000,
-        loadBalancingMode: endpoint.loadBalancingMode || 'RoundRobin',
-        blockHttp10: endpoint.blockHttp10 || false,
-        maxRequestBodySize: endpoint.maxRequestBodySize || 536870912,
-        captureRequestBody: endpoint.captureRequestBody || false,
-        captureResponseBody: endpoint.captureResponseBody || false,
-        captureRequestHeaders: endpoint.captureRequestHeaders !== false,
-        captureResponseHeaders: endpoint.captureResponseHeaders !== false,
-        maxCaptureRequestBodySize: endpoint.maxCaptureRequestBodySize || 65536,
-        maxCaptureResponseBodySize: endpoint.maxCaptureResponseBodySize || 65536,
-      });
-    };
+      setSettingsForm(endpointToForm(endpoint));
+      setNewRoute({ httpMethod: 'GET', urlPattern: '/', requiresAuthentication: false });
+      setEditingRoute(null);
+      setAttachValue('');
+      setRoutes([]);
+      setMappings([]);
+      loadDetailData(endpoint.identifier);
+    },
+    [loadDetailData]
+  );
 
-    if (selectedEndpoint && endpoint.guid !== selectedEndpoint.guid) {
-      handleWithUnsavedCheck(doSelect);
-    } else {
-      doSelect();
+  // Deep-link: select an endpoint by identifier passed via router state.
+  useEffect(() => {
+    if (pendingSelect.current && endpoints.length > 0) {
+      const match = endpoints.find((e) => e.identifier === pendingSelect.current);
+      if (match) openDetail(match);
+      pendingSelect.current = null;
     }
+  }, [endpoints, openDetail]);
+
+  // ---- Derived list (client-side search + pagination) ----
+  const total = endpoints.length;
+  const pageRows = useMemo(() => {
+    const start = (pageNumber - 1) * pageSize;
+    return endpoints.slice(start, start + pageSize);
+  }, [endpoints, pageNumber, pageSize]);
+
+  useEffect(() => {
+    // Clamp page if the list shrank.
+    const pages = Math.max(1, Math.ceil(total / pageSize));
+    if (pageNumber > pages) setPageNumber(pages);
+  }, [total, pageSize, pageNumber]);
+
+  // ---- Endpoint create / edit ----
+  const openCreate = () => {
+    setEditingGuid(null);
+    setForm({ ...EMPTY_ENDPOINT });
+    setFormOpen(true);
   };
 
-  const handleAddNew = () => {
-    setFormData({
-      identifier: '',
-      name: '',
-      timeoutMs: 60000,
-      loadBalancingMode: 'RoundRobin',
-      blockHttp10: false,
-      maxRequestBodySize: 536870912,
-      captureRequestBody: false,
-      captureResponseBody: false,
-      captureRequestHeaders: true,
-      captureResponseHeaders: true,
-      maxCaptureRequestBodySize: 65536,
-      maxCaptureResponseBodySize: 65536,
-    });
-    setShowAddModal(true);
+  const openEdit = (endpoint) => {
+    setEditingGuid(endpoint.guid);
+    setForm(endpointToForm(endpoint));
+    setFormOpen(true);
   };
 
-  const handleCreateEndpoint = async (e) => {
+  const submitForm = async (e) => {
     e.preventDefault();
+    setSaving(true);
     try {
-      await apiClient.createEndpoint(formData);
-      showSuccess('Endpoint created successfully');
-      setShowAddModal(false);
-      loadData();
+      if (editingGuid) {
+        await apiClient.updateEndpoint(editingGuid, form);
+        showSuccess(t('endpoints.updated'));
+      } else {
+        await apiClient.createEndpoint(form);
+        showSuccess(t('endpoints.created'));
+      }
+      setFormOpen(false);
+      loadEndpoints();
     } catch (err) {
-      showError('Failed to create endpoint: ' + err.message);
+      showError((t('endpoints.saveError')) + ': ' + (err.message || ''));
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleResetForm = () => {
-    if (selectedEndpoint) {
-      setFormData({
-        identifier: selectedEndpoint.identifier || '',
-        name: selectedEndpoint.name || '',
-        timeoutMs: selectedEndpoint.timeoutMs || 60000,
-        loadBalancingMode: selectedEndpoint.loadBalancingMode || 'RoundRobin',
-        blockHttp10: selectedEndpoint.blockHttp10 || false,
-        maxRequestBodySize: selectedEndpoint.maxRequestBodySize || 536870912,
-        captureRequestBody: selectedEndpoint.captureRequestBody || false,
-        captureResponseBody: selectedEndpoint.captureResponseBody || false,
-        captureRequestHeaders: selectedEndpoint.captureRequestHeaders !== false,
-        captureResponseHeaders: selectedEndpoint.captureResponseHeaders !== false,
-        maxCaptureRequestBodySize: selectedEndpoint.maxCaptureRequestBodySize || 65536,
-        maxCaptureResponseBodySize: selectedEndpoint.maxCaptureResponseBodySize || 65536,
-      });
-    }
-  };
-
-  const handleSaveEndpoint = async () => {
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const updatedEndpoint = await apiClient.updateEndpoint(selectedEndpoint.guid, formData);
-      showSuccess('Endpoint settings saved');
-      // Update the selected endpoint with the response data
-      setSelectedEndpoint(updatedEndpoint);
-      // Update the endpoints list
-      setEndpoints(prev => prev.map(e => e.guid === updatedEndpoint.guid ? updatedEndpoint : e));
-      // Update form data to match
-      setFormData({
-        identifier: updatedEndpoint.identifier || '',
-        name: updatedEndpoint.name || '',
-        timeoutMs: updatedEndpoint.timeoutMs || 60000,
-        loadBalancingMode: updatedEndpoint.loadBalancingMode || 'RoundRobin',
-        blockHttp10: updatedEndpoint.blockHttp10 || false,
-        maxRequestBodySize: updatedEndpoint.maxRequestBodySize || 536870912,
-        captureRequestBody: updatedEndpoint.captureRequestBody || false,
-        captureResponseBody: updatedEndpoint.captureResponseBody || false,
-        captureRequestHeaders: updatedEndpoint.captureRequestHeaders !== false,
-        captureResponseHeaders: updatedEndpoint.captureResponseHeaders !== false,
-        maxCaptureRequestBodySize: updatedEndpoint.maxCaptureRequestBodySize || 65536,
-        maxCaptureResponseBodySize: updatedEndpoint.maxCaptureResponseBodySize || 65536,
-      });
+      await apiClient.deleteEndpoint(deleteTarget.guid);
+      showSuccess(t('endpoints.deleted'));
+      setDeleteTarget(null);
+      if (detail && detail.guid === deleteTarget.guid) setDetail(null);
+      loadEndpoints();
     } catch (err) {
-      showError('Failed to save endpoint: ' + err.message);
+      showError((t('endpoints.deleteError')) + ': ' + (err.message || ''));
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const handleClosePanel = () => {
-    const doClose = () => {
-      setSelectedEndpoint(null);
-      selectedEndpointGuidRef.current = null;
-    };
-    handleWithUnsavedCheck(doClose);
-  };
+  // ---- Detail: settings ----
+  const settingsDirty = useMemo(() => {
+    if (!detail) return false;
+    const base = endpointToForm(detail);
+    return Object.keys(base).some((k) => base[k] !== settingsForm[k]);
+  }, [detail, settingsForm]);
 
-  const handleDiscardChanges = () => {
-    setShowUnsavedWarning(false);
-    if (pendingAction) {
-      pendingAction();
-      setPendingAction(null);
-    }
-  };
+  const resetSettings = () => setSettingsForm(endpointToForm(detail));
 
-  const handleDeleteEndpointClick = () => {
-    setDeleteEndpointConfirm({ show: true });
-  };
-
-  const handleDeleteEndpointConfirm = async () => {
-    setDeleteEndpointConfirm({ show: false });
-
+  const saveSettings = async () => {
+    if (!detail) return;
+    setSavingSettings(true);
     try {
-      await apiClient.deleteEndpoint(selectedEndpoint.guid);
-      showSuccess('Endpoint deleted successfully');
-      setSelectedEndpoint(null);
-      selectedEndpointGuidRef.current = null;
-      loadData();
+      const updated = await apiClient.updateEndpoint(detail.guid, settingsForm);
+      showSuccess(t('endpoints.settingsSaved'));
+      const next = updated || { ...detail, ...settingsForm };
+      setDetail(next);
+      setSettingsForm(endpointToForm(next));
+      setEndpoints((prev) => prev.map((e) => (e.guid === next.guid ? next : e)));
     } catch (err) {
-      showError('Failed to delete endpoint: ' + err.message);
+      showError((t('endpoints.saveError')) + ': ' + (err.message || ''));
+    } finally {
+      setSavingSettings(false);
     }
   };
 
-  const handleAddRoute = async () => {
+  // Guard the detail modal close when settings are dirty.
+  const requestCloseDetail = () => {
+    if (settingsDirty) setConfirmDiscard(true);
+    else setDetail(null);
+  };
+  const closeDetailNow = () => {
+    setConfirmDiscard(false);
+    setDetail(null);
+  };
+
+  // ---- Detail: routes ----
+  const addRoute = async () => {
     if (!newRoute.urlPattern || newRoute.urlPattern.trim() === '') {
-      showError('URL pattern is required');
+      showError(t('endpoints.urlPatternRequired'));
       return;
     }
-
     try {
-      const createdRoute = await apiClient.createRoute({
-        endpointIdentifier: selectedEndpoint.identifier,
-        endpointGuid: selectedEndpoint.guid,
+      await apiClient.createRoute({
+        endpointIdentifier: detail.identifier,
+        endpointGuid: detail.guid,
         httpMethod: newRoute.httpMethod,
-        urlPattern: newRoute.urlPattern,
+        urlPattern: newRoute.urlPattern.trim(),
         requiresAuthentication: newRoute.requiresAuthentication,
       });
-      showSuccess('Route added successfully');
+      showSuccess(t('endpoints.routeAdded'));
       setNewRoute({ httpMethod: 'GET', urlPattern: '/', requiresAuthentication: false });
-      // Add the new route to the routes list without reloading everything
-      setRoutes(prev => [...prev, createdRoute]);
+      loadDetailData(detail.identifier);
     } catch (err) {
-      showError('Failed to add route: ' + err.message);
+      showError((t('endpoints.routeSaveError')) + ': ' + (err.message || ''));
     }
   };
 
-  const handleDeleteRouteClick = (route) => {
-    setDeleteRouteConfirm({ show: true, route });
-  };
-
-  const handleDeleteRouteConfirm = async () => {
-    const route = deleteRouteConfirm.route;
-    setDeleteRouteConfirm({ show: false, route: null });
-
+  const saveRouteEdit = async () => {
+    if (!editingRoute) return;
+    if (!editingRoute.urlPattern || editingRoute.urlPattern.trim() === '') {
+      showError(t('endpoints.urlPatternRequired'));
+      return;
+    }
     try {
-      await apiClient.deleteRoute(route.id);
-      showSuccess('Route deleted successfully');
-      loadData();
+      await apiClient.updateRoute(editingRoute.id, {
+        endpointIdentifier: detail.identifier,
+        endpointGuid: detail.guid,
+        httpMethod: editingRoute.httpMethod,
+        urlPattern: editingRoute.urlPattern.trim(),
+        requiresAuthentication: editingRoute.requiresAuthentication,
+        sortOrder: editingRoute.sortOrder,
+      });
+      showSuccess(t('endpoints.routeUpdated'));
+      setEditingRoute(null);
+      loadDetailData(detail.identifier);
     } catch (err) {
-      showError('Failed to delete route: ' + err.message);
+      showError((t('endpoints.routeSaveError')) + ': ' + (err.message || ''));
     }
   };
 
-  const handleAddOriginMapping = async (originIdentifier) => {
-    const origin = getOriginByIdentifier(originIdentifier);
-    if (!origin) return;
+  const confirmDeleteRoute = async () => {
+    if (!deleteRoute) return;
+    try {
+      await apiClient.deleteRoute(deleteRoute.id);
+      showSuccess(t('endpoints.routeDeleted'));
+      setDeleteRoute(null);
+      loadDetailData(detail.identifier);
+    } catch (err) {
+      showError((t('endpoints.routeDeleteError')) + ': ' + (err.message || ''));
+    }
+  };
 
+  // ---- Detail: origin mappings ----
+  const unmappedOrigins = useMemo(() => {
+    const mapped = new Set(mappings.map((m) => m.originIdentifier));
+    return origins.filter((o) => !mapped.has(o.identifier));
+  }, [origins, mappings]);
+
+  const originByIdentifier = (identifier) => origins.find((o) => o.identifier === identifier);
+
+  const attachOrigin = async (originIdentifier) => {
+    const origin = originByIdentifier(originIdentifier);
+    if (!origin) return;
     try {
       await apiClient.createMapping({
-        endpointIdentifier: selectedEndpoint.identifier,
-        endpointGuid: selectedEndpoint.guid,
+        endpointIdentifier: detail.identifier,
+        endpointGuid: detail.guid,
         originIdentifier: origin.identifier,
         originGuid: origin.guid,
       });
-      showSuccess(`Origin "${origin.name || origin.identifier}" added`);
-      loadData();
+      showSuccess(t('endpoints.originAttached'));
+      setAttachValue('');
+      loadDetailData(detail.identifier);
     } catch (err) {
-      showError('Failed to add origin: ' + err.message);
+      showError((t('endpoints.attachError')) + ': ' + (err.message || ''));
     }
   };
 
-  const handleRemoveOriginClick = (mapping) => {
-    setRemoveOriginConfirm({ show: true, mapping });
-  };
-
-  const handleRemoveOriginConfirm = async () => {
-    const mapping = removeOriginConfirm.mapping;
-    setRemoveOriginConfirm({ show: false, mapping: null });
-
+  const confirmDetach = async () => {
+    if (!detachTarget) return;
     try {
-      await apiClient.deleteMapping(mapping.id);
-      showSuccess('Origin removed');
-      loadData();
+      await apiClient.deleteMapping(detachTarget.id);
+      showSuccess(t('endpoints.originDetached'));
+      setDetachTarget(null);
+      loadDetailData(detail.identifier);
     } catch (err) {
-      showError('Failed to remove origin: ' + err.message);
+      showError((t('endpoints.detachError')) + ': ' + (err.message || ''));
     }
   };
 
+  // ---- Master table columns ----
   const columns = [
-    { key: 'identifier', label: 'Identifier' },
-    { key: 'name', label: 'Name' },
     {
-      key: 'routes',
-      label: 'Routes',
-      render: (_, row) => {
-        const endpointRoutes = getRoutesForEndpoint(row.identifier);
-        if (endpointRoutes.length === 0) {
-          return <span className="text-muted">None</span>;
-        }
-        return <span className="badge badge-info">{endpointRoutes.length}</span>;
-      },
+      key: 'identifier',
+      label: t('endpoints.identifier'),
+      mono: true,
+      sortable: true,
+      filterable: true,
+      render: (row) => <CopyableId value={row.identifier} />,
+    },
+    { key: 'name', label: t('endpoints.name'), sortable: true, filterable: true },
+    {
+      key: 'loadBalancingMode',
+      label: t('endpoints.loadBalancing'),
+      sortable: true,
+      render: (row) => (
+        <Badge tone={row.loadBalancingMode === 'Random' ? 'accent' : 'info'}>
+          {row.loadBalancingMode === 'Random' ? t('endpoints.random') : t('endpoints.roundRobin')}
+        </Badge>
+      ),
     },
     {
-      key: 'origins',
-      label: 'Origins',
-      render: (_, row) => {
-        const endpointMappings = getMappingsForEndpoint(row.identifier);
-        if (endpointMappings.length === 0) {
-          return <span className="text-muted">None</span>;
-        }
-        return <span className="badge badge-purple">{endpointMappings.length}</span>;
-      },
+      key: 'actions',
+      label: '',
+      isAction: true,
+      align: 'end',
+      render: (row) => (
+        <ActionMenu
+          items={entityActions(t, {
+            onView: () => openDetail(row),
+            onViewJson: () => setJsonRow(row),
+            onEdit: () => openEdit(row),
+            onDelete: () => setDeleteTarget(row),
+            canEdit: isAdmin,
+            canDelete: isAdmin,
+          })}
+        />
+      ),
     },
-    { key: 'loadBalancingMode', label: 'Load Balancing' },
   ];
 
-  if (loading) {
-    return (
-      <div className="view-loading">
-        <div className="spinner"></div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  const selectedRoutes = selectedEndpoint ? getRoutesForEndpoint(selectedEndpoint.identifier) : [];
-  const preAuthRoutes = selectedRoutes.filter(r => !r.requiresAuthentication);
-  const authRoutes = selectedRoutes.filter(r => r.requiresAuthentication);
-  const selectedMappings = selectedEndpoint ? getMappingsForEndpoint(selectedEndpoint.identifier) : [];
-  const unmappedOrigins = selectedEndpoint ? getUnmappedOrigins(selectedEndpoint.identifier) : [];
-
   return (
-    <div className="view master-detail-view">
-      {/* Master: Endpoints Table */}
-      <div className="master-panel">
-        <div className="view-header">
-          <h2 className="view-title">API Endpoints</h2>
-          <button className="btn btn-primary" onClick={handleAddNew}>
-            Add Endpoint
-          </button>
-        </div>
-
-        <DataTable
-          columns={columns}
-          data={endpoints}
-          emptyMessage="No API endpoints configured"
-          onRowClick={handleSelectEndpoint}
-          selectedRow={selectedEndpoint}
-          rowKey="guid"
-        />
-      </div>
-
-      {/* Detail: Selected Endpoint */}
-      {selectedEndpoint && (
-        <div className="detail-panel">
-          <div className="detail-panel-header">
-            <div className="detail-panel-title">
-              <h3>{selectedEndpoint.name || selectedEndpoint.identifier}</h3>
-              {hasUnsavedChanges() && <span className="unsaved-indicator">Unsaved changes</span>}
-            </div>
-            <div className="detail-panel-actions">
-              {hasUnsavedChanges() && (
-                <>
-                  <button className="btn btn-secondary btn-sm" onClick={handleResetForm}>
-                    Reset
-                  </button>
-                  <button className="btn btn-primary btn-sm" onClick={handleSaveEndpoint}>
-                    Save
-                  </button>
-                </>
-              )}
-              <button className="btn btn-danger btn-sm" onClick={handleDeleteEndpointClick}>
-                Delete
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={handleClosePanel}>
-                Close
-              </button>
-            </div>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="detail-tabs">
-            <button
-              className={`detail-tab ${activeTab === 'routes' ? 'active' : ''}`}
-              onClick={() => setActiveTab('routes')}
-            >
-              URL Routes
-              <span className="badge badge-sm">{selectedRoutes.length}</span>
+    <div className="view">
+      <PageHeader
+        title={t('endpoints.title')}
+        subtitle={t('endpoints.subtitle')}
+        actions={
+          isAdmin && (
+            <button type="button" className="btn btn-primary" onClick={openCreate}>
+              <Icons.Plus size={16} />
+              {t('endpoints.add')}
             </button>
-            <button
-              className={`detail-tab ${activeTab === 'origins' ? 'active' : ''}`}
-              onClick={() => setActiveTab('origins')}
-            >
-              Origin Servers
-              <span className="badge badge-sm">{selectedMappings.length}</span>
-            </button>
-            <button
-              className={`detail-tab ${activeTab === 'settings' ? 'active' : ''}`}
-              onClick={() => setActiveTab('settings')}
-            >
-              Settings
-            </button>
-          </div>
+          )
+        }
+      />
 
-          <div className="detail-panel-content">
-            {/* Routes Tab */}
-            {activeTab === 'routes' && (
-              <div className="tab-content">
-                {/* Add Route Form - Prominent */}
-                <div className="add-form-section">
-                  <h4>Add New Route</h4>
-                  <div className="add-route-form">
-                    <select
-                      className="form-input route-method-select"
-                      value={newRoute.httpMethod}
-                      onChange={(e) => setNewRoute({ ...newRoute, httpMethod: e.target.value })}
-                    >
-                      <option value="GET">GET</option>
-                      <option value="POST">POST</option>
-                      <option value="PUT">PUT</option>
-                      <option value="PATCH">PATCH</option>
-                      <option value="DELETE">DELETE</option>
-                      <option value="HEAD">HEAD</option>
-                      <option value="OPTIONS">OPTIONS</option>
-                    </select>
-                    <input
-                      type="text"
-                      className="form-input route-url-input"
-                      placeholder="/api/resource/{id}"
-                      value={newRoute.urlPattern}
-                      onChange={(e) => setNewRoute({ ...newRoute, urlPattern: e.target.value })}
-                    />
-                    <label className="form-checkbox route-auth-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={newRoute.requiresAuthentication}
-                        onChange={(e) => setNewRoute({ ...newRoute, requiresAuthentication: e.target.checked })}
-                      />
-                      Requires Auth
-                    </label>
-                    <button type="button" className="btn btn-primary" onClick={handleAddRoute}>
-                      Add Route
-                    </button>
-                  </div>
-                </div>
-
-                {/* Routes Lists */}
-                <div className="routes-panels">
-                  {/* Pre-Auth Routes */}
-                  <div className="routes-panel">
-                    <div className="routes-panel-header">
-                      <h5>Pre-Authentication Routes</h5>
-                      <span className="badge badge-info">{preAuthRoutes.length}</span>
-                    </div>
-                    <div className="routes-panel-content">
-                      {preAuthRoutes.length === 0 ? (
-                        <p className="text-muted">No pre-auth routes configured</p>
-                      ) : (
-                        <div className="routes-list-compact">
-                          {preAuthRoutes.map((route) => (
-                            <div key={route.id} className="route-row">
-                              <span className={`badge badge-method badge-${route.httpMethod?.toLowerCase() || 'any'}`}>
-                                {route.httpMethod || 'ANY'}
-                              </span>
-                              <code className="route-url-display">{route.urlPattern}</code>
-                              <button
-                                className="btn btn-ghost btn-xs route-delete-btn"
-                                onClick={() => handleDeleteRouteClick(route)}
-                                title="Delete route"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Authenticated Routes */}
-                  <div className="routes-panel">
-                    <div className="routes-panel-header">
-                      <h5>Authenticated Routes</h5>
-                      <span className="badge badge-warning">{authRoutes.length}</span>
-                    </div>
-                    <div className="routes-panel-content">
-                      {authRoutes.length === 0 ? (
-                        <p className="text-muted">No authenticated routes configured</p>
-                      ) : (
-                        <div className="routes-list-compact">
-                          {authRoutes.map((route) => (
-                            <div key={route.id} className="route-row">
-                              <span className={`badge badge-method badge-${route.httpMethod?.toLowerCase() || 'any'}`}>
-                                {route.httpMethod || 'ANY'}
-                              </span>
-                              <code className="route-url-display">{route.urlPattern}</code>
-                              <button
-                                className="btn btn-ghost btn-xs route-delete-btn"
-                                onClick={() => handleDeleteRouteClick(route)}
-                                title="Delete route"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Origins Tab */}
-            {activeTab === 'origins' && (
-              <div className="tab-content">
-                {/* Add Origin Mapping */}
-                <div className="add-form-section">
-                  <h4>Add Origin Server</h4>
-                  {unmappedOrigins.length === 0 ? (
-                    <p className="text-muted">All origin servers are already mapped to this endpoint.</p>
-                  ) : (
-                    <div className="add-origin-form">
-                      <select
-                        id="origin-select"
-                        className="form-input"
-                        defaultValue=""
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            handleAddOriginMapping(e.target.value);
-                            e.target.value = '';
-                          }
-                        }}
-                      >
-                        <option value="" disabled>Select an origin server to add...</option>
-                        {unmappedOrigins.map((origin) => (
-                          <option key={origin.guid} value={origin.identifier}>
-                            {origin.name || origin.identifier} ({origin.hostname}:{origin.port})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-
-                {/* Mapped Origins List */}
-                <div className="origins-section">
-                  <h4>Mapped Origin Servers</h4>
-                  {selectedMappings.length === 0 ? (
-                    <div className="empty-state">
-                      <p>No origin servers mapped to this endpoint.</p>
-                      <p className="text-muted">Add an origin server above to enable request routing.</p>
-                    </div>
-                  ) : (
-                    <div className="origins-list">
-                      {selectedMappings.map((mapping) => {
-                        const origin = getOriginByIdentifier(mapping.originIdentifier);
-                        return (
-                          <div key={mapping.id} className="origin-card">
-                            <div className="origin-card-info">
-                              <div className="origin-card-name">
-                                {origin?.name || mapping.originIdentifier}
-                              </div>
-                              <div className="origin-card-details">
-                                <code>{origin?.hostname || '?'}:{origin?.port || '?'}</code>
-                                {origin?.ssl && <span className="badge badge-success">SSL</span>}
-                              </div>
-                            </div>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleRemoveOriginClick(mapping)}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Settings Tab */}
-            {activeTab === 'settings' && (
-              <div className="tab-content">
-                <div className="settings-edit">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Identifier</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.identifier}
-                        disabled
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Name</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Load Balancing</label>
-                      <select
-                        className="form-input"
-                        value={formData.loadBalancingMode}
-                        onChange={(e) => setFormData({ ...formData, loadBalancingMode: e.target.value })}
-                      >
-                        <option value="RoundRobin">Round Robin</option>
-                        <option value="Random">Random</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Timeout (ms)</label>
-                      <input
-                        type="number"
-                        className="form-input"
-                        value={formData.timeoutMs}
-                        onChange={(e) => setFormData({ ...formData, timeoutMs: parseInt(e.target.value) })}
-                      />
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Max Body Size (bytes)</label>
-                      <input
-                        type="number"
-                        className="form-input"
-                        value={formData.maxRequestBodySize}
-                        onChange={(e) => setFormData({ ...formData, maxRequestBodySize: parseInt(e.target.value) })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-checkbox" style={{ marginTop: '28px' }}>
-                        <input
-                          type="checkbox"
-                          checked={formData.blockHttp10}
-                          onChange={(e) => setFormData({ ...formData, blockHttp10: e.target.checked })}
-                        />
-                        Block HTTP/1.0 requests
-                      </label>
-                    </div>
-                  </div>
-
-                  <h4 style={{ marginTop: '24px', marginBottom: '16px' }}>Request History Capture</h4>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={formData.captureRequestHeaders}
-                          onChange={(e) => setFormData({ ...formData, captureRequestHeaders: e.target.checked })}
-                        />
-                        Capture Request Headers
-                      </label>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={formData.captureResponseHeaders}
-                          onChange={(e) => setFormData({ ...formData, captureResponseHeaders: e.target.checked })}
-                        />
-                        Capture Response Headers
-                      </label>
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={formData.captureRequestBody}
-                          onChange={(e) => setFormData({ ...formData, captureRequestBody: e.target.checked })}
-                        />
-                        Capture Request Body
-                      </label>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={formData.captureResponseBody}
-                          onChange={(e) => setFormData({ ...formData, captureResponseBody: e.target.checked })}
-                        />
-                        Capture Response Body
-                      </label>
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Max Capture Request Body (bytes)</label>
-                      <input
-                        type="number"
-                        className="form-input"
-                        value={formData.maxCaptureRequestBodySize}
-                        onChange={(e) => setFormData({ ...formData, maxCaptureRequestBodySize: parseInt(e.target.value) })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Max Capture Response Body (bytes)</label>
-                      <input
-                        type="number"
-                        className="form-input"
-                        value={formData.maxCaptureResponseBodySize}
-                        onChange={(e) => setFormData({ ...formData, maxCaptureResponseBodySize: parseInt(e.target.value) })}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+      <TablePagination
+        total={total}
+        pageNumber={pageNumber}
+        pageSize={pageSize}
+        onPageChange={setPageNumber}
+        onPageSizeChange={(s) => {
+          setPageSize(s);
+          setPageNumber(1);
+        }}
+        onRefresh={loadEndpoints}
+      >
+        <div className="ep-search">
+          <Icons.Search size={16} className="ep-search__icon" />
+          <input
+            type="text"
+            className="form-input ep-search__input"
+            placeholder={t('common.search')}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPageNumber(1);
+            }}
+            aria-label={t('common.search')}
+          />
         </div>
-      )}
+      </TablePagination>
 
-      {/* Placeholder when nothing selected */}
-      {!selectedEndpoint && endpoints.length > 0 && (
-        <div className="detail-panel detail-panel-empty">
-          <p>Select an endpoint from the table above to view and manage its routes, origin servers, and settings.</p>
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        rows={pageRows}
+        rowKey={(row) => row.guid}
+        loading={loading}
+        error={error}
+        onRetry={loadEndpoints}
+        onRowClick={openDetail}
+        emptyMessage={t('endpoints.empty')}
+        emptyHint={t('endpoints.emptyHint')}
+      />
 
-      {/* Add Endpoint Modal */}
-      {showAddModal && (
-        <Modal title="Add Endpoint" onClose={() => setShowAddModal(false)}>
-          <form onSubmit={handleCreateEndpoint}>
-            <div className="form-group">
-              <label className="form-label">Identifier</label>
-              <input
-                type="text"
-                className="form-input"
-                value={formData.identifier}
-                onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
-                required
-                placeholder="my-api"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Name</label>
-              <input
-                type="text"
-                className="form-input"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="My API"
-              />
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Load Balancing</label>
-                <select
-                  className="form-input"
-                  value={formData.loadBalancingMode}
-                  onChange={(e) => setFormData({ ...formData, loadBalancingMode: e.target.value })}
-                >
-                  <option value="RoundRobin">Round Robin</option>
-                  <option value="Random">Random</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Timeout (ms)</label>
-                <input
-                  type="number"
-                  className="form-input"
-                  value={formData.timeoutMs}
-                  onChange={(e) => setFormData({ ...formData, timeoutMs: parseInt(e.target.value) })}
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-checkbox">
-                <input
-                  type="checkbox"
-                  checked={formData.blockHttp10}
-                  onChange={(e) => setFormData({ ...formData, blockHttp10: e.target.checked })}
-                />
-                Block HTTP/1.0 requests
-              </label>
-            </div>
-            <p className="form-hint">You can add URL routes and origin servers after creating the endpoint.</p>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
-                Cancel
+      {/* Create / edit endpoint */}
+      {formOpen && (
+        <Modal
+          open
+          onClose={() => setFormOpen(false)}
+          size="large"
+          title={editingGuid ? t('endpoints.editTitle') : t('endpoints.createTitle')}
+          footer={
+            <>
+              <button type="button" className="sb-btn sb-btn--ghost" onClick={() => setFormOpen(false)} disabled={saving}>
+                {t('common.cancel')}
               </button>
-              <button type="submit" className="btn btn-primary">
-                Create Endpoint
+              <button type="submit" form="endpoint-form" className="sb-btn sb-btn--primary" disabled={saving}>
+                {saving ? t('common.saving') : editingGuid ? t('common.update') : t('common.create')}
               </button>
-            </div>
+            </>
+          }
+        >
+          <form id="endpoint-form" onSubmit={submitForm}>
+            <EndpointFormFields form={form} setForm={setForm} disableIdentifier={!!editingGuid} t={t} />
+            {!editingGuid && <p className="form-hint">{t('endpoints.createHint')}</p>}
           </form>
         </Modal>
       )}
 
-      {deleteEndpointConfirm.show && (
-        <ConfirmModal
-          title="Delete Endpoint"
-          message="Are you sure you want to delete this endpoint? This will also delete all associated routes and origin mappings."
-          entityName={selectedEndpoint?.identifier}
-          confirmLabel="Delete"
-          onConfirm={handleDeleteEndpointConfirm}
-          onClose={() => setDeleteEndpointConfirm({ show: false })}
+      {/* Detail modal */}
+      {detail && (
+        <Modal
+          open
+          onClose={requestCloseDetail}
+          size="xl"
+          title={detail.name || detail.identifier}
+          subtitle={<CopyableId value={detail.identifier} />}
+          footer={
+            <button type="button" className="sb-btn sb-btn--ghost" onClick={requestCloseDetail}>
+              {t('common.close')}
+            </button>
+          }
+        >
+          <Segmented
+            className="ep-tabs"
+            ariaLabel={t('endpoints.title')}
+            value={activeTab}
+            onChange={setActiveTab}
+            options={[
+              { value: 'routes', label: `${t('endpoints.tabRoutes')} (${routes.length})` },
+              { value: 'origins', label: `${t('endpoints.tabOrigins')} (${mappings.length})` },
+              { value: 'settings', label: t('endpoints.tabSettings') },
+            ]}
+          />
+
+          <div className="ep-tabpanel">
+            {activeTab === 'routes' && (
+              <RoutesTab
+                t={t}
+                isAdmin={isAdmin}
+                routes={routes}
+                newRoute={newRoute}
+                setNewRoute={setNewRoute}
+                onAddRoute={addRoute}
+                editingRoute={editingRoute}
+                setEditingRoute={setEditingRoute}
+                onSaveRouteEdit={saveRouteEdit}
+                onDeleteRoute={setDeleteRoute}
+              />
+            )}
+
+            {activeTab === 'origins' && (
+              <OriginsTab
+                t={t}
+                isAdmin={isAdmin}
+                mappings={mappings}
+                originByIdentifier={originByIdentifier}
+                unmappedOrigins={unmappedOrigins}
+                attachValue={attachValue}
+                setAttachValue={setAttachValue}
+                onAttach={attachOrigin}
+                onDetach={setDetachTarget}
+              />
+            )}
+
+            {activeTab === 'settings' && (
+              <div className="ep-settings">
+                <EndpointFormFields form={settingsForm} setForm={setSettingsForm} disableIdentifier readOnly={!isAdmin} t={t} />
+                {isAdmin && settingsDirty && (
+                  <div className="ep-settings__actions">
+                    <span className="ep-settings__dirty">{t('endpoints.unsavedChanges')}</span>
+                    <button type="button" className="btn btn-secondary" onClick={resetSettings} disabled={savingSettings}>
+                      {t('endpoints.reset')}
+                    </button>
+                    <button type="button" className="btn btn-primary" onClick={saveSettings} disabled={savingSettings}>
+                      {savingSettings ? t('common.saving') : t('common.save')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {/* JSON viewer */}
+      {jsonRow && (
+        <JsonViewerModal
+          open
+          onClose={() => setJsonRow(null)}
+          data={jsonRow}
+          id={jsonRow.identifier}
+          title={t('endpoints.viewTitle')}
         />
       )}
 
-      {deleteRouteConfirm.show && (
-        <ConfirmModal
-          title="Delete Route"
-          message="Are you sure you want to delete this route?"
-          entityName={`${deleteRouteConfirm.route?.httpMethod} ${deleteRouteConfirm.route?.urlPattern}`}
-          confirmLabel="Delete"
-          onConfirm={handleDeleteRouteConfirm}
-          onClose={() => setDeleteRouteConfirm({ show: false, route: null })}
-        />
+      {/* Delete endpoint */}
+      <ConfirmModal
+        open={!!deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title={t('endpoints.deleteTitle')}
+        message={t('endpoints.deleteMessage', { name: deleteTarget?.name || deleteTarget?.identifier || '' })}
+        variant="danger"
+        confirmLabel={t('common.delete')}
+        busy={deleting}
+      />
+
+      {/* Delete route */}
+      <ConfirmModal
+        open={!!deleteRoute}
+        onCancel={() => setDeleteRoute(null)}
+        onConfirm={confirmDeleteRoute}
+        title={t('endpoints.deleteRouteTitle')}
+        message={t('endpoints.deleteRouteMessage', {
+          route: deleteRoute ? `${deleteRoute.httpMethod || 'ANY'} ${deleteRoute.urlPattern}` : '',
+        })}
+        variant="danger"
+        confirmLabel={t('common.delete')}
+      />
+
+      {/* Detach origin */}
+      <ConfirmModal
+        open={!!detachTarget}
+        onCancel={() => setDetachTarget(null)}
+        onConfirm={confirmDetach}
+        title={t('endpoints.detachTitle')}
+        message={t('endpoints.detachMessage', {
+          name: detachTarget
+            ? originByIdentifier(detachTarget.originIdentifier)?.name || detachTarget.originIdentifier
+            : '',
+        })}
+        variant="danger"
+        confirmLabel={t('endpoints.detach')}
+      />
+
+      {/* Discard unsaved settings */}
+      <ConfirmModal
+        open={confirmDiscard}
+        onCancel={() => setConfirmDiscard(false)}
+        onConfirm={closeDetailNow}
+        title={t('endpoints.discardTitle')}
+        message={t('endpoints.discardMessage')}
+        variant="warning"
+        confirmLabel={t('endpoints.discard')}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Shared endpoint field set (create modal + settings tab).
+function EndpointFormFields({ form, setForm, disableIdentifier = false, readOnly = false, t }) {
+  const set = (patch) => setForm((prev) => ({ ...prev, ...patch }));
+  return (
+    <>
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">{t('endpoints.identifier')}</label>
+          <input
+            type="text"
+            className="form-input"
+            value={form.identifier}
+            onChange={(e) => set({ identifier: e.target.value })}
+            disabled={disableIdentifier}
+            required
+            placeholder="my-api"
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">{t('endpoints.name')}</label>
+          <input
+            type="text"
+            className="form-input"
+            value={form.name}
+            onChange={(e) => set({ name: e.target.value })}
+            disabled={readOnly}
+            placeholder="My API"
+          />
+        </div>
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">{t('endpoints.loadBalancing')}</label>
+          <select
+            className="form-input"
+            value={form.loadBalancingMode}
+            onChange={(e) => set({ loadBalancingMode: e.target.value })}
+            disabled={readOnly}
+          >
+            <option value="RoundRobin">{t('endpoints.roundRobin')}</option>
+            <option value="Random">{t('endpoints.random')}</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="form-label">{t('endpoints.timeoutMs')}</label>
+          <input
+            type="number"
+            className="form-input"
+            value={form.timeoutMs}
+            onChange={(e) => set({ timeoutMs: parseInt(e.target.value, 10) || 0 })}
+            disabled={readOnly}
+          />
+        </div>
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">{t('endpoints.maxRequestBodySize')}</label>
+          <input
+            type="number"
+            className="form-input"
+            value={form.maxRequestBodySize}
+            onChange={(e) => set({ maxRequestBodySize: parseInt(e.target.value, 10) || 0 })}
+            disabled={readOnly}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">{t('endpoints.authContextHeader')}</label>
+          <input
+            type="text"
+            className="form-input"
+            value={form.authContextHeader}
+            onChange={(e) => set({ authContextHeader: e.target.value })}
+            disabled={readOnly || !form.includeAuthContextHeader}
+            placeholder="X-Auth-Context"
+          />
+        </div>
+      </div>
+
+      <div className="form-checks">
+        <label className="form-checkbox">
+          <input
+            type="checkbox"
+            checked={form.blockHttp10}
+            onChange={(e) => set({ blockHttp10: e.target.checked })}
+            disabled={readOnly}
+          />
+          {t('endpoints.blockHttp10')}
+        </label>
+        <label className="form-checkbox">
+          <input
+            type="checkbox"
+            checked={form.includeAuthContextHeader}
+            onChange={(e) => set({ includeAuthContextHeader: e.target.checked })}
+            disabled={readOnly}
+          />
+          {t('endpoints.includeAuthContextHeader')}
+        </label>
+        <label className="form-checkbox">
+          <input
+            type="checkbox"
+            checked={form.useGlobalBlockedHeaders}
+            onChange={(e) => set({ useGlobalBlockedHeaders: e.target.checked })}
+            disabled={readOnly}
+          />
+          {t('endpoints.useGlobalBlockedHeaders')}
+        </label>
+      </div>
+    </>
+  );
+}
+
+EndpointFormFields.propTypes = {
+  form: PropTypes.object.isRequired,
+  setForm: PropTypes.func.isRequired,
+  disableIdentifier: PropTypes.bool,
+  readOnly: PropTypes.bool,
+  t: PropTypes.func.isRequired,
+};
+
+// ---------------------------------------------------------------------------
+// Routes tab.
+function RoutesTab({
+  t,
+  isAdmin,
+  routes,
+  newRoute,
+  setNewRoute,
+  onAddRoute,
+  editingRoute,
+  setEditingRoute,
+  onSaveRouteEdit,
+  onDeleteRoute,
+}) {
+  const columns = [
+    {
+      key: 'httpMethod',
+      label: t('endpoints.httpMethod'),
+      width: 120,
+      render: (row) =>
+        editingRoute && editingRoute.id === row.id ? (
+          <select
+            className="form-input"
+            value={editingRoute.httpMethod}
+            onChange={(e) => setEditingRoute({ ...editingRoute, httpMethod: e.target.value })}
+          >
+            {HTTP_METHODS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <MethodBadge method={row.httpMethod} />
+        ),
+    },
+    {
+      key: 'urlPattern',
+      label: t('endpoints.urlPattern'),
+      mono: true,
+      render: (row) =>
+        editingRoute && editingRoute.id === row.id ? (
+          <input
+            type="text"
+            className="form-input"
+            value={editingRoute.urlPattern}
+            onChange={(e) => setEditingRoute({ ...editingRoute, urlPattern: e.target.value })}
+          />
+        ) : (
+          <code className="ep-code">{row.urlPattern}</code>
+        ),
+    },
+    {
+      key: 'requiresAuthentication',
+      label: t('endpoints.requiresAuth'),
+      width: 140,
+      render: (row) =>
+        editingRoute && editingRoute.id === row.id ? (
+          <label className="form-checkbox">
+            <input
+              type="checkbox"
+              checked={editingRoute.requiresAuthentication}
+              onChange={(e) => setEditingRoute({ ...editingRoute, requiresAuthentication: e.target.checked })}
+            />
+          </label>
+        ) : (
+          <Badge tone={row.requiresAuthentication ? 'success' : 'neutral'}>
+            {row.requiresAuthentication ? t('endpoints.authRequired') : t('endpoints.authPublic')}
+          </Badge>
+        ),
+    },
+    {
+      key: 'actions',
+      label: '',
+      isAction: true,
+      align: 'end',
+      width: 96,
+      render: (row) => {
+        if (!isAdmin) return null;
+        if (editingRoute && editingRoute.id === row.id) {
+          return (
+            <div className="ep-row-actions">
+              <button type="button" className="btn btn-primary btn-sm" onClick={onSaveRouteEdit}>
+                {t('common.save')}
+              </button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEditingRoute(null)}>
+                {t('common.cancel')}
+              </button>
+            </div>
+          );
+        }
+        return (
+          <ActionMenu
+            items={entityActions(t, {
+              onEdit: () => setEditingRoute({ ...row }),
+              onDelete: () => onDeleteRoute(row),
+              canEdit: isAdmin,
+              canDelete: isAdmin,
+            })}
+          />
+        );
+      },
+    },
+  ];
+
+  return (
+    <div>
+      {isAdmin && (
+        <div className="ep-inline-form">
+          <select
+            className="form-input ep-inline-form__method"
+            value={newRoute.httpMethod}
+            onChange={(e) => setNewRoute({ ...newRoute, httpMethod: e.target.value })}
+            aria-label={t('endpoints.httpMethod')}
+          >
+            {HTTP_METHODS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <input
+            type="text"
+            className="form-input ep-inline-form__grow"
+            placeholder="/api/resource/{id}"
+            value={newRoute.urlPattern}
+            onChange={(e) => setNewRoute({ ...newRoute, urlPattern: e.target.value })}
+            aria-label={t('endpoints.urlPattern')}
+          />
+          <label className="form-checkbox">
+            <input
+              type="checkbox"
+              checked={newRoute.requiresAuthentication}
+              onChange={(e) => setNewRoute({ ...newRoute, requiresAuthentication: e.target.checked })}
+            />
+            {t('endpoints.requiresAuth')}
+          </label>
+          <button type="button" className="btn btn-primary" onClick={onAddRoute}>
+            <Icons.Plus size={16} />
+            {t('endpoints.addRoute')}
+          </button>
+        </div>
       )}
 
-      {removeOriginConfirm.show && (
-        <ConfirmModal
-          title="Remove Origin"
-          message="Are you sure you want to remove this origin server from this endpoint?"
-          entityName={getOriginByIdentifier(removeOriginConfirm.mapping?.originIdentifier)?.name || removeOriginConfirm.mapping?.originIdentifier}
-          confirmLabel="Remove"
-          onConfirm={handleRemoveOriginConfirm}
-          onClose={() => setRemoveOriginConfirm({ show: false, mapping: null })}
-        />
+      <DataTable
+        columns={columns}
+        rows={routes}
+        rowKey={(row) => row.id}
+        emptyMessage={t('endpoints.routesEmpty')}
+      />
+    </div>
+  );
+}
+
+RoutesTab.propTypes = {
+  t: PropTypes.func.isRequired,
+  isAdmin: PropTypes.bool,
+  routes: PropTypes.array.isRequired,
+  newRoute: PropTypes.object.isRequired,
+  setNewRoute: PropTypes.func.isRequired,
+  onAddRoute: PropTypes.func.isRequired,
+  editingRoute: PropTypes.object,
+  setEditingRoute: PropTypes.func.isRequired,
+  onSaveRouteEdit: PropTypes.func.isRequired,
+  onDeleteRoute: PropTypes.func.isRequired,
+};
+
+// ---------------------------------------------------------------------------
+// Origins tab.
+function OriginsTab({
+  t,
+  isAdmin,
+  mappings,
+  originByIdentifier,
+  unmappedOrigins,
+  attachValue,
+  setAttachValue,
+  onAttach,
+  onDetach,
+}) {
+  const columns = [
+    {
+      key: 'originIdentifier',
+      label: t('endpoints.origin'),
+      mono: true,
+      render: (row) => <CopyableId value={row.originIdentifier} />,
+    },
+    {
+      key: 'name',
+      label: t('endpoints.name'),
+      render: (row) => {
+        const o = originByIdentifier(row.originIdentifier);
+        return o?.name || <span className="ep-muted">{t('common.none')}</span>;
+      },
+    },
+    {
+      key: 'host',
+      label: t('origins.hostname'),
+      render: (row) => {
+        const o = originByIdentifier(row.originIdentifier);
+        if (!o) return <span className="ep-muted">—</span>;
+        return (
+          <code className="ep-code">
+            {o.hostname}:{o.port}
+          </code>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      label: '',
+      isAction: true,
+      align: 'end',
+      width: 96,
+      render: (row) =>
+        isAdmin ? (
+          <button type="button" className="btn btn-danger btn-sm" onClick={() => onDetach(row)}>
+            {t('endpoints.detach')}
+          </button>
+        ) : null,
+    },
+  ];
+
+  return (
+    <div>
+      {isAdmin && (
+        <div className="ep-inline-form">
+          <select
+            className="form-input ep-inline-form__grow"
+            value={attachValue}
+            onChange={(e) => setAttachValue(e.target.value)}
+            disabled={unmappedOrigins.length === 0}
+            aria-label={t('endpoints.selectOrigin')}
+          >
+            <option value="">
+              {unmappedOrigins.length === 0 ? t('endpoints.allOriginsMapped') : t('endpoints.selectOrigin')}
+            </option>
+            {unmappedOrigins.map((o) => (
+              <option key={o.guid} value={o.identifier}>
+                {o.name || o.identifier} ({o.hostname}:{o.port})
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => attachValue && onAttach(attachValue)}
+            disabled={!attachValue}
+          >
+            <Icons.Plus size={16} />
+            {t('endpoints.attachOrigin')}
+          </button>
+        </div>
       )}
 
-      {showUnsavedWarning && (
-        <ConfirmModal
-          title="Unsaved Changes"
-          message="You have unsaved changes to the endpoint settings. Are you sure you want to discard them?"
-          warningMessage="Your changes will be lost."
-          confirmLabel="Discard"
-          confirmVariant="warning"
-          onConfirm={handleDiscardChanges}
-          onClose={() => { setShowUnsavedWarning(false); setPendingAction(null); }}
-        />
+      {mappings.length === 0 ? (
+        <EmptyState message={t('endpoints.originsEmpty')} hint={t('endpoints.originsEmptyHint')} />
+      ) : (
+        <DataTable columns={columns} rows={mappings} rowKey={(row) => row.id} emptyMessage={t('endpoints.originsEmpty')} />
       )}
     </div>
   );
 }
+
+OriginsTab.propTypes = {
+  t: PropTypes.func.isRequired,
+  isAdmin: PropTypes.bool,
+  mappings: PropTypes.array.isRequired,
+  originByIdentifier: PropTypes.func.isRequired,
+  unmappedOrigins: PropTypes.array.isRequired,
+  attachValue: PropTypes.string.isRequired,
+  setAttachValue: PropTypes.func.isRequired,
+  onAttach: PropTypes.func.isRequired,
+  onDetach: PropTypes.func.isRequired,
+};
 
 export default EndpointsView;

@@ -1,0 +1,116 @@
+.sb-dt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.sb-dt__scroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.sb-dt__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.sb-dt__th {
+  padding: var(--spacing-3) var(--spacing-4);
+  text-align: start;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.sb-dt__th--action {
+  width: 1%;
+  text-align: end;
+}
+
+.sb-dt__sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+}
+
+.sb-dt__sort-btn:hover {
+  color: var(--color-text);
+}
+
+.sb-dt__filter-row .sb-dt__filter-cell {
+  padding: var(--spacing-1) var(--spacing-2) var(--spacing-2);
+  background: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sb-dt__filter-input {
+  width: 100%;
+  height: var(--control-height-sm);
+  padding-inline: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+}
+
+.sb-dt__filter-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.sb-dt__cell {
+  padding: var(--spacing-3) var(--spacing-4);
+  text-align: start;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.sb-dt__cell--mono {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+.sb-dt__cell--action {
+  width: 1%;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.sb-dt__row:last-child .sb-dt__cell {
+  border-bottom: none;
+}
+
+.sb-dt__row--clickable {
+  cursor: pointer;
+}
+
+.sb-dt__row--clickable:hover {
+  background: var(--color-surface-alt);
+}
+
+.sb-dt__state {
+  padding: var(--spacing-8) var(--spacing-4);
+  text-align: center;
+  border-bottom: none;
+}
+
+.sb-dt__loading {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}

@@ -1,255 +1,358 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
-import DataTable from '../common/DataTable';
-import Modal from '../common/Modal';
-import ConfirmModal from '../common/ConfirmModal';
-import './Views.css';
+import {
+  PageHeader,
+  DataTable,
+  TablePagination,
+  ActionMenu,
+  entityActions,
+  Modal,
+  ConfirmModal,
+  JsonViewerModal,
+  Badge,
+  CopyableId,
+  Icons,
+} from '../ui';
+import './ResourceViews.css';
 
-function UsersView() {
-  const { apiClient } = useAuth();
-  const { showSuccess, showError } = useApp();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, user: null });
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    firstName: '',
-    lastName: '',
-    isAdmin: false,
-    active: true,
-  });
+const EMPTY_FORM = {
+  username: '',
+  email: '',
+  firstName: '',
+  lastName: '',
+  isAdmin: false,
+  active: true,
+};
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    try {
-      const data = await apiClient.getUsers();
-      setUsers(data);
-    } catch (err) {
-      showError('Failed to load users: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAdd = () => {
-    setEditingUser(null);
-    setFormData({
-      username: '',
-      email: '',
-      firstName: '',
-      lastName: '',
-      isAdmin: false,
-      active: true,
-    });
-    setShowModal(true);
-  };
-
-  const handleEdit = (user) => {
-    setEditingUser(user);
-    setFormData({
-      username: user.username || '',
-      email: user.email || '',
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      isAdmin: user.isAdmin || false,
-      active: user.active !== false,
-    });
-    setShowModal(true);
-  };
-
-  const handleDeleteClick = (user) => {
-    setDeleteConfirm({ show: true, user });
-  };
-
-  const handleDeleteConfirm = async () => {
-    const user = deleteConfirm.user;
-    setDeleteConfirm({ show: false, user: null });
-
-    try {
-      await apiClient.deleteUser(user.guid);
-      showSuccess('User deleted successfully');
-      loadUsers();
-    } catch (err) {
-      showError('Failed to delete user: ' + err.message);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingUser) {
-        await apiClient.updateUser(editingUser.guid, formData);
-        showSuccess('User updated successfully');
-      } else {
-        await apiClient.createUser(formData);
-        showSuccess('User created successfully');
-      }
-      setShowModal(false);
-      loadUsers();
-    } catch (err) {
-      showError('Failed to save user: ' + err.message);
-    }
-  };
-
-  const columns = [
-    { key: 'username', label: 'Username' },
-    { key: 'email', label: 'Email' },
-    {
-      key: 'fullName',
-      label: 'Name',
-      render: (_, row) => {
-        const parts = [row.firstName, row.lastName].filter(Boolean);
-        return parts.length > 0 ? parts.join(' ') : '-';
-      },
-    },
-    {
-      key: 'isAdmin',
-      label: 'Admin',
-      render: (value) => (
-        <span className={`badge ${value ? 'badge-warning' : 'badge-secondary'}`}>
-          {value ? 'Yes' : 'No'}
-        </span>
-      ),
-    },
-    {
-      key: 'active',
-      label: 'Status',
-      render: (value) => (
-        <span className={`badge ${value !== false ? 'badge-success' : 'badge-danger'}`}>
-          {value !== false ? 'Active' : 'Inactive'}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (_, row) => (
-        <div className="table-actions">
-          <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(row)}>
-            Edit
-          </button>
-          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(row)}>
-            Delete
-          </button>
-        </div>
-      ),
-    },
-  ];
-
-  if (loading) {
-    return (
-      <div className="view-loading">
-        <div className="spinner"></div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
+function DetailItem({ label, children, full = false, mono = false }) {
   return (
-    <div className="view">
-      <div className="view-header">
-        <h2 className="view-title">Users</h2>
-        <button className="btn btn-primary" onClick={handleAdd}>
-          Add User
-        </button>
-      </div>
-
-      <DataTable columns={columns} data={users} emptyMessage="No users configured" />
-
-      {showModal && (
-        <Modal title={editingUser ? 'Edit User' : 'Add User'} onClose={() => setShowModal(false)}>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">Username</label>
-              <input
-                type="text"
-                className="form-input"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                required
-                disabled={!!editingUser}
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                className="form-input"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">First Name</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Last Name</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-checkbox">
-                <input
-                  type="checkbox"
-                  checked={formData.isAdmin}
-                  onChange={(e) => setFormData({ ...formData, isAdmin: e.target.checked })}
-                />
-                Administrator
-              </label>
-            </div>
-            <div className="form-group">
-              <label className="form-checkbox">
-                <input
-                  type="checkbox"
-                  checked={formData.active}
-                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                />
-                Active
-              </label>
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary">
-                {editingUser ? 'Update' : 'Create'}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {deleteConfirm.show && (
-        <ConfirmModal
-          title="Delete User"
-          message="Are you sure you want to delete this user? All associated credentials will also be deleted."
-          entityName={deleteConfirm.user?.username}
-          confirmLabel="Delete"
-          onConfirm={handleDeleteConfirm}
-          onClose={() => setDeleteConfirm({ show: false, user: null })}
-        />
-      )}
+    <div className={`rv-detail-item ${full ? 'rv-detail-item--full' : ''}`.trim()}>
+      <span className="rv-detail-label">{label}</span>
+      <span className={`rv-detail-value ${mono ? 'rv-detail-value--mono' : ''}`.trim()}>
+        {children}
+      </span>
     </div>
   );
 }
 
-export default UsersView;
+DetailItem.propTypes = {
+  label: PropTypes.node,
+  children: PropTypes.node,
+  full: PropTypes.bool,
+  mono: PropTypes.bool,
+};
+
+function fullName(row) {
+  const parts = [row.firstName, row.lastName].filter(Boolean);
+  return parts.length ? parts.join(' ') : '';
+}
+
+export default function UsersView() {
+  const { t } = useTranslation();
+  const { apiClient, isAdmin } = useAuth();
+  const { showSuccess, showError } = useApp();
+
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+
+  const [viewRow, setViewRow] = useState(null);
+  const [jsonRow, setJsonRow] = useState(null);
+  const [deleteRow, setDeleteRow] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiClient.getUsers();
+      setRows(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message || t('users.loadError'));
+    } finally {
+      setLoading(false);
+    }
+  }, [apiClient, t]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(EMPTY_FORM);
+    setFormOpen(true);
+  };
+
+  const openEdit = (row) => {
+    setEditing(row);
+    setForm({
+      username: row.username || '',
+      email: row.email || '',
+      firstName: row.firstName || '',
+      lastName: row.lastName || '',
+      isAdmin: row.isAdmin || false,
+      active: row.active !== false,
+    });
+    setFormOpen(true);
+  };
+
+  const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (editing) {
+        await apiClient.updateUser(editing.guid, form);
+        showSuccess(t('users.updated'));
+      } else {
+        await apiClient.createUser(form);
+        showSuccess(t('users.created'));
+      }
+      setFormOpen(false);
+      await load();
+    } catch (err) {
+      showError(`${t('users.saveError')}: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteRow) return;
+    setDeleting(true);
+    try {
+      await apiClient.deleteUser(deleteRow.guid);
+      showSuccess(t('users.deleted'));
+      setDeleteRow(null);
+      await load();
+    } catch (err) {
+      showError(`${t('users.deleteError')}: ${err.message}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const columns = [
+    { key: 'username', label: t('users.username'), sortable: true, filterable: true, mono: true },
+    { key: 'email', label: t('users.email'), sortable: true, filterable: true, render: (r) => r.email || '—' },
+    {
+      key: 'fullName',
+      label: t('users.fullName'),
+      sortable: true,
+      sortValue: (r) => fullName(r),
+      render: (r) => fullName(r) || '—',
+    },
+    {
+      key: 'isAdmin',
+      label: t('users.role'),
+      sortable: true,
+      sortValue: (r) => (r.isAdmin ? 1 : 0),
+      render: (r) => <Badge tone={r.isAdmin ? 'accent' : 'neutral'}>{r.isAdmin ? t('users.admin') : t('topbar.roleReadOnly')}</Badge>,
+    },
+    {
+      key: 'active',
+      label: t('users.status'),
+      sortable: true,
+      sortValue: (r) => (r.active !== false ? 1 : 0),
+      render: (r) => (
+        <Badge tone={r.active !== false ? 'success' : 'danger'}>
+          {r.active !== false ? t('status.active') : t('status.inactive')}
+        </Badge>
+      ),
+    },
+    {
+      key: 'actions',
+      label: '',
+      isAction: true,
+      align: 'end',
+      width: '56px',
+      render: (row) => (
+        <ActionMenu
+          items={entityActions(t, {
+            onView: () => setViewRow(row),
+            onViewJson: () => setJsonRow(row),
+            onEdit: () => openEdit(row),
+            onDelete: () => setDeleteRow(row),
+            canEdit: isAdmin,
+            canDelete: isAdmin,
+          })}
+        />
+      ),
+    },
+  ];
+
+  const start = (pageNumber - 1) * pageSize;
+  const paged = rows.slice(start, start + pageSize);
+
+  return (
+    <div className="rv-view">
+      <PageHeader
+        title={t('users.title')}
+        subtitle={t('users.subtitle')}
+        actions={
+          isAdmin ? (
+            <button type="button" className="btn btn-primary" onClick={openCreate}>
+              <Icons.Plus size={16} />
+              <span>{t('users.add')}</span>
+            </button>
+          ) : null
+        }
+      />
+
+      <TablePagination
+        total={rows.length}
+        pageNumber={pageNumber}
+        pageSize={pageSize}
+        onPageChange={setPageNumber}
+        onPageSizeChange={(s) => {
+          setPageSize(s);
+          setPageNumber(1);
+        }}
+        onRefresh={load}
+      />
+
+      <DataTable
+        columns={columns}
+        rows={paged}
+        rowKey={(r) => r.guid}
+        loading={loading}
+        error={error}
+        onRetry={load}
+        onRowClick={(r) => setViewRow(r)}
+        emptyMessage={t('users.empty')}
+        emptyHint={t('users.emptyHint')}
+      />
+
+      {/* Create / Edit form */}
+      <Modal
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        size="medium"
+        title={editing ? t('users.editTitle') : t('users.createTitle')}
+        footer={
+          <>
+            <button type="button" className="btn btn-secondary" onClick={() => setFormOpen(false)}>
+              {t('common.cancel')}
+            </button>
+            <button type="submit" form="user-form" className="btn btn-primary" disabled={saving}>
+              {saving ? t('common.saving') : editing ? t('common.update') : t('common.create')}
+            </button>
+          </>
+        }
+      >
+        <form id="user-form" onSubmit={submit}>
+          <div className="form-group">
+            <label className="form-label" htmlFor="u-username">{t('users.username')}</label>
+            <input
+              id="u-username"
+              className="form-input"
+              value={form.username}
+              onChange={(e) => setField('username', e.target.value)}
+              required
+              disabled={!!editing}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="u-email">{t('users.email')}</label>
+            <input
+              id="u-email"
+              type="email"
+              className="form-input"
+              value={form.email}
+              onChange={(e) => setField('email', e.target.value)}
+            />
+          </div>
+          <div className="rv-form-grid">
+            <div className="form-group">
+              <label className="form-label" htmlFor="u-first">{t('users.firstName')}</label>
+              <input
+                id="u-first"
+                className="form-input"
+                value={form.firstName}
+                onChange={(e) => setField('firstName', e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="u-last">{t('users.lastName')}</label>
+              <input
+                id="u-last"
+                className="form-input"
+                value={form.lastName}
+                onChange={(e) => setField('lastName', e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="rv-check">
+              <input type="checkbox" checked={form.isAdmin} onChange={(e) => setField('isAdmin', e.target.checked)} />
+              <span>{t('users.administrator')}</span>
+            </label>
+          </div>
+          <div className="form-group">
+            <label className="rv-check">
+              <input type="checkbox" checked={form.active} onChange={(e) => setField('active', e.target.checked)} />
+              <span>{t('users.active')}</span>
+            </label>
+          </div>
+        </form>
+      </Modal>
+
+      {/* View detail */}
+      <Modal open={!!viewRow} onClose={() => setViewRow(null)} size="medium" title={t('users.viewTitle')}>
+        {viewRow && (
+          <div className="rv-detail-grid">
+            <DetailItem label={t('users.guid')} full mono>
+              <CopyableId value={viewRow.guid} />
+            </DetailItem>
+            <DetailItem label={t('users.username')} mono>{viewRow.username}</DetailItem>
+            <DetailItem label={t('users.email')}>{viewRow.email || '—'}</DetailItem>
+            <DetailItem label={t('users.firstName')}>{viewRow.firstName || '—'}</DetailItem>
+            <DetailItem label={t('users.lastName')}>{viewRow.lastName || '—'}</DetailItem>
+            <DetailItem label={t('users.role')}>
+              <Badge tone={viewRow.isAdmin ? 'accent' : 'neutral'}>
+                {viewRow.isAdmin ? t('users.admin') : t('topbar.roleReadOnly')}
+              </Badge>
+            </DetailItem>
+            <DetailItem label={t('users.status')}>
+              <Badge tone={viewRow.active !== false ? 'success' : 'danger'}>
+                {viewRow.active !== false ? t('status.active') : t('status.inactive')}
+              </Badge>
+            </DetailItem>
+          </div>
+        )}
+      </Modal>
+
+      <JsonViewerModal
+        open={!!jsonRow}
+        onClose={() => setJsonRow(null)}
+        data={jsonRow}
+        id={jsonRow?.guid}
+        title={t('users.viewTitle')}
+      />
+
+      <ConfirmModal
+        open={!!deleteRow}
+        onCancel={() => setDeleteRow(null)}
+        onConfirm={confirmDelete}
+        variant="danger"
+        title={t('users.deleteTitle')}
+        message={t('users.deleteMessage', { name: deleteRow?.username })}
+        confirmLabel={t('common.delete')}
+        busy={deleting}
+      />
+    </div>
+  );
+}

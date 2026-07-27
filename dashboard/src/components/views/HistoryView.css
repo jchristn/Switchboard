@@ -1,0 +1,63 @@
+.history-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+/* KPI strip */
+.history-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-4);
+}
+
+/* Filter controls (shared input look for FilterBar fields) */
+.sb-input {
+  height: var(--control-height-md);
+  width: 100%;
+  padding-inline: var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.sb-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.history-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  height: var(--control-height-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.history-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+/* Path cell */
+.history-path {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--spacing-1);
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-path__query {
+  color: var(--color-text-subtle);
+}

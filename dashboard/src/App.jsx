@@ -9,14 +9,20 @@ import HistoryView from './components/views/HistoryView';
 import SettingsView from './components/views/SettingsView';
 import UsersView from './components/views/UsersView';
 import CredentialsView from './components/views/CredentialsView';
+import RewritesView from './components/views/RewritesView';
+import BlockedHeadersView from './components/views/BlockedHeadersView';
+import ApiExplorerView from './components/views/ApiExplorerView';
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isRestoring } = useAuth();
 
+  // Don't flash the login screen while a stored session is being validated.
+  if (isRestoring) {
+    return <div className="sb-route-loading" />;
+  }
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
-
   return children;
 }
 
@@ -35,9 +41,12 @@ function App() {
         <Route index element={<OverviewView />} />
         <Route path="origins" element={<OriginsView />} />
         <Route path="endpoints" element={<EndpointsView />} />
+        <Route path="rewrites" element={<RewritesView />} />
         <Route path="history" element={<HistoryView />} />
         <Route path="users" element={<UsersView />} />
         <Route path="credentials" element={<CredentialsView />} />
+        <Route path="blocked-headers" element={<BlockedHeadersView />} />
+        <Route path="api-explorer" element={<ApiExplorerView />} />
         <Route path="settings" element={<SettingsView />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

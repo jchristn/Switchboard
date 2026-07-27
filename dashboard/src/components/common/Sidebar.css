@@ -1,67 +1,142 @@
-.sidebar {
-  grid-area: sidebar;
-  background-color: var(--color-bg-primary);
-  border-right: 1px solid var(--color-border);
-  padding: var(--spacing-4);
-  overflow-y: auto;
-  transition: width var(--transition-normal);
-}
-
-.sidebar.collapsed {
-  padding: var(--spacing-2);
-}
-
-.sidebar-nav {
+.sb-sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-1);
+  background-color: var(--color-surface);
+  border-inline-end: 1px solid var(--color-border);
+  transition: width var(--transition-normal);
+  height: 100vh;
+  position: sticky;
+  top: 0;
 }
 
-.sidebar-link {
+.sb-sidebar.is-collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+.sb-sidebar-brand {
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  transition: all var(--transition-fast);
-}
-
-.sidebar-link:hover {
-  background-color: var(--color-bg-tertiary);
-  color: var(--color-text-primary);
-  text-decoration: none;
-}
-
-.sidebar-link.active {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.sidebar-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: var(--spacing-2);
+  height: var(--header-height);
+  padding-inline: var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
-.sidebar-label {
-  font-weight: 500;
+.sb-sidebar-logo {
+  width: 26px;
+  height: 26px;
+}
+
+.sb-sidebar-name {
+  font-weight: 700;
+  font-size: var(--font-size-lg);
   white-space: nowrap;
 }
 
-.sidebar.collapsed .sidebar-link {
-  justify-content: center;
-  padding: var(--spacing-3);
+.sb-sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-3) var(--spacing-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
 }
 
-.sidebar.collapsed .sidebar-label {
-  display: none;
+.sb-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sb-nav-group-label {
+  padding-inline: var(--spacing-3);
+  margin-bottom: var(--spacing-1);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.sb-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  min-height: 36px;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.sb-nav-item:hover {
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.sb-nav-item.is-active {
+  background-color: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-accent);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.sb-nav-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.sb-nav-label {
+  white-space: nowrap;
+}
+
+.sb-sidebar.is-collapsed .sb-nav-item {
+  justify-content: center;
+}
+
+.sb-sidebar-footer {
+  border-top: 1px solid var(--color-border);
+  padding: var(--spacing-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  flex-shrink: 0;
+}
+
+.sb-footer-btn {
+  text-align: start;
+  padding: var(--spacing-2);
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.sb-footer-btn:hover {
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+.sb-footer-version {
+  padding-inline: var(--spacing-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
 }
 
 @media (max-width: 768px) {
-  .sidebar {
-    display: none;
+  .sb-sidebar {
+    position: fixed;
+    inset-inline-start: 0;
+    z-index: var(--z-sticky);
+    transform: translateX(-100%);
+  }
+  [dir='rtl'] .sb-sidebar {
+    transform: translateX(100%);
   }
 }

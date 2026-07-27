@@ -2,7 +2,12 @@
 
 ## Current Version
 
-v4.0.10
+v4.1.0
+
+### Changes in v4.1.0
+
+- Reworked the management dashboard end to end: grouped navigation, an operator overview with KPI cards and a request-activity chart, a request-history inspector, form-based settings editing with restart-required annotations, a first-run setup wizard, an OpenAPI-driven API Explorer, kebab action menus with consistent View / Edit / View JSON / Delete, an icon topbar with a GitHub link, and full internationalization (English, German, Japanese, Arabic with RTL)
+- Added management API endpoints backing the dashboard: `GET /history/timeseries` (bucketed request activity), `GET`/`PUT /settings` (global configuration with masked secrets and restart-required/runtime-editable metadata), `POST /system/restart` (graceful restart for supervised deployments), and `POST /config/validate` (configuration validation)
 
 ### Changes in v4.0.10
 

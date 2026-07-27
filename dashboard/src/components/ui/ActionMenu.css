@@ -1,0 +1,86 @@
+.sb-action-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.sb-action-menu__trigger:hover,
+.sb-action-menu__trigger[aria-expanded='true'] {
+  color: var(--color-text);
+  background: var(--color-surface-sunken);
+  border-color: var(--color-border);
+}
+
+.sb-action-menu {
+  position: fixed;
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.sb-action-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  width: 100%;
+  padding-block: var(--spacing-2);
+  padding-inline: var(--spacing-2);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  text-align: start;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sb-action-menu__item:hover:not(:disabled),
+.sb-action-menu__item:focus-visible {
+  background: var(--color-surface-sunken);
+  outline: none;
+}
+
+.sb-action-menu__item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sb-action-menu__item--danger {
+  color: var(--color-danger);
+}
+
+.sb-action-menu__item--danger:hover:not(:disabled),
+.sb-action-menu__item--danger:focus-visible {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+
+.sb-action-menu__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: currentColor;
+}
+
+.sb-action-menu__label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sb-action-menu__divider {
+  height: 1px;
+  margin-block: var(--spacing-1);
+  margin-inline: var(--spacing-1);
+  background: var(--color-border);
+}

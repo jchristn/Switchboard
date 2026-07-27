@@ -4,8 +4,12 @@ namespace Switchboard.Core.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
     using System.Text.Json;
+    using System.Text.Json.Nodes;
     using System.Threading.Tasks;
+    using SerializationHelper;
     using SyslogLogging;
     using WatsonWebserver;
     using WatsonWebserver.Core;
@@ -33,6 +37,17 @@ namespace Switchboard.Core.Services
             set => _Logging = value ?? throw new ArgumentNullException(nameof(Logging));
         }
 
+        /// <summary>
+        /// Action invoked to trigger a process restart. Overridable so tests can substitute a no-op
+        /// in place of the real <see cref="Environment.Exit(int)"/> call.
+        /// Never null.
+        /// </summary>
+        public Action RestartAction
+        {
+            get => _RestartAction;
+            set => _RestartAction = value ?? throw new ArgumentNullException(nameof(RestartAction));
+        }
+
         #endregion
 
         #region Private-Members
@@ -40,11 +55,58 @@ namespace Switchboard.Core.Services
         private readonly ManagementSettings _Settings;
         private readonly SwitchboardClient _Client;
         private LoggingModule _Logging;
+        private readonly SwitchboardSettings? _SwitchboardSettings;
+        private readonly string? _SettingsFilePath;
+        private readonly Serializer _Serializer = new Serializer();
         private readonly string _Header = "[ManagementService] ";
         private bool _Disposed = false;
         private string? _CachedOpenApiDocument = null;
         private string? _CachedSwaggerHtml = null;
         private string _ServerUrl = "";
+
+        private const string MaskValue = "********";
+
+        /// <summary>
+        /// Configuration paths that only take effect after a full process restart.
+        /// </summary>
+        private static readonly string[] _RestartRequiredSettings = new string[]
+        {
+            "Webserver.Hostname",
+            "Webserver.Port",
+            "Webserver.Ssl",
+            "Database.Type",
+            "Database.Filename",
+            "Database.Hostname",
+            "Database.Port",
+            "Database.DatabaseName",
+            "Database.Username",
+            "Database.Password",
+            "Database.Ssl",
+            "Database.TrustServerCertificate",
+            "Management.Enable",
+            "Management.BasePath",
+            "OpenApi.Enable"
+        };
+
+        /// <summary>
+        /// Configuration paths that hot-swap live without a process restart.
+        /// </summary>
+        private static readonly string[] _RuntimeEditableSettings = new string[]
+        {
+            "Logging.MinimumSeverity",
+            "Logging.ConsoleLogging",
+            "Logging.EnableColors",
+            "RequestHistory.Enable",
+            "RequestHistory.CaptureRequestBody",
+            "RequestHistory.CaptureResponseBody",
+            "RequestHistory.CaptureRequestHeaders",
+            "RequestHistory.CaptureResponseHeaders",
+            "BlockedHeaders",
+            "Management.AdminToken",
+            "Management.RequireAuthentication"
+        };
+
+        private Action _RestartAction = () => Environment.Exit(0);
 
         private static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
@@ -62,14 +124,29 @@ namespace Switchboard.Core.Services
         /// <param name="settings">Management settings.</param>
         /// <param name="client">Switchboard client.</param>
         /// <param name="logging">Logging module.</param>
+        /// <param name="switchboardSettings">
+        /// Live global settings object. When supplied, the settings GET/PUT endpoints are able to read
+        /// and hot-swap runtime-editable configuration in place. May be null when the service is hosted
+        /// without global settings, in which case the settings endpoints return 400.
+        /// </param>
+        /// <param name="settingsFilePath">
+        /// Optional path to the settings file (e.g. sb.json). When supplied and the file already exists,
+        /// a settings PUT persists the mutated settings back to disk. Persistence is a best-effort,
+        /// file-only operation: when no settings file exists on disk (for example when the daemon is
+        /// hosted embedded), PUT changes apply live but are not persisted across a restart.
+        /// </param>
         public ManagementService(
             ManagementSettings settings,
             SwitchboardClient client,
-            LoggingModule logging)
+            LoggingModule logging,
+            SwitchboardSettings? switchboardSettings = null,
+            string? settingsFilePath = null)
         {
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _Client = client ?? throw new ArgumentNullException(nameof(client));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
+            _SwitchboardSettings = switchboardSettings;
+            _SettingsFilePath = settingsFilePath;
         }
 
         #endregion
@@ -160,6 +237,17 @@ namespace Switchboard.Core.Services
             webserver.Routes.PreAuthentication.Parameter.Add(HttpMethod.DELETE, basePath + "/history/{id}", DeleteHistoryAsync);
             webserver.Routes.PreAuthentication.Static.Add(HttpMethod.POST, basePath + "/history/cleanup", RunHistoryCleanupAsync);
             webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, basePath + "/history/stats", GetHistoryStatsAsync);
+            webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, basePath + "/history/timeseries", GetHistoryTimeSeriesAsync);
+
+            // Settings
+            webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, basePath + "/settings", GetSettingsAsync);
+            webserver.Routes.PreAuthentication.Static.Add(HttpMethod.PUT, basePath + "/settings", UpdateSettingsAsync);
+
+            // System
+            webserver.Routes.PreAuthentication.Static.Add(HttpMethod.POST, basePath + "/system/restart", RestartSystemAsync);
+
+            // Config validation
+            webserver.Routes.PreAuthentication.Static.Add(HttpMethod.POST, basePath + "/config/validate", ValidateConfigAsync);
 
             // Health check
             webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, basePath + "/health", GetHealthAsync);
@@ -1302,6 +1390,444 @@ namespace Switchboard.Core.Services
                     totalRequests = totalCount,
                     failedRequests = failedCount,
                     successRate = totalCount > 0 ? Math.Round((double)(totalCount - failedCount) / totalCount * 100, 2) : 0
+                }).ConfigureAwait(false);
+            }
+            catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
+        }
+
+        #endregion
+
+        #region Private-Methods-TimeSeries
+
+        private async Task GetHistoryTimeSeriesAsync(HttpContextBase ctx)
+        {
+            try
+            {
+                if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+
+                string? startStr = ctx.Request.Query.Elements["start"];
+                string? endStr = ctx.Request.Query.Elements["end"];
+
+                DateTime end;
+                DateTime start;
+
+                if (!String.IsNullOrEmpty(endStr))
+                {
+                    if (!TryParseUtc(endStr, out end)) { await SendBadRequest(ctx, "Invalid 'end' timestamp").ConfigureAwait(false); return; }
+                }
+                else
+                {
+                    end = DateTime.UtcNow;
+                }
+
+                if (!String.IsNullOrEmpty(startStr))
+                {
+                    if (!TryParseUtc(startStr, out start)) { await SendBadRequest(ctx, "Invalid 'start' timestamp").ConfigureAwait(false); return; }
+                }
+                else
+                {
+                    start = end.AddHours(-24);
+                }
+
+                if (start >= end) { await SendBadRequest(ctx, "'start' must be earlier than 'end'").ConfigureAwait(false); return; }
+
+                int intervalMinutes = Int32.TryParse(ctx.Request.Query.Elements["intervalMinutes"], out int im) ? im : 60;
+                if (intervalMinutes < 1) intervalMinutes = 1;
+
+                // The request history store compares and returns timestamps in system-local time, so
+                // the UTC window bounds are converted to local time for the query. BuildTimeSeries
+                // normalizes each returned timestamp back to UTC before bucketing.
+                List<Models.RequestHistory> rows =
+                    await _Client.RequestHistory.GetByTimeRangeAsync(
+                        start.ToLocalTime(), end.ToLocalTime(), 0, null, ctx.Token).ConfigureAwait(false);
+
+                List<TimeSeriesBucket> buckets = BuildTimeSeries(rows, start, end, intervalMinutes);
+
+                await SendOk(ctx, new
+                {
+                    startUtc = start.ToString("o"),
+                    endUtc = end.ToString("o"),
+                    intervalMinutes,
+                    buckets
+                }).ConfigureAwait(false);
+            }
+            catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
+        }
+
+        /// <summary>
+        /// Aggregate request history rows into fixed-width, zero-filled time buckets. Pure function
+        /// with no I/O so it can be unit tested. Rows outside [<paramref name="start"/>,
+        /// <paramref name="end"/>) are ignored. Each row is bucketed by flooring its
+        /// <c>TimestampUtc</c> to the interval boundary measured from <paramref name="start"/>.
+        /// </summary>
+        /// <param name="rows">Request history rows to aggregate. Null is treated as empty.</param>
+        /// <param name="start">Inclusive window start (UTC).</param>
+        /// <param name="end">Exclusive window end (UTC).</param>
+        /// <param name="intervalMinutes">Bucket width in minutes. Values below 1 are treated as 1.</param>
+        /// <returns>Ordered list of buckets covering the window; empty buckets are zero-filled.</returns>
+        public static List<TimeSeriesBucket> BuildTimeSeries(
+            List<Models.RequestHistory>? rows,
+            DateTime start,
+            DateTime end,
+            int intervalMinutes)
+        {
+            if (intervalMinutes < 1) intervalMinutes = 1;
+
+            TimeSpan interval = TimeSpan.FromMinutes(intervalMinutes);
+            long totalTicks = end.Ticks - start.Ticks;
+            int bucketCount = (int)Math.Ceiling((double)totalTicks / interval.Ticks);
+            if (bucketCount < 1) bucketCount = 1;
+
+            List<TimeSeriesBucket> buckets = new List<TimeSeriesBucket>(bucketCount);
+            long[] durationSums = new long[bucketCount];
+
+            for (int i = 0; i < bucketCount; i++)
+            {
+                buckets.Add(new TimeSeriesBucket
+                {
+                    BucketStartUtc = start.AddTicks(interval.Ticks * i)
+                });
+            }
+
+            if (rows != null)
+            {
+                foreach (Models.RequestHistory row in rows)
+                {
+                    // Timestamps materialized from the store may carry Local kind; normalize to UTC so
+                    // they align with the UTC window bounds.
+                    DateTime ts = row.TimestampUtc;
+                    if (ts.Kind == DateTimeKind.Local) ts = ts.ToUniversalTime();
+
+                    if (ts < start || ts >= end) continue;
+
+                    int index = (int)((ts.Ticks - start.Ticks) / interval.Ticks);
+                    if (index < 0 || index >= bucketCount) continue;
+
+                    TimeSeriesBucket bucket = buckets[index];
+                    bucket.Total += 1;
+                    if (row.Success) bucket.Success += 1;
+                    else bucket.Failure += 1;
+                    durationSums[index] += row.DurationMs;
+                }
+            }
+
+            for (int i = 0; i < bucketCount; i++)
+            {
+                if (buckets[i].Total > 0)
+                    buckets[i].AvgDurationMs = Math.Round((double)durationSums[i] / buckets[i].Total, 2);
+            }
+
+            return buckets;
+        }
+
+        private static bool TryParseUtc(string value, out DateTime result)
+        {
+            return DateTime.TryParse(
+                value,
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal,
+                out result);
+        }
+
+        #endregion
+
+        #region Private-Methods-Settings
+
+        private async Task GetSettingsAsync(HttpContextBase ctx)
+        {
+            try
+            {
+                if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+
+                if (_SwitchboardSettings == null)
+                {
+                    await SendBadRequest(ctx, "Global settings are not available in this deployment").ConfigureAwait(false);
+                    return;
+                }
+
+                JsonObject root = (JsonSerializer.SerializeToNode(_SwitchboardSettings, _JsonOptions) as JsonObject)
+                    ?? new JsonObject();
+
+                MaskSecrets(root);
+
+                root["restartRequiredSettings"] = ToJsonArray(_RestartRequiredSettings);
+                root["runtimeEditableSettings"] = ToJsonArray(_RuntimeEditableSettings);
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(root.ToJsonString(_JsonOptions)).ConfigureAwait(false);
+            }
+            catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
+        }
+
+        private async Task UpdateSettingsAsync(HttpContextBase ctx)
+        {
+            try
+            {
+                if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot update settings").ConfigureAwait(false); return; }
+
+                if (_SwitchboardSettings == null)
+                {
+                    await SendBadRequest(ctx, "Global settings are not available in this deployment").ConfigureAwait(false);
+                    return;
+                }
+
+                SwitchboardSettings? incoming = await ReadBody<SwitchboardSettings>(ctx).ConfigureAwait(false);
+                if (incoming == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
+
+                ApplySettings(incoming);
+                PersistSettings();
+
+                _Logging.Info(_Header + "settings updated");
+
+                JsonObject root = (JsonSerializer.SerializeToNode(_SwitchboardSettings, _JsonOptions) as JsonObject)
+                    ?? new JsonObject();
+                MaskSecrets(root);
+                root["restartRequiredSettings"] = ToJsonArray(_RestartRequiredSettings);
+                root["runtimeEditableSettings"] = ToJsonArray(_RuntimeEditableSettings);
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(root.ToJsonString(_JsonOptions)).ConfigureAwait(false);
+            }
+            catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
+        }
+
+        private static void MaskSecrets(JsonObject root)
+        {
+            if (root["Database"] is JsonObject db
+                && db["Password"] is JsonValue
+                && !String.IsNullOrEmpty(db["Password"]!.GetValue<string?>()))
+            {
+                db["Password"] = MaskValue;
+            }
+
+            if (root["Management"] is JsonObject mgmt
+                && mgmt["AdminToken"] is JsonValue
+                && !String.IsNullOrEmpty(mgmt["AdminToken"]!.GetValue<string?>()))
+            {
+                mgmt["AdminToken"] = MaskValue;
+            }
+        }
+
+        private static JsonArray ToJsonArray(string[] values)
+        {
+            JsonArray array = new JsonArray();
+            foreach (string value in values) array.Add(value);
+            return array;
+        }
+
+        /// <summary>
+        /// Apply an incoming settings tree onto the live settings object. Runtime-editable fields are
+        /// mutated in place on the existing sub-objects (so services holding references see the change);
+        /// restart-required sections are replaced by reference (they take effect only after a restart,
+        /// but the new values are reflected on subsequent reads and persisted). Masked secrets in the
+        /// incoming payload are preserved from the existing stored values.
+        /// </summary>
+        private void ApplySettings(SwitchboardSettings incoming)
+        {
+            SwitchboardSettings live = _SwitchboardSettings!;
+
+            // ---- Logging (MinimumSeverity, ConsoleLogging, EnableColors hot-swap) ----
+            live.Logging.Servers = incoming.Logging.Servers;
+            live.Logging.LogDirectory = incoming.Logging.LogDirectory;
+            live.Logging.LogFilename = incoming.Logging.LogFilename;
+            live.Logging.ConsoleLogging = incoming.Logging.ConsoleLogging;
+            live.Logging.EnableColors = incoming.Logging.EnableColors;
+            live.Logging.MinimumSeverity = incoming.Logging.MinimumSeverity;
+
+            _Logging.Settings.MinimumSeverity = (Severity)incoming.Logging.MinimumSeverity;
+            _Logging.Settings.EnableConsole = incoming.Logging.ConsoleLogging;
+            _Logging.Settings.EnableColors = incoming.Logging.EnableColors;
+
+            // ---- RequestHistory (capture flags hot-swap) ----
+            live.RequestHistory.Enable = incoming.RequestHistory.Enable;
+            live.RequestHistory.CaptureRequestBody = incoming.RequestHistory.CaptureRequestBody;
+            live.RequestHistory.CaptureResponseBody = incoming.RequestHistory.CaptureResponseBody;
+            live.RequestHistory.CaptureRequestHeaders = incoming.RequestHistory.CaptureRequestHeaders;
+            live.RequestHistory.CaptureResponseHeaders = incoming.RequestHistory.CaptureResponseHeaders;
+            live.RequestHistory.MaxRequestBodySize = incoming.RequestHistory.MaxRequestBodySize;
+            live.RequestHistory.MaxResponseBodySize = incoming.RequestHistory.MaxResponseBodySize;
+            live.RequestHistory.RetentionDays = incoming.RequestHistory.RetentionDays;
+            live.RequestHistory.MaxRecords = incoming.RequestHistory.MaxRecords;
+            live.RequestHistory.CleanupIntervalSeconds = incoming.RequestHistory.CleanupIntervalSeconds;
+
+            // ---- BlockedHeaders (hot-swap; mutate list in place) ----
+            live.BlockedHeaders.Clear();
+            if (incoming.BlockedHeaders != null) live.BlockedHeaders.AddRange(incoming.BlockedHeaders);
+
+            // ---- Management (mutate in place; keep AdminToken when masked) ----
+            live.Management.Enable = incoming.Management.Enable;
+            live.Management.BasePath = incoming.Management.BasePath;
+            live.Management.RequireAuthentication = incoming.Management.RequireAuthentication;
+            if (!String.Equals(incoming.Management.AdminToken, MaskValue, StringComparison.Ordinal))
+                live.Management.AdminToken = incoming.Management.AdminToken;
+
+            // ---- Database (restart required; keep Password when masked) ----
+            if (String.Equals(incoming.Database.Password, MaskValue, StringComparison.Ordinal))
+                incoming.Database.Password = live.Database.Password;
+            live.Database = incoming.Database;
+
+            // ---- Webserver / OpenApi (restart required) ----
+            live.Webserver = incoming.Webserver;
+            live.OpenApi = incoming.OpenApi;
+        }
+
+        private void PersistSettings()
+        {
+            try
+            {
+                if (String.IsNullOrEmpty(_SettingsFilePath) || !File.Exists(_SettingsFilePath))
+                {
+                    _Logging.Debug(_Header + "no settings file on disk; settings applied live but not persisted");
+                    return;
+                }
+
+                File.WriteAllText(_SettingsFilePath, _Serializer.SerializeJson(_SwitchboardSettings, true));
+                _Logging.Info(_Header + "settings persisted to " + _SettingsFilePath);
+            }
+            catch (Exception ex)
+            {
+                _Logging.Warn(_Header + "failed to persist settings: " + ex.Message);
+            }
+        }
+
+        #endregion
+
+        #region Private-Methods-System
+
+        private async Task RestartSystemAsync(HttpContextBase ctx)
+        {
+            try
+            {
+                if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+                if (!HasWriteAccess(ctx)) { await SendForbidden(ctx, "Read-only credentials cannot restart the system").ConfigureAwait(false); return; }
+
+                _Logging.Warn(_Header + "system restart requested; process will exit shortly");
+
+                Action restart = _RestartAction;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(500).ConfigureAwait(false);
+                        _Logging.Warn(_Header + "executing restart");
+                        restart();
+                    }
+                    catch (Exception ex)
+                    {
+                        _Logging.Warn(_Header + "restart action threw: " + ex.Message);
+                    }
+                });
+
+                ctx.Response.StatusCode = 202;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(JsonSerializer.Serialize(new
+                {
+                    status = "restarting",
+                    message = "The server is shutting down and will be restarted by its supervisor."
+                }, _JsonOptions)).ConfigureAwait(false);
+            }
+            catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
+        }
+
+        #endregion
+
+        #region Private-Methods-ConfigValidation
+
+        private async Task ValidateConfigAsync(HttpContextBase ctx)
+        {
+            try
+            {
+                if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+
+                List<ApiEndpointConfig> endpoints;
+                List<OriginServerConfig> origins;
+                List<EndpointRoute> routes;
+                List<EndpointOriginMapping> mappings;
+
+                ConfigValidationRequest? posted = null;
+                if (ctx.Request.DataAsBytes != null && ctx.Request.DataAsBytes.Length > 0)
+                    posted = await ReadBody<ConfigValidationRequest>(ctx).ConfigureAwait(false);
+
+                if (posted != null && posted.HasAny)
+                {
+                    endpoints = posted.Endpoints ?? new List<ApiEndpointConfig>();
+                    origins = posted.Origins ?? new List<OriginServerConfig>();
+                    routes = posted.Routes ?? new List<EndpointRoute>();
+                    mappings = posted.Mappings ?? new List<EndpointOriginMapping>();
+                }
+                else
+                {
+                    endpoints = await _Client.ApiEndpoints.GetAllAsync(null, 0, null, ctx.Token).ConfigureAwait(false);
+                    origins = await _Client.OriginServers.GetAllAsync(null, 0, null, ctx.Token).ConfigureAwait(false);
+                    routes = await _Client.EndpointRoutes.GetAllAsync(0, null, ctx.Token).ConfigureAwait(false);
+                    mappings = await _Client.EndpointOriginMappings.GetAllAsync(0, null, ctx.Token).ConfigureAwait(false);
+                }
+
+                List<object> errors = new List<object>();
+                List<object> warnings = new List<object>();
+
+                HashSet<string> originIds = new HashSet<string>(
+                    origins.Select(o => o.Identifier), StringComparer.OrdinalIgnoreCase);
+
+                // Every mapping's origin must reference an existing origin.
+                foreach (EndpointOriginMapping mapping in mappings)
+                {
+                    if (!originIds.Contains(mapping.OriginIdentifier))
+                    {
+                        errors.Add(new
+                        {
+                            code = "OriginNotFound",
+                            message = "Endpoint '" + mapping.EndpointIdentifier + "' references origin '"
+                                + mapping.OriginIdentifier + "' which does not exist.",
+                            endpoint = mapping.EndpointIdentifier,
+                            origin = mapping.OriginIdentifier
+                        });
+                    }
+                }
+
+                // Every endpoint must have at least one route.
+                HashSet<string> endpointsWithRoutes = new HashSet<string>(
+                    routes.Select(r => r.EndpointIdentifier), StringComparer.OrdinalIgnoreCase);
+
+                foreach (ApiEndpointConfig endpoint in endpoints)
+                {
+                    if (!endpointsWithRoutes.Contains(endpoint.Identifier))
+                    {
+                        errors.Add(new
+                        {
+                            code = "NoRoutes",
+                            message = "Endpoint '" + endpoint.Identifier + "' has no routes defined.",
+                            endpoint = endpoint.Identifier
+                        });
+                    }
+                }
+
+                // No two origins may share hostname+port with different identifiers.
+                foreach (IGrouping<string, OriginServerConfig> group in origins.GroupBy(
+                    o => o.Hostname.ToLowerInvariant() + ":" + o.Port))
+                {
+                    List<string> distinctIds = group.Select(o => o.Identifier).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    if (distinctIds.Count > 1)
+                    {
+                        warnings.Add(new
+                        {
+                            code = "DuplicateOriginAddress",
+                            message = "Origins " + String.Join(", ", distinctIds) + " share the same address '"
+                                + group.Key + "'.",
+                            address = group.Key,
+                            origins = distinctIds
+                        });
+                    }
+                }
+
+                await SendOk(ctx, new
+                {
+                    valid = errors.Count == 0,
+                    errors,
+                    warnings
                 }).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }

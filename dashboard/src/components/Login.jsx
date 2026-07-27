@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import LanguageSelector from './common/LanguageSelector';
 import './Login.css';
 
 function Login() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { connect, isLoading, error, isAuthenticated, serverUrl: savedUrl } = useAuth();
 
   const [serverUrl, setServerUrl] = useState(savedUrl || 'http://localhost:8000');
@@ -12,32 +15,31 @@ function Login() {
   const [showToken, setShowToken] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    }
+    if (isAuthenticated) navigate('/dashboard');
   }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const success = await connect(serverUrl, token);
-    if (success) {
-      navigate('/dashboard');
-    }
+    if (success) navigate('/dashboard');
   };
 
   return (
     <div className="login-container">
+      <div className="login-lang">
+        <LanguageSelector compact />
+      </div>
       <div className="login-card">
         <div className="login-header">
-          <img src="/logo.png" alt="Switchboard" className="login-logo" />
-          <h1 className="login-title">Switchboard</h1>
-          <p className="login-subtitle">Management Dashboard</p>
+          <img src="/logo.png" alt={t('app.name')} className="login-logo" />
+          <h1 className="login-title">{t('app.name')}</h1>
+          <p className="login-subtitle">{t('login.title')}</p>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label" htmlFor="serverUrl">
-              Server URL
+              {t('login.serverUrl')}
             </label>
             <input
               id="serverUrl"
@@ -52,14 +54,13 @@ function Login() {
 
           <div className="form-group">
             <label className="form-label" htmlFor="token">
-              API Token
+              {t('login.token')}
             </label>
             <div className="input-with-icon">
               <input
                 id="token"
                 type={showToken ? 'text' : 'password'}
                 className="form-input"
-                placeholder="Enter your admin token"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 required
@@ -69,7 +70,7 @@ function Login() {
                 className="visibility-toggle"
                 onClick={() => setShowToken(!showToken)}
                 tabIndex={-1}
-                aria-label={showToken ? 'Hide token' : 'Show token'}
+                aria-label={showToken ? t('common.close') : t('common.view')}
               >
                 {showToken ? (
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -86,23 +87,15 @@ function Login() {
             </div>
           </div>
 
-          {error && (
-            <div className="login-error">
-              {error}
-            </div>
-          )}
+          {error && <div className="login-error">{t('login.failed')}</div>}
 
-          <button
-            type="submit"
-            className="btn btn-primary login-button"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Connecting...' : 'Connect'}
+          <button type="submit" className="btn btn-primary login-button" disabled={isLoading}>
+            {isLoading ? t('login.connecting') : t('login.connect')}
           </button>
         </form>
 
         <div className="login-footer">
-          <p>Enter your Switchboard server URL and admin token to connect.</p>
+          <p>{t('login.subtitle')}</p>
         </div>
       </div>
     </div>

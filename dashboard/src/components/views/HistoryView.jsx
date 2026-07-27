@@ -1,498 +1,497 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
-import DataTable from '../common/DataTable';
-import ConfirmModal from '../common/ConfirmModal';
-import './Views.css';
+import { useFormatters } from '../../hooks/useFormatters';
+import {
+  PageHeader,
+  DataTable,
+  TablePagination,
+  ActionMenu,
+  entityActions,
+  JsonViewerModal,
+  ConfirmModal,
+  ActivityChart,
+  TIME_RANGES,
+  Metric,
+  MethodBadge,
+  StatusBadge,
+  FilterBar,
+  Field,
+  FilterGrid,
+  FilterActions,
+} from '../ui';
+import RequestDetailsModal from './RequestDetailsModal';
+import './HistoryView.css';
 
-// Format timestamp with microsecond precision: yyyy-MM-dd HH:mm:ss.ffffffZ
-function formatPreciseTimestamp(timestamp) {
-  if (!timestamp) return 'N/A';
-  const date = new Date(timestamp);
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const hours = String(date.getUTCHours()).padStart(2, '0');
-  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-  const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-  const ms = String(date.getUTCMilliseconds()).padStart(3, '0');
-  // JavaScript Date only has millisecond precision, pad with 000 for microseconds
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}000Z`;
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+
+const EMPTY_FILTERS = {
+  method: '',
+  status: '',
+  path: '',
+  from: '',
+  to: '',
+  failedOnly: false,
+};
+
+// Converts a millisecond timestamp into the value format a datetime-local input
+// expects ("YYYY-MM-DDTHH:mm") in the viewer's local time.
+function toLocalInputValue(ms) {
+  const d = new Date(ms);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(
+    d.getMinutes()
+  )}`;
 }
 
-// Copyable value with inline copy button
-function CopyableValue({ value, link, linkState, mono = false }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
-
-  if (!value) return <span className="detail-value">N/A</span>;
-
-  const content = link ? (
-    <Link to={link} state={linkState} className={`detail-link ${mono ? 'mono' : ''}`}>{value}</Link>
-  ) : (
-    <span className={mono ? 'mono' : ''}>{value}</span>
-  );
-
-  return (
-    <span className={`detail-value copyable-value ${mono ? 'detail-value-mono' : ''}`}>
-      {content}
-      <button
-        className={`inline-copy-btn ${copied ? 'copied' : ''}`}
-        onClick={handleCopy}
-        title={copied ? 'Copied!' : 'Copy to clipboard'}
-      >
-        {copied ? (
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-        )}
-      </button>
-    </span>
-  );
-}
-
-// Check if string is valid JSON
-function isJson(str) {
-  if (!str || typeof str !== 'string') return false;
-  const trimmed = str.trim();
-  if ((!trimmed.startsWith('{') && !trimmed.startsWith('[')) ||
-      (!trimmed.endsWith('}') && !trimmed.endsWith(']'))) {
-    return false;
-  }
-  try {
-    JSON.parse(str);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Format content for display
-function formatContent(content, prettyPrint) {
-  if (!content || !prettyPrint) return content;
-
-  if (isJson(content)) {
-    try {
-      return JSON.stringify(JSON.parse(content), null, 2);
-    } catch {
-      return content;
-    }
-  }
-  return content;
-}
-
-// Copyable code block component with collapse/expand
-function CopyableCodeBlock({ content, label, defaultExpanded = true }) {
-  const [copied, setCopied] = useState(false);
-  const [prettyPrint, setPrettyPrint] = useState(true);
-  const [expanded, setExpanded] = useState(defaultExpanded);
-  const [fullHeight, setFullHeight] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      // Always copy the original content, not the formatted version
-      await navigator.clipboard.writeText(content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
-
-  if (!content) return null;
-
-  const canPrettyPrint = isJson(content);
-  const displayContent = formatContent(content, prettyPrint);
-
-  return (
-    <div className={`copyable-code-block ${expanded ? 'expanded' : 'collapsed'}`}>
-      <div className="copyable-code-header" onClick={() => setExpanded(!expanded)}>
-        <div className="copyable-code-title">
-          <button
-            className="expand-btn"
-            title={expanded ? 'Collapse' : 'Expand'}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points={expanded ? "6 9 12 15 18 9" : "9 18 15 12 9 6"}></polyline>
-            </svg>
-          </button>
-          <span className="copyable-code-label">{label}</span>
-        </div>
-        <div className="copyable-code-actions" onClick={(e) => e.stopPropagation()}>
-          {expanded && (
-            <button
-              className={`height-btn ${fullHeight ? 'active' : ''}`}
-              onClick={() => setFullHeight(!fullHeight)}
-              title={fullHeight ? 'Constrain height' : 'Expand to full height'}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {fullHeight ? (
-                  <>
-                    <polyline points="4 14 10 14 10 20"></polyline>
-                    <polyline points="20 10 14 10 14 4"></polyline>
-                    <line x1="14" y1="10" x2="21" y2="3"></line>
-                    <line x1="3" y1="21" x2="10" y2="14"></line>
-                  </>
-                ) : (
-                  <>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <polyline points="9 21 3 21 3 15"></polyline>
-                    <line x1="21" y1="3" x2="14" y2="10"></line>
-                    <line x1="3" y1="21" x2="10" y2="14"></line>
-                  </>
-                )}
-              </svg>
-            </button>
-          )}
-          {canPrettyPrint && (
-            <button
-              className={`format-btn ${prettyPrint ? 'active' : ''}`}
-              onClick={() => setPrettyPrint(!prettyPrint)}
-              title={prettyPrint ? 'Show raw' : 'Pretty print'}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                <line x1="9" y1="20" x2="15" y2="20"></line>
-                <line x1="12" y1="4" x2="12" y2="20"></line>
-              </svg>
-            </button>
-          )}
-          <button
-            className={`copy-btn ${copied ? 'copied' : ''}`}
-            onClick={handleCopy}
-            title={copied ? 'Copied!' : 'Copy to clipboard'}
-          >
-            {copied ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-      {expanded && (
-        <pre className={`copyable-code-content ${fullHeight ? 'full-height' : ''}`}>{displayContent}</pre>
-      )}
-    </div>
-  );
+// Converts a datetime-local value (local time) into an ISO8601 UTC string for the API.
+function localInputToIso(value) {
+  if (!value) return undefined;
+  const ms = Date.parse(value);
+  if (Number.isNaN(ms)) return undefined;
+  return new Date(ms).toISOString();
 }
 
 function HistoryView() {
+  const { t } = useTranslation();
+  const fmt = useFormatters();
   const { apiClient } = useAuth();
   const { showSuccess, showError } = useApp();
-  const [history, setHistory] = useState([]);
+  const [searchParams] = useSearchParams();
+
+  // Chart state.
+  const [rangeId, setRangeId] = useState('hour');
+  const [timeseries, setTimeseries] = useState([]);
+  const [chartLoading, setChartLoading] = useState(false);
+
+  // KPI stats.
+  const [stats, setStats] = useState(null);
+
+  // Table state.
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [filters, setFilters] = useState({
-    take: 50,
-  });
-  const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
+  const [error, setError] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
-  useEffect(() => {
-    loadHistory();
-  }, [filters]);
+  // Filters — `?failed=1` presets the failed-only toggle.
+  const [filters, setFilters] = useState(() => ({
+    ...EMPTY_FILTERS,
+    failedOnly: searchParams.get('failed') === '1',
+  }));
 
-  const loadHistory = async () => {
-    setLoading(true);
+  // Modals.
+  const [viewRecord, setViewRecord] = useState(null);
+  const [jsonRecord, setJsonRecord] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const filtersActive = useMemo(
+    () =>
+      Boolean(
+        filters.method ||
+          filters.status ||
+          filters.path ||
+          filters.from ||
+          filters.to ||
+          filters.failedOnly
+      ),
+    [filters]
+  );
+
+  const updateFilter = (patch) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+    setPageNumber(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({ ...EMPTY_FILTERS });
+    setPageNumber(1);
+  };
+
+  // ---- Stats ----
+  const loadStats = useCallback(async () => {
     try {
-      const data = await apiClient.getRecentHistory(filters.take);
-      setHistory(data);
+      const data = await apiClient.getHistoryStats();
+      setStats(data);
+    } catch {
+      setStats(null);
+    }
+  }, [apiClient]);
+
+  // ---- Timeseries (chart) ----
+  const loadTimeseries = useCallback(async () => {
+    const range = TIME_RANGES[rangeId] || TIME_RANGES.hour;
+    const end = new Date();
+    const start = new Date(end.getTime() - range.windowMs);
+    setChartLoading(true);
+    try {
+      const data = await apiClient.getHistoryTimeseries({
+        start: start.toISOString(),
+        end: end.toISOString(),
+        intervalMinutes: Math.max(1, Math.round(range.bucketMs / 60000)),
+      });
+      setTimeseries(Array.isArray(data) ? data : []);
+    } catch {
+      // New endpoint may not exist yet (404) — render the chart empty rather than error.
+      setTimeseries([]);
+    } finally {
+      setChartLoading(false);
+    }
+  }, [apiClient, rangeId]);
+
+  // ---- Table rows ----
+  const loadRows = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const skip = (pageNumber - 1) * pageSize;
+    const take = pageSize;
+    const start = localInputToIso(filters.from);
+    const end = localInputToIso(filters.to);
+    // getFailedHistory is the server-side path for failed-only when no date window is
+    // applied; otherwise we fetch the window via getHistory and drop successes below.
+    const useFailedEndpoint = filters.failedOnly && !start && !end;
+    try {
+      let data = useFailedEndpoint
+        ? await apiClient.getFailedHistory({ skip, take })
+        : await apiClient.getHistory({ skip, take, start, end });
+      data = Array.isArray(data) ? data : [];
+
+      // Client-side fallback: the backend does not filter by method/status/path (nor
+      // by failed when a date window forced us onto getHistory), so apply those here
+      // over the fetched page.
+      if (filters.failedOnly && !useFailedEndpoint) {
+        data = data.filter((r) => r.success === false || (r.statusCode >= 400));
+      }
+      if (filters.method) {
+        const m = filters.method.toUpperCase();
+        data = data.filter((r) => String(r.httpMethod || '').toUpperCase() === m);
+      }
+      if (filters.status) {
+        const needle = filters.status.trim().toLowerCase();
+        data = data.filter((r) => String(r.statusCode ?? '').toLowerCase().includes(needle));
+      }
+      if (filters.path) {
+        const needle = filters.path.trim().toLowerCase();
+        data = data.filter((r) => String(r.requestPath || '').toLowerCase().includes(needle));
+      }
+
+      setRows(data);
     } catch (err) {
-      showError('Failed to load history: ' + err.message);
+      setError(err?.message || t('history.loadError'));
+      setRows([]);
     } finally {
       setLoading(false);
     }
+  }, [apiClient, pageNumber, pageSize, filters, t]);
+
+  useEffect(() => {
+    loadRows();
+  }, [loadRows]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  useEffect(() => {
+    loadTimeseries();
+  }, [loadTimeseries]);
+
+  const refreshAll = () => {
+    loadRows();
+    loadStats();
+    loadTimeseries();
   };
 
-  const handleViewDetails = async (record) => {
+  // Clicking a chart bucket scopes the from/to filters to that bucket's window.
+  const handleBucketClick = (bucket) => {
+    if (!bucket) return;
+    const range = TIME_RANGES[rangeId] || TIME_RANGES.hour;
+    const startMs = bucket.startMs != null ? bucket.startMs : Date.parse(bucket.bucketStartUtc);
+    if (Number.isNaN(startMs)) return;
+    updateFilter({
+      from: toLocalInputValue(startMs),
+      to: toLocalInputValue(startMs + range.bucketMs),
+    });
+  };
+
+  // ---- Row actions ----
+  const openDetail = async (row, mode) => {
     try {
-      const details = await apiClient.getHistoryDetail(record.requestId);
-      setSelectedRequest(details);
+      const id = row.id ?? row.requestId;
+      const full = await apiClient.getHistoryDetail(id);
+      const record = full || row;
+      if (mode === 'json') setJsonRecord(record);
+      else setViewRecord(record);
     } catch (err) {
-      showError('Failed to load request details: ' + err.message);
+      showError(err?.message || t('history.detailLoadError'));
     }
   };
 
-  const handleCloseDetails = () => {
-    setSelectedRequest(null);
-  };
-
-  const handleCleanupClick = () => {
-    setShowCleanupConfirm(true);
-  };
-
-  const handleCleanupConfirm = async () => {
-    setShowCleanupConfirm(false);
-
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const result = await apiClient.runHistoryCleanup(7);
-      showSuccess(`Cleanup complete: ${result.deletedRecords} records deleted`);
-      loadHistory();
+      await apiClient.deleteHistory(deleteTarget.id ?? deleteTarget.requestId);
+      showSuccess(t('history.deleted'));
+      setDeleteTarget(null);
+      refreshAll();
     } catch (err) {
-      showError('Failed to run cleanup: ' + err.message);
+      showError(err?.message || t('history.loadError'));
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
-  };
+  // ---- KPIs ----
+  const avgDurationMs = useMemo(() => {
+    if (!rows.length) return null;
+    const withDuration = rows.filter((r) => typeof r.durationMs === 'number');
+    if (!withDuration.length) return null;
+    return withDuration.reduce((sum, r) => sum + r.durationMs, 0) / withDuration.length;
+  }, [rows]);
 
-  const getStatusBadge = (statusCode) => {
-    if (statusCode >= 200 && statusCode < 300) {
-      return 'badge-success';
-    } else if (statusCode >= 300 && statusCode < 400) {
-      return 'badge-info';
-    } else if (statusCode >= 400 && statusCode < 500) {
-      return 'badge-warning';
-    } else {
-      return 'badge-danger';
+  const successRateText = useMemo(() => {
+    if (!stats || stats.successRate == null) return '—';
+    const rate = stats.successRate > 1 ? stats.successRate / 100 : stats.successRate;
+    return fmt.percent(rate, 1);
+  }, [stats, fmt]);
+
+  const total = useMemo(() => {
+    if (stats) {
+      return filters.failedOnly ? stats.failedRequests ?? rows.length : stats.totalRequests ?? rows.length;
     }
-  };
+    return rows.length;
+  }, [stats, filters.failedOnly, rows.length]);
 
-  const columns = [
-    {
-      key: 'timestampUtc',
-      label: 'Timestamp',
-      render: (value) => formatTimestamp(value),
-    },
-    { key: 'httpMethod', label: 'Method' },
-    {
-      key: 'requestPath',
-      label: 'Path',
-      render: (value) => (
-        <span className="path-cell" title={value}>
-          {value.length > 50 ? value.substring(0, 50) + '...' : value}
-        </span>
-      ),
-    },
-    {
-      key: 'statusCode',
-      label: 'Status',
-      render: (value) => (
-        <span className={`badge ${getStatusBadge(value)}`}>{value}</span>
-      ),
-    },
-    {
-      key: 'durationMs',
-      label: 'Duration',
-      render: (value) => `${value}ms`,
-    },
-  ];
+  // ---- Table columns ----
+  const columns = useMemo(
+    () => [
+      {
+        key: 'timestampUtc',
+        label: t('history.colWhen'),
+        sortable: true,
+        sortValue: (r) => Date.parse(r.timestampUtc) || 0,
+        render: (r) => (
+          <span title={`${fmt.dateTime(r.timestampUtc)} · ${fmt.relative(r.timestampUtc)}`}>
+            {fmt.dateTime(r.timestampUtc)}
+          </span>
+        ),
+      },
+      {
+        key: 'httpMethod',
+        label: t('history.colMethod'),
+        render: (r) => <MethodBadge method={r.httpMethod} />,
+      },
+      {
+        key: 'requestPath',
+        label: t('history.colPath'),
+        mono: true,
+        render: (r) => (
+          <span className="history-path" title={`${r.requestPath || ''}${r.queryString || ''}`}>
+            {r.requestPath}
+            {r.queryString ? <span className="history-path__query">{r.queryString}</span> : null}
+          </span>
+        ),
+      },
+      {
+        key: 'statusCode',
+        label: t('history.colStatus'),
+        align: 'center',
+        sortable: true,
+        sortValue: (r) => r.statusCode || 0,
+        render: (r) => <StatusBadge status={r.statusCode} />,
+      },
+      {
+        key: 'durationMs',
+        label: t('history.colDuration'),
+        align: 'end',
+        sortable: true,
+        sortValue: (r) => r.durationMs || 0,
+        render: (r) => fmt.duration(r.durationMs),
+      },
+      {
+        key: 'clientIp',
+        label: t('history.colClient'),
+        mono: true,
+        render: (r) => r.clientIp || '—',
+      },
+      {
+        key: 'actions',
+        label: t('common.actions'),
+        align: 'end',
+        isAction: true,
+        width: 56,
+        render: (r) => (
+          <ActionMenu
+            items={entityActions(t, {
+              onView: () => openDetail(r, 'view'),
+              onViewJson: () => openDetail(r, 'json'),
+              onDelete: () => setDeleteTarget(r),
+            })}
+          />
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, fmt]
+  );
+
+  const emptyMessage = filtersActive
+    ? t('history.emptyNoMatch')
+    : t('history.emptyNoTraffic');
 
   return (
-    <div className="view master-detail-view history-view">
-      {/* Master: History Table */}
-      <div className="master-panel">
-        <div className="view-header">
-          <h2 className="view-title">Request History</h2>
-          <div className="view-actions">
-            <select
-              className="form-input"
-              style={{ width: 'auto' }}
-              value={filters.take}
-              onChange={(e) => setFilters({ ...filters, take: parseInt(e.target.value) })}
-            >
-              <option value="25">Last 25</option>
-              <option value="50">Last 50</option>
-              <option value="100">Last 100</option>
-              <option value="250">Last 250</option>
-            </select>
-            <button className="btn btn-secondary" onClick={loadHistory}>
-              Refresh
-            </button>
-            <button className="btn btn-danger" onClick={handleCleanupClick}>
-              Cleanup
-            </button>
-          </div>
-        </div>
+    <div className="view history-view">
+      <PageHeader title={t('history.title')} subtitle={t('history.subtitle')} />
 
-        {loading ? (
-          <div className="view-loading">
-            <div className="spinner"></div>
-            <p>Loading...</p>
-          </div>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={history}
-            emptyMessage="No request history"
-            onRowClick={handleViewDetails}
-            selectedRow={selectedRequest}
-            rowKey="requestId"
-          />
-        )}
+      <ActivityChart
+        data={timeseries}
+        rangeId={rangeId}
+        onRangeChange={setRangeId}
+        onBucketClick={handleBucketClick}
+        onRefresh={loadTimeseries}
+        loading={chartLoading}
+      />
+
+      <div className="history-kpis">
+        <Metric label={t('history.kpiRetained')} value={fmt.number(stats?.totalRequests ?? rows.length)} />
+        <Metric
+          label={t('history.kpiFailures')}
+          value={fmt.number(stats?.failedRequests ?? 0)}
+          tone={stats?.failedRequests ? 'danger' : 'neutral'}
+        />
+        <Metric label={t('history.kpiSuccessRate')} value={successRateText} tone="success" />
+        <Metric
+          label={t('history.kpiAvgDuration')}
+          value={avgDurationMs != null ? fmt.duration(avgDurationMs) : '—'}
+        />
       </div>
 
-      {/* Detail: Request Details Panel */}
-      {selectedRequest && (
-        <div className="detail-panel history-detail-panel">
-          <div className="detail-panel-header">
-            <div className="detail-panel-title">
-              <h3>
-                <span className={`badge badge-method badge-${selectedRequest.httpMethod?.toLowerCase() || 'any'}`}>
-                  {selectedRequest.httpMethod}
-                </span>
-                <span className="request-path-title">{selectedRequest.requestPath}</span>
-              </h3>
-            </div>
-            <div className="detail-panel-actions">
-              <button className="btn btn-ghost btn-sm" onClick={handleCloseDetails}>
-                Close
+      <TablePagination
+        total={total}
+        pageNumber={pageNumber}
+        pageSize={pageSize}
+        onPageChange={setPageNumber}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPageNumber(1);
+        }}
+        onRefresh={refreshAll}
+      >
+        <FilterBar>
+          <FilterGrid>
+            <Field label={t('history.filterMethod')}>
+              <select
+                className="sb-input"
+                value={filters.method}
+                onChange={(e) => updateFilter({ method: e.target.value })}
+              >
+                <option value="">{t('history.methodAny')}</option>
+                {HTTP_METHODS.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label={t('history.filterStatus')}>
+              <input
+                type="text"
+                className="sb-input"
+                inputMode="numeric"
+                placeholder={t('history.statusAny')}
+                value={filters.status}
+                onChange={(e) => updateFilter({ status: e.target.value })}
+              />
+            </Field>
+            <Field label={t('history.filterPath')}>
+              <input
+                type="text"
+                className="sb-input"
+                value={filters.path}
+                onChange={(e) => updateFilter({ path: e.target.value })}
+              />
+            </Field>
+            <Field label={t('history.filterFrom')}>
+              <input
+                type="datetime-local"
+                className="sb-input"
+                value={filters.from}
+                onChange={(e) => updateFilter({ from: e.target.value })}
+              />
+            </Field>
+            <Field label={t('history.filterTo')}>
+              <input
+                type="datetime-local"
+                className="sb-input"
+                value={filters.to}
+                onChange={(e) => updateFilter({ to: e.target.value })}
+              />
+            </Field>
+            <Field label="">
+              <label className="history-toggle">
+                <input
+                  type="checkbox"
+                  checked={filters.failedOnly}
+                  onChange={(e) => updateFilter({ failedOnly: e.target.checked })}
+                />
+                <span>{t('history.failedOnly')}</span>
+              </label>
+            </Field>
+          </FilterGrid>
+          {filtersActive && (
+            <FilterActions>
+              <button type="button" className="sb-btn sb-btn--ghost" onClick={clearFilters}>
+                {t('common.clear')}
               </button>
-            </div>
-          </div>
+            </FilterActions>
+          )}
+        </FilterBar>
+      </TablePagination>
 
-          <div className="detail-panel-content history-detail-content">
-            {/* Metadata Section - Two Columns */}
-            <div className="history-metadata-grid">
-              {/* Request Metadata */}
-              <div className="history-metadata-section">
-                <h4>Request</h4>
-                <div className="detail-row">
-                  <span className="detail-label">Request ID:</span>
-                  <CopyableValue value={selectedRequest.requestId} mono />
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Time:</span>
-                  <span className="detail-value detail-value-mono">{formatPreciseTimestamp(selectedRequest.timestampUtc)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Method:</span>
-                  <span className="detail-value">{selectedRequest.httpMethod}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Path:</span>
-                  <span className="detail-value">{selectedRequest.requestPath}</span>
-                </div>
-                {selectedRequest.queryString && (
-                  <div className="detail-row">
-                    <span className="detail-label">Query:</span>
-                    <span className="detail-value">{selectedRequest.queryString}</span>
-                  </div>
-                )}
-                <div className="detail-row">
-                  <span className="detail-label">Client IP:</span>
-                  <span className="detail-value">{selectedRequest.clientIp || 'N/A'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Endpoint:</span>
-                  <CopyableValue
-                    value={selectedRequest.endpointIdentifier}
-                    link={selectedRequest.endpointIdentifier ? "/endpoints" : null}
-                    linkState={selectedRequest.endpointIdentifier ? { selectIdentifier: selectedRequest.endpointIdentifier } : null}
-                  />
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Origin:</span>
-                  <CopyableValue
-                    value={selectedRequest.originIdentifier}
-                    link={selectedRequest.originIdentifier ? "/origins" : null}
-                    linkState={selectedRequest.originIdentifier ? { selectIdentifier: selectedRequest.originIdentifier } : null}
-                  />
-                </div>
-              </div>
+      <DataTable
+        columns={columns}
+        rows={rows}
+        rowKey={(r) => r.id ?? r.requestId}
+        loading={loading}
+        error={error}
+        onRetry={loadRows}
+        onRowClick={(r) => openDetail(r, 'view')}
+        emptyMessage={emptyMessage}
+        emptyHint={filtersActive ? t('common.clear') : t('table.emptyHint')}
+      />
 
-              {/* Response Metadata */}
-              <div className="history-metadata-section">
-                <h4>Response</h4>
-                <div className="detail-row">
-                  <span className="detail-label">Status:</span>
-                  <span className={`badge ${getStatusBadge(selectedRequest.statusCode)}`}>
-                    {selectedRequest.statusCode}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Duration:</span>
-                  <span className="detail-value">{selectedRequest.durationMs}ms</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Size:</span>
-                  <span className="detail-value">{selectedRequest.responseBodySize} bytes</span>
-                </div>
-                {selectedRequest.errorMessage && (
-                  <div className="detail-row">
-                    <span className="detail-label">Error:</span>
-                    <span className="detail-value text-danger">{selectedRequest.errorMessage}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+      <RequestDetailsModal
+        open={Boolean(viewRecord)}
+        record={viewRecord}
+        onClose={() => setViewRecord(null)}
+        onViewJson={() => {
+          setJsonRecord(viewRecord);
+          setViewRecord(null);
+        }}
+      />
 
-            {/* Headers Section - Horizontally Aligned */}
-            <div className="history-paired-section">
-              <div className="history-paired-column">
-                <CopyableCodeBlock
-                  content={selectedRequest.requestHeaders}
-                  label="Request Headers"
-                />
-              </div>
-              <div className="history-paired-column">
-                <CopyableCodeBlock
-                  content={selectedRequest.responseHeaders}
-                  label="Response Headers"
-                />
-              </div>
-            </div>
+      <JsonViewerModal
+        open={Boolean(jsonRecord)}
+        onClose={() => setJsonRecord(null)}
+        data={jsonRecord}
+        id={jsonRecord?.requestId}
+        title={t('history.detailTitle')}
+      />
 
-            {/* Bodies Section - Horizontally Aligned */}
-            <div className="history-paired-section">
-              <div className="history-paired-column">
-                <CopyableCodeBlock
-                  content={selectedRequest.requestBody}
-                  label="Request Body"
-                />
-              </div>
-              <div className="history-paired-column">
-                <CopyableCodeBlock
-                  content={selectedRequest.responseBody}
-                  label="Response Body"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Placeholder when nothing selected */}
-      {!selectedRequest && history.length > 0 && (
-        <div className="detail-panel detail-panel-empty">
-          <p>Select a request from the table above to view details.</p>
-        </div>
-      )}
-
-      {showCleanupConfirm && (
-        <ConfirmModal
-          title="Cleanup History"
-          message="This will delete request history records older than 7 days."
-          warningMessage="This action cannot be undone."
-          confirmLabel="Run Cleanup"
-          confirmVariant="warning"
-          onConfirm={handleCleanupConfirm}
-          onClose={() => setShowCleanupConfirm(false)}
-        />
-      )}
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        variant="danger"
+        title={t('history.deleteConfirmTitle')}
+        message={t('history.deleteConfirmMessage')}
+        confirmLabel={t('common.delete')}
+        busy={deleting}
+      />
     </div>
   );
 }
