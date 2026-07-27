@@ -21,8 +21,12 @@ namespace Test.Shared
                 List<TestSuiteDescriptor> suites = new List<TestSuiteDescriptor>();
                 suites.AddRange(UnitSuites.All);
                 suites.AddRange(SettingsImportSuites.All);
+                suites.AddRange(ClientCrudSuites.All);
+                suites.AddRange(RequestHistoryCaptureSuites.All);
                 suites.AddRange(ProxySuites.All);
                 suites.AddRange(StreamingSuites.All);
+                suites.AddRange(GatewaySuites.All);
+                suites.AddRange(ManagementApiSuites.All);
                 suites.AddRange(HealthSuites.All);
                 return suites;
             }
@@ -34,7 +38,14 @@ namespace Test.Shared
         /// </summary>
         public static IReadOnlyList<TestSuiteDescriptor> UnitOnly
         {
-            get { return UnitSuites.All.Concat(SettingsImportSuites.All).ToList(); }
+            get
+            {
+                return UnitSuites.All
+                    .Concat(SettingsImportSuites.All)
+                    .Concat(ClientCrudSuites.All)
+                    .Concat(RequestHistoryCaptureSuites.All)
+                    .ToList();
+            }
         }
     }
 }

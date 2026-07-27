@@ -23,6 +23,7 @@ namespace Test.Shared.Harness
         private readonly IReadOnlyList<KeyValuePair<string, int>> _OriginPorts;
         private readonly int _MaxParallelRequests;
         private readonly int _RateLimitThreshold;
+        private readonly bool _EnableManagement;
         private readonly string _DbPath;
         private readonly SemaphoreSlim _StartLock = new SemaphoreSlim(1, 1);
         private readonly List<OriginHost> _Origins = new List<OriginHost>();
@@ -39,17 +40,28 @@ namespace Test.Shared.Harness
         /// <param name="originPorts">Origin server name/port pairs.</param>
         /// <param name="maxParallelRequests">Per-origin parallel request cap.</param>
         /// <param name="rateLimitThreshold">Per-origin rate limit threshold.</param>
+        /// <param name="enableManagement">True to enable the management REST API on the daemon.</param>
         public ProxyHarness(
             int proxyPort,
             IReadOnlyList<KeyValuePair<string, int>> originPorts,
             int maxParallelRequests = 100,
-            int rateLimitThreshold = 1000)
+            int rateLimitThreshold = 1000,
+            bool enableManagement = false)
         {
             _ProxyPort = proxyPort;
             _OriginPorts = originPorts ?? throw new ArgumentNullException(nameof(originPorts));
             _MaxParallelRequests = maxParallelRequests;
             _RateLimitThreshold = rateLimitThreshold;
+            _EnableManagement = enableManagement;
             _DbPath = Path.Combine(Path.GetTempPath(), "switchboard_harness_" + Guid.NewGuid().ToString("N") + ".db");
+        }
+
+        /// <summary>
+        /// The port the proxy listens on.
+        /// </summary>
+        public int ProxyPort
+        {
+            get { return _ProxyPort; }
         }
 
         /// <summary>
@@ -151,7 +163,7 @@ namespace Test.Shared.Harness
             settings.Database.Type = Switchboard.Core.Database.DatabaseTypeEnum.Sqlite;
             settings.Database.Filename = _DbPath;
 
-            settings.Management.Enable = false;
+            settings.Management.Enable = _EnableManagement;
             settings.RequestHistory.Enable = false;
 
             settings.OpenApi = new OpenApiDocumentSettings

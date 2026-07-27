@@ -25,5 +25,30 @@ namespace Test.Shared.Harness
             },
             maxParallelRequests: 100,
             rateLimitThreshold: 1000);
+
+        /// <summary>
+        /// Dedicated harness (proxy 9260, origins 9261-9262) for gateway error scenarios that mutate
+        /// endpoint configuration (HTTP/1.0 blocking, request-size limits, auth-callback overrides).
+        /// Kept separate from <see cref="Shared"/> so those mutations never affect other suites.
+        /// </summary>
+        public static readonly ProxyHarness GatewayErrors = new ProxyHarness(
+            9260,
+            new List<KeyValuePair<string, int>>
+            {
+                new KeyValuePair<string, int>("Server 1", 9261),
+                new KeyValuePair<string, int>("Server 2", 9262)
+            });
+
+        /// <summary>
+        /// Dedicated harness (proxy 9270, origins 9271-9272) with the management REST API enabled.
+        /// </summary>
+        public static readonly ProxyHarness Management = new ProxyHarness(
+            9270,
+            new List<KeyValuePair<string, int>>
+            {
+                new KeyValuePair<string, int>("Server 1", 9271),
+                new KeyValuePair<string, int>("Server 2", 9272)
+            },
+            enableManagement: true);
     }
 }
