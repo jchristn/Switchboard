@@ -1,0 +1,27 @@
+# The server image build context is this directory (src/). The whole context is uploaded to the
+# Docker Build Cloud builder on every build, so exclude everything the image never reads. The
+# Dockerfile restores and publishes Switchboard.Server (transitively Switchboard.Core) from source,
+# so only .cs/.csproj/.sln files are needed.
+
+# Build output
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/*.user
+**/TestResults/
+
+# Local databases, NuGet packages, and runtime state
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.nupkg
+**/*.snupkg
+**/logs/
+**/*.log
+
+# Not read by the server image build
+.dockerignore
+*.md
+*.bat
+*.sh

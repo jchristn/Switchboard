@@ -1,0 +1,27 @@
+# The dashboard image build context is this directory (dashboard/). The whole context is uploaded to
+# the Docker Build Cloud builder on every build. Dependencies are restored inside the image and the
+# Vite app is built there, so host node_modules and dist must never be uploaded.
+
+# Dependencies — restored inside the image
+node_modules/
+
+# Build output
+dist/
+build/
+.vite/
+coverage/
+
+# Editor/OS
+.vs/
+.idea/
+*.user
+
+# Runtime/logs
+*.log
+logs/
+
+# Not read by the image build
+.dockerignore
+*.md
+*.bat
+*.sh
