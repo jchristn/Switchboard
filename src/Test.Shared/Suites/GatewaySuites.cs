@@ -75,10 +75,7 @@ namespace Test.Shared
                             }
                         }),
 
-                    // NOTE: the gateway hardcodes HTTP 400 for the too-large branch while serializing a
-                    // TooLarge error body (GatewayService.DefaultRoute), so the observed status is 400
-                    // even though ApiErrorResponse maps TooLarge to 413. This asserts the actual behavior.
-                    new TestCaseDescriptor("Gateway", "RequestTooLarge", "Request exceeding MaxRequestBodySize is rejected with a TooLarge error",
+                    new TestCaseDescriptor("Gateway", "RequestTooLarge", "Request exceeding MaxRequestBodySize returns 413 with a TooLarge body",
                         executeAsync: async ct =>
                         {
                             ProxyHarness h = TestHarnesses.GatewayErrors;
@@ -93,7 +90,7 @@ namespace Test.Shared
                                     req.ContentType = "text/plain";
                                     using (RestResponse resp = await req.SendAsync(new string('x', 500)))
                                     {
-                                        Check.Equal(400, resp.StatusCode, "oversized body rejected with 400");
+                                        Check.Equal(413, resp.StatusCode, "oversized body returns 413");
                                         Check.Contains(resp.DataAsString, "TooLarge", "TooLarge error body");
                                     }
                                 }

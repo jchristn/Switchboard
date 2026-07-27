@@ -47,6 +47,10 @@
                         return "The requested resource is not empty.";
                     case ApiErrorEnum.NotFound:
                         return "The requested resource was not found.";
+                    case ApiErrorEnum.SlowDown:
+                        return "You have exceeded the allowed request rate. Please slow down and retry.";
+                    case ApiErrorEnum.TokenExpired:
+                        return "Your token has expired. Please reauthenticate and retry.";
                     case ApiErrorEnum.TooLarge:
                         return "The size of your request exceeds the maximum allowed by this server.";
                     case ApiErrorEnum.UnsupportedHttpVersion:

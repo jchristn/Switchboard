@@ -2,7 +2,14 @@
 
 ## Current Version
 
-v4.0.9
+v4.0.10
+
+### Changes in v4.0.10
+
+- Enforce configured blocked headers (global and per-endpoint) when forwarding requests to origins; previously only a fixed hop-by-hop set was stripped
+- Return HTTP `413` (instead of `400`) when a request exceeds `MaxRequestBodySize`, matching the `TooLarge` error model
+- Add human-readable error messages for the `SlowDown` (429) and `TokenExpired` (401) error codes
+- Re-architected the test suite onto the [Touchstone](https://github.com/jchristn/touchstone) framework (Test.Shared / Test.Automated / Test.Xunit / Test.Nunit) with substantially expanded coverage
 
 ### Changes in v4.0.9
 

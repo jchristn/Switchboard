@@ -161,6 +161,23 @@ namespace Test.Shared
                         }
                     }),
 
+                    IntegrationSupport.SharedCase("ProxyCore", "BlockedHeaderStripped", "Configured blocked headers are not forwarded to origins", async (h, ct) =>
+                    {
+                        using (RestRequest req = new RestRequest(h.Url("/api/headers-test")))
+                        {
+                            req.Headers.Add("X-Blocked-Secret", "should-not-arrive");
+                            req.Headers.Add("X-Allowed-Header", "should-arrive");
+                            using (RestResponse resp = await req.SendAsync())
+                            {
+                                Check.Equal(200, resp.StatusCode, "headers status");
+                                Check.Contains(resp.DataAsString, "X-Allowed-Header", "allowed header forwarded");
+                                Check.Contains(resp.DataAsString, "should-arrive", "allowed value forwarded");
+                                Check.False(resp.DataAsString.Contains("should-not-arrive"), "blocked header value not forwarded");
+                                Check.False(resp.DataAsString.Contains("X-Blocked-Secret"), "blocked header name not forwarded");
+                            }
+                        }
+                    }),
+
                     IntegrationSupport.SharedCase("ProxyCore", "QueryForwarding", "Query strings are forwarded verbatim", async (h, ct) =>
                     {
                         using (RestRequest req = new RestRequest(h.Url("/unauthenticated?param1=value1")))

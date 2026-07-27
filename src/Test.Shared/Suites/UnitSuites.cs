@@ -346,6 +346,18 @@ namespace Test.Shared
                         return Task.CompletedTask;
                     }),
 
+                    Case("ErrorResponse", "SlowDownAndTokenExpiredMessages", "SlowDown and TokenExpired have specific, non-generic messages", ct =>
+                    {
+                        string slowDown = new ApiErrorResponse(ApiErrorEnum.SlowDown).Message;
+                        Check.False(slowDown.Contains("unknown error code"), "SlowDown is not the generic message");
+                        Check.Contains(slowDown, "rate", "SlowDown mentions rate");
+
+                        string tokenExpired = new ApiErrorResponse(ApiErrorEnum.TokenExpired).Message;
+                        Check.False(tokenExpired.Contains("unknown error code"), "TokenExpired is not the generic message");
+                        Check.Contains(tokenExpired, "expired", "TokenExpired mentions expiry");
+                        return Task.CompletedTask;
+                    }),
+
                     Case("ErrorResponse", "DefaultError", "Default error code is AuthenticationFailed", ct =>
                     {
                         Check.Equal(ApiErrorEnum.AuthenticationFailed, new ApiErrorResponse().Error, "default error");

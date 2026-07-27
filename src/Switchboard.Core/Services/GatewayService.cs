@@ -346,13 +346,13 @@
                 if (match.Endpoint.MaxRequestBodySize > 0 && ctx.Request.ContentLength > match.Endpoint.MaxRequestBodySize)
                 {
                     _Logging.Warn(_Header + "request too large from " + ctx.Request.Source.IpAddress + ": " + ctx.Request.ContentLength + " bytes");
-                    ctx.Response.StatusCode = 400;
+                    ctx.Response.StatusCode = 413;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.TooLarge, null, "Your request was too large"), true));
 
                     if (captureContext != null)
                     {
-                        captureContext.StatusCode = 400;
+                        captureContext.StatusCode = 413;
                         captureContext.ErrorMessage = "Request too large";
                     }
                     return;
@@ -466,11 +466,13 @@
             }
         }
 
-        private bool ShouldForwardRequestHeader(string key)
+        private bool ShouldForwardRequestHeader(string key, ApiEndpoint endpoint)
         {
             if (String.IsNullOrEmpty(key)) return false;
 
-            switch (key.ToLowerInvariant())
+            string lower = key.ToLowerInvariant();
+
+            switch (lower)
             {
                 case "connection":
                 case "content-length":
@@ -482,9 +484,21 @@
                 case "transfer-encoding":
                 case "upgrade":
                     return false;
-                default:
-                    return true;
             }
+
+            if (endpoint != null)
+            {
+                if (endpoint.BlockedHeaders != null
+                    && endpoint.BlockedHeaders.Any(h => !String.IsNullOrEmpty(h) && h.Equals(lower, StringComparison.OrdinalIgnoreCase)))
+                    return false;
+
+                if (endpoint.UseGlobalBlockedHeaders
+                    && _Settings.BlockedHeaders != null
+                    && _Settings.BlockedHeaders.Any(h => !String.IsNullOrEmpty(h) && h.Equals(lower, StringComparison.OrdinalIgnoreCase)))
+                    return false;
+            }
+
+            return true;
         }
 
         private bool TryExtractChunkedPayload(byte[] data, out byte[] payload)
@@ -823,7 +837,7 @@
                         {
                             foreach (string key in ctx.Request.Headers.Keys)
                             {
-                                if (!ShouldForwardRequestHeader(key))
+                                if (!ShouldForwardRequestHeader(key, endpoint.Endpoint))
                                     continue;
 
                                 if (!req.Headers.AllKeys.Contains(key))

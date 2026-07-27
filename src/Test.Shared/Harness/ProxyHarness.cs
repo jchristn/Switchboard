@@ -166,6 +166,10 @@ namespace Test.Shared.Harness
             settings.Management.Enable = _EnableManagement;
             settings.RequestHistory.Enable = false;
 
+            // A custom global blocked header used to verify that configured blocked headers are
+            // stripped before forwarding to origins (the origin echoes X-* headers it receives).
+            settings.BlockedHeaders.Add("x-blocked-secret");
+
             settings.OpenApi = new OpenApiDocumentSettings
             {
                 Enable = true,
