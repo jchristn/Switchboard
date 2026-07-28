@@ -1,0 +1,17 @@
+<Project>
+
+  <!--
+    CVE-2025-6965 (GHSA-2m69-gcr7-jv3q) flags SQLitePCLRaw.lib.e_sqlite3 (the native SQLite bundle,
+    SQLite < 3.50.2), a transitive dependency of Microsoft.Data.Sqlite used by the SQLite database
+    driver. Every released SQLitePCLRaw version (through 2.1.11, the newest) is flagged and no patched
+    bundle has shipped yet. The flaw requires attacker-controlled aggregate SQL (more aggregate terms
+    than columns); Switchboard only ever issues the parameterized CRUD statements it constructs
+    itself, so it is not reachable. Suppress the NuGet audit warning solution-wide (it otherwise
+    surfaces on every project that transitively references the driver) until an upstream bundle ships
+    SQLite >= 3.50.2, then remove this suppression and update the package.
+  -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+  </ItemGroup>
+
+</Project>
