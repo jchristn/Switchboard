@@ -58,12 +58,12 @@ The built files will be in `dashboard/dist/` and can be served by any static fil
 
 1. Open the dashboard in your browser
 2. Enter your Switchboard server URL (e.g., `http://localhost:8000`)
-3. Enter your admin API token (configured in `sb.json` as `Management.AdminToken`, default: `switchboardadmin`)
+3. Enter your admin API token (configured in `sb.json` as `Management.AdminToken`, default: `sbadmin`)
 4. Click **Connect**
 
 **Docker Default Credentials:**
 - Server URL: `http://localhost:8000`
-- Admin Token: `switchboardadmin` (from `sb.sqlite.json`)
+- Admin Token: `sbadmin` (from `sb.sqlite.json`)
 
 ## Dashboard Sections
 

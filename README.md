@@ -532,7 +532,7 @@ Example `sb.sqlite.json` (recommended starting point):
   "Management": {
     "Enable": true,
     "BasePath": "/_sb/v1.0/",
-    "AdminToken": "switchboardadmin",
+    "AdminToken": "sbadmin",
     "RequireAuthentication": true
   },
   "RequestHistory": {
@@ -550,7 +550,7 @@ Example `sb.sqlite.json` (recommended starting point):
 
 1. Open `http://localhost:3000` in your browser
 2. Enter the server URL: `http://localhost:8000`
-3. Enter the admin token from your config (default: `switchboardadmin`)
+3. Enter the admin token from your config (default: `sbadmin`)
 4. Click **Connect**
 
 #### Volume Mounts

@@ -246,8 +246,8 @@
             Console.WriteLine("  IMPORTANT: This bearer token will NOT be displayed again.");
             Console.WriteLine("  Please copy and store it securely now.");
             Console.WriteLine();
-            Console.WriteLine("  This credential is marked as read-only and cannot be modified or");
-            Console.WriteLine("  deleted through the API or dashboard.");
+            Console.WriteLine("  This credential has full administrative access. Store it securely,");
+            Console.WriteLine("  and rotate or replace it before running in production.");
             Console.WriteLine();
             Console.WriteLine("================================================================================");
             Console.WriteLine();

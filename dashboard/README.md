@@ -59,19 +59,23 @@ and the `Icons` namespace. Build page-level views out of these rather than one-o
   z-index ramp are CSS variables in `index.css`, with a `[data-theme="dark"]` override block.
   Components reference the semantic aliases (`--color-surface`, `--color-text-muted`,
   `--color-accent`, …). Layout uses logical properties (`margin-inline`, `inset-inline-start`) so
-  the Arabic RTL locale lays out correctly.
+  the Farsi (Persian) RTL locale lays out correctly.
 - **Every string is a key.** No hardcoded UI text — components call `t('...')` and format numbers,
   dates, durations, and bytes through `useFormatters()` so output follows the active locale. Add
   new strings to `src/i18n/locales/en/translation.json`; the other catalogs mirror its key set.
-- **One client.** All HTTP goes through `ApiClient` in `utils/api.js`. A 401 anywhere dispatches
-  `auth:unauthorized`, which drops the session.
+- **One client.** All HTTP goes through `ApiClient` in `utils/api.js`. A genuine authentication 401
+  dispatches `auth:unauthorized`, which drops the session; an authorization failure
+  (`403`/`AuthorizationFailed`) is surfaced to the caller instead, so a read-only user is not logged
+  out for attempting a write.
 - **Restart-required vs. live.** The settings editor tags each field the server reports in
   `restartRequiredSettings`; everything else applies on save. The restart control exits the server
   process and waits for it to come back (the container's restart policy brings it up).
 
 ## Internationalization
 
-English, German, Japanese, and Arabic ship complete. The language selector is on the login screen
-and in the topbar; the choice persists and sets `document.documentElement` `lang`/`dir`. Append
+Nine languages ship complete: English, Spanish, German, French, Portuguese, Mandarin (Simplified),
+Cantonese (Traditional), Japanese, and Farsi (Persian, right-to-left). The language selector is on
+the login screen and in the topbar; the choice persists and sets `document.documentElement`
+`lang`/`dir`. Append
 `?lang=cimode` to see raw keys, or `?lang=de` to force a locale. To add a language, add an entry to
 `src/i18n/localeRegistry.js` and a catalog under `src/i18n/locales/<code>/`.

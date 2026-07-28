@@ -32,7 +32,7 @@ binary, or as these containers.
 - Request history with retention, plus an OpenAPI document and Swagger UI
 - A management API under `/_sb/v1.0` and a full web dashboard (overview with an activity chart,
   settings editing with restart-required flags, a setup wizard, an API explorer, and
-  internationalization in English, German, Japanese, and Arabic)
+  internationalization in nine languages including right-to-left Farsi)
 - SQLite, MySQL, PostgreSQL, or SQL Server for configuration storage
 
 ## Quick start

@@ -64,7 +64,10 @@ curl -H "Authorization: Bearer sbadmin" http://localhost:8000/_sb/v1.0/health
 On first startup, Switchboard creates a default administrator:
 - **Username**: `admin`
 - **Bearer Token**: `sbadmin` (displayed once on first startup)
-- **Read-Only**: The default credential cannot be modified or deleted
+- **Access**: Full administrator — can create, update, and delete resources. Rotate or replace it before running in production.
+
+Write operations (POST/PUT/DELETE) require a credential that is not read-only. A read-only credential
+may read but receives `403 Forbidden` (`AuthorizationFailed`) on a write; the session is not ended.
 
 ---
 
@@ -148,7 +151,7 @@ GET /_sb/v1.0/origins?skip=10&take=25
 | Error Code | HTTP Status | Description |
 |------------|-------------|-------------|
 | `AuthenticationFailed` | 401 | Authentication material was not accepted |
-| `AuthorizationFailed` | 401 | Authenticated but not authorized |
+| `AuthorizationFailed` | 403 | Authenticated but lacks permission (e.g. a read-only credential attempting a write) |
 | `BadGateway` | 502 | No origin servers available |
 | `BadRequest` | 400 | Invalid request (URL, query, or body) |
 | `Conflict` | 409 | Operation would create a conflict |
@@ -184,7 +187,7 @@ Returns the health status of the Switchboard instance.
 {
   "status": "healthy",
   "timestamp": "2024-01-15T10:30:00.000Z",
-  "version": "4.0.0"
+  "version": "4.1.0"
 }
 ```
 
@@ -732,9 +735,9 @@ GET /_sb/v1.0/history/failed
 GET /_sb/v1.0/history/{id}
 ```
 
-The `{id}` parameter accepts either:
-- Numeric ID (e.g., `123`)
-- GUID (e.g., `550e8400-e29b-41d4-a716-446655440000`)
+The `{id}` is the request's `requestId` (a GUID), as returned by the list endpoints
+(e.g., `550e8400-e29b-41d4-a716-446655440000`). A numeric primary key is also accepted but is not
+populated by the default store, so use the `requestId`.
 
 **Response:** [RequestHistory](#requesthistory)
 
@@ -1046,7 +1049,7 @@ Transforms request URLs before forwarding to origin servers.
 | `id` | integer | No | Auto-generated | Primary key |
 | `endpointIdentifier` | string | Yes | - | Parent endpoint identifier |
 | `endpointGUID` | string (GUID) | No | - | Parent endpoint GUID |
-| `httpMethod` | string | Yes | `"GET"` | HTTP method this rewrite applies to |
+| `httpMethod` | string | No | `""` | HTTP method this rewrite applies to; an empty value applies to any method |
 | `sourcePattern` | string | Yes | - | URL pattern to match |
 | `targetPattern` | string | Yes | - | URL pattern to rewrite to |
 | `sortOrder` | integer | No | 0 | Priority (lower = first) |
