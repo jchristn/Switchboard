@@ -1245,7 +1245,7 @@ namespace Switchboard.Core.Services
 
                 if (!String.IsNullOrEmpty(startStr) && !String.IsNullOrEmpty(endStr))
                 {
-                    if (DateTime.TryParse(startStr, out DateTime start) && DateTime.TryParse(endStr, out DateTime end))
+                    if (TryParseUtc(startStr, out DateTime start) && TryParseUtc(endStr, out DateTime end))
                     {
                         history = await _Client.RequestHistory.GetByTimeRangeAsync(start, end, skip, take, ctx.Token).ConfigureAwait(false);
                     }
@@ -1444,12 +1444,11 @@ namespace Switchboard.Core.Services
                 int intervalMinutes = Int32.TryParse(ctx.Request.Query.Elements["intervalMinutes"], out int im) ? im : 60;
                 if (intervalMinutes < 1) intervalMinutes = 1;
 
-                // The request history store compares and returns timestamps in system-local time, so
-                // the UTC window bounds are converted to local time for the query. BuildTimeSeries
-                // normalizes each returned timestamp back to UTC before bucketing.
+                // Timestamps are materialized from the store as UTC, so query and bucket entirely in
+                // UTC — no local-time conversion, which is fragile across host/container time zones.
                 List<Models.RequestHistory> rows =
                     await _Client.RequestHistory.GetByTimeRangeAsync(
-                        start.ToLocalTime(), end.ToLocalTime(), 0, null, ctx.Token).ConfigureAwait(false);
+                        start, end, 0, null, ctx.Token).ConfigureAwait(false);
 
                 List<TimeSeriesBucket> buckets = BuildTimeSeries(rows, start, end, intervalMinutes);
 
@@ -1503,10 +1502,11 @@ namespace Switchboard.Core.Services
             {
                 foreach (Models.RequestHistory row in rows)
                 {
-                    // Timestamps materialized from the store may carry Local kind; normalize to UTC so
-                    // they align with the UTC window bounds.
+                    // Normalize each timestamp to UTC regardless of the kind materialized from the
+                    // store, so it aligns with the UTC window bounds.
                     DateTime ts = row.TimestampUtc;
                     if (ts.Kind == DateTimeKind.Local) ts = ts.ToUniversalTime();
+                    else if (ts.Kind == DateTimeKind.Unspecified) ts = DateTime.SpecifyKind(ts, DateTimeKind.Utc);
 
                     if (ts < start || ts >= end) continue;
 

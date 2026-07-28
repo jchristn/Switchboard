@@ -1048,7 +1048,10 @@ namespace Switchboard.Core.Database.Sqlite
                 RequestHistory rh = new RequestHistory
                 {
                     RequestId = Guid.Parse(reader.GetString(reader.GetOrdinal("request_id"))),
-                    TimestampUtc = DateTime.Parse(reader.GetString(reader.GetOrdinal("timestamp_utc"))),
+                    TimestampUtc = DateTime.Parse(
+                        reader.GetString(reader.GetOrdinal("timestamp_utc")),
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
                     HttpMethod = reader.GetString(reader.GetOrdinal("http_method")),
                     RequestPath = reader.GetString(reader.GetOrdinal("request_path")),
                     StatusCode = reader.GetInt32(reader.GetOrdinal("status_code")),
