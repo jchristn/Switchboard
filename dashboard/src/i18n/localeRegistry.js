@@ -8,9 +8,14 @@ export const FALLBACK_LOCALE = 'en';
 
 export const LOCALES = [
   { code: 'en', dir: 'ltr', native: 'English', english: 'English' },
+  { code: 'es', dir: 'ltr', native: 'Español', english: 'Spanish' },
   { code: 'de', dir: 'ltr', native: 'Deutsch', english: 'German' },
+  { code: 'fr', dir: 'ltr', native: 'Français', english: 'French' },
+  { code: 'pt', dir: 'ltr', native: 'Português', english: 'Portuguese' },
+  { code: 'zh', dir: 'ltr', native: '中文（普通话）', english: 'Mandarin Chinese' },
+  { code: 'yue', dir: 'ltr', native: '中文（廣東話）', english: 'Cantonese Chinese' },
   { code: 'ja', dir: 'ltr', native: '日本語', english: 'Japanese' },
-  { code: 'ar', dir: 'rtl', native: 'العربية', english: 'Arabic' },
+  { code: 'fa', dir: 'rtl', native: 'فارسی', english: 'Persian' },
 ];
 
 export const SUPPORTED_CODES = LOCALES.map((l) => l.code);

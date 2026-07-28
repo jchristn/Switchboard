@@ -26,9 +26,6 @@ function Login() {
 
   return (
     <div className="login-container">
-      <div className="login-lang">
-        <LanguageSelector compact />
-      </div>
       <div className="login-card">
         <div className="login-header">
           <img src="/logo.png" alt={t('app.name')} className="login-logo" />
@@ -96,6 +93,10 @@ function Login() {
 
         <div className="login-footer">
           <p>{t('login.subtitle')}</p>
+        </div>
+
+        <div className="login-language">
+          <LanguageSelector compact />
         </div>
       </div>
     </div>

@@ -100,8 +100,20 @@ function EndpointsView() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.getEndpoints({ search: search || undefined });
-      setEndpoints(Array.isArray(data) ? data : []);
+      // Endpoints carry no routes of their own; fetch routes too so the master table can show the
+      // method + URL pattern(s) for each endpoint at a glance.
+      const [data, routesData] = await Promise.all([
+        apiClient.getEndpoints({ search: search || undefined }),
+        apiClient.getRoutes(),
+      ]);
+      const eps = Array.isArray(data) ? data : [];
+      const allRoutes = Array.isArray(routesData) ? routesData : [];
+      const byEndpoint = new Map();
+      for (const r of allRoutes) {
+        if (!byEndpoint.has(r.endpointIdentifier)) byEndpoint.set(r.endpointIdentifier, []);
+        byEndpoint.get(r.endpointIdentifier).push(r);
+      }
+      setEndpoints(eps.map((e) => ({ ...e, routes: byEndpoint.get(e.identifier) || [] })));
     } catch (err) {
       setError(err.message || t('endpoints.loadError'));
     } finally {
@@ -360,6 +372,27 @@ function EndpointsView() {
       render: (row) => <CopyableId value={row.identifier} />,
     },
     { key: 'name', label: t('endpoints.name'), sortable: true, filterable: true },
+    {
+      key: 'routes',
+      label: t('endpoints.tabRoutes'),
+      render: (row) => {
+        const rowRoutes = row.routes || [];
+        if (rowRoutes.length === 0) return <span className="ep-muted">{t('common.none')}</span>;
+        return (
+          <div className="ep-routes-cell">
+            {rowRoutes.slice(0, 4).map((r) => (
+              <div className="ep-route-line" key={r.id}>
+                <MethodBadge method={r.httpMethod} />
+                <code className="ep-code">{r.urlPattern}</code>
+              </div>
+            ))}
+            {rowRoutes.length > 4 && (
+              <span className="ep-muted">+{rowRoutes.length - 4}</span>
+            )}
+          </div>
+        );
+      },
+    },
     {
       key: 'loadBalancingMode',
       label: t('endpoints.loadBalancing'),
