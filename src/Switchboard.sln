@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Xunit", "Test.Xunit\Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Nunit", "Test.Nunit\Test.Nunit.csproj", "{FE61B84A-7EFF-4541-B73F-E249283214F3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApplication", "SampleApplication\SampleApplication.csproj", "{04D1001F-F7FE-4872-BF7B-7B906E50804A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{FE61B84A-7EFF-4541-B73F-E249283214F3}.Release|x64.Build.0 = Release|Any CPU
 		{FE61B84A-7EFF-4541-B73F-E249283214F3}.Release|x86.ActiveCfg = Release|Any CPU
 		{FE61B84A-7EFF-4541-B73F-E249283214F3}.Release|x86.Build.0 = Release|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Debug|x64.Build.0 = Debug|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Debug|x86.Build.0 = Debug|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Release|x64.ActiveCfg = Release|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Release|x64.Build.0 = Release|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Release|x86.ActiveCfg = Release|Any CPU
+		{04D1001F-F7FE-4872-BF7B-7B906E50804A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

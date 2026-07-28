@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SampleApplication</name>
+    </assembly>
+    <members>
+        <member name="T:SampleApplication.Program">
+            <summary>
+            Sample application that runs the Switchboard daemon in-process (no Docker) as a reverse proxy
+            and API gateway in front of three WatsonWebserver origin servers. Several routes are load
+            balanced across different subsets of the origins so the routing and load-balancing behavior is
+            observable from a simple HTTP client such as curl.
+            </summary>
+        </member>
+        <member name="P:SampleApplication.Program.DefaultProxyPort">
+            <summary>
+            Default TCP port the Switchboard proxy listens on when no override is supplied.
+            </summary>
+        </member>
+        <member name="M:SampleApplication.Program.Main(System.String[])">
+            <summary>
+            Entry point. Starts the three origins and the Switchboard daemon, waits for the origins to
+            become healthy, then runs until Ctrl+C.
+            </summary>
+            <param name="args">Optional command-line arguments. The first argument, when present and a valid port, overrides the proxy port (default is <see cref="P:SampleApplication.Program.DefaultProxyPort"/>).</param>
+            <returns>A task that completes when the application shuts down.</returns>
+        </member>
+        <member name="T:SampleApplication.SampleOriginServer">
+            <summary>
+            A single backend origin server hosted with WatsonWebserver. Every response identifies the node
+            that served it, so the effect of Switchboard's load balancing and per-route origin sets is
+            visible to the caller. Each origin answers the same set of routes; Switchboard is responsible
+            for deciding which origins are eligible for a given route.
+            </summary>
+        </member>
+        <member name="P:SampleApplication.SampleOriginServer.NodeNumber">
+            <summary>
+            Node number this origin identifies as in its responses. Minimum is 1.
+            </summary>
+        </member>
+        <member name="P:SampleApplication.SampleOriginServer.Port">
+            <summary>
+            TCP port this origin listens on (bound to localhost). Range is 1 to 65535.
+            </summary>
+        </member>
+        <member name="M:SampleApplication.SampleOriginServer.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Initialize (but do not start) an origin server for the given node number and port.
+            </summary>
+            <param name="nodeNumber">Node number echoed in responses. Minimum is 1.</param>
+            <param name="port">TCP port to bind on localhost. Range is 1 to 65535.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when <paramref name="nodeNumber"/> is less than 1, or <paramref name="port"/> is outside 1 to 65535.</exception>
+        </member>
+        <member name="M:SampleApplication.SampleOriginServer.Start">
+            <summary>
+            Start listening for requests on the configured port.
+            </summary>
+        </member>
+        <member name="M:SampleApplication.SampleOriginServer.Dispose">
+            <summary>
+            Stop listening and release the underlying webserver.
+            </summary>
+        </member>
+    </members>
+</doc>

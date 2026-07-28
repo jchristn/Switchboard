@@ -610,16 +610,31 @@
 
         private async Task GetRootRoute(HttpContextBase ctx)
         {
+            // A configured API endpoint for GET / takes precedence over the built-in homepage, so the
+            // root path can be proxied like any other route; the homepage is only a fallback.
+            if (FindApiEndpoint(ctx) != null)
+            {
+                await DefaultRoute(ctx).ConfigureAwait(false);
+                return;
+            }
+
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = Constants.HtmlContentType;
-            await ctx.Response.Send(Constants.HtmlHomepage);
+            await ctx.Response.Send(Constants.HtmlHomepage).ConfigureAwait(false);
         }
 
         private async Task HeadRootRoute(HttpContextBase ctx)
         {
+            // A configured API endpoint for HEAD / takes precedence over the built-in homepage.
+            if (FindApiEndpoint(ctx) != null)
+            {
+                await DefaultRoute(ctx).ConfigureAwait(false);
+                return;
+            }
+
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = Constants.TextContentType;
-            await ctx.Response.Send();
+            await ctx.Response.Send().ConfigureAwait(false);
         }
 
         private async Task GetFaviconRoute(HttpContextBase ctx)
