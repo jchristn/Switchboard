@@ -220,7 +220,9 @@ function HistoryView() {
   // ---- Row actions ----
   const openDetail = async (row, mode) => {
     try {
-      const id = row.id ?? row.requestId;
+      // Request history is keyed by RequestId (a GUID); the numeric Id is not populated, so it must
+      // not take precedence or every lookup would resolve to 0.
+      const id = row.requestId ?? row.id;
       const full = await apiClient.getHistoryDetail(id);
       const record = full || row;
       if (mode === 'json') setJsonRecord(record);
@@ -234,7 +236,7 @@ function HistoryView() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await apiClient.deleteHistory(deleteTarget.id ?? deleteTarget.requestId);
+      await apiClient.deleteHistory(deleteTarget.requestId ?? deleteTarget.id);
       showSuccess(t('history.deleted'));
       setDeleteTarget(null);
       refreshAll();
@@ -455,7 +457,7 @@ function HistoryView() {
       <DataTable
         columns={columns}
         rows={rows}
-        rowKey={(r) => r.id ?? r.requestId}
+        rowKey={(r) => r.requestId ?? r.id}
         loading={loading}
         error={error}
         onRetry={loadRows}
