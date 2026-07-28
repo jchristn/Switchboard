@@ -1,7 +1,7 @@
 @echo off
 if "%~1"=="" (
     echo Usage: build-dashboard.bat [version-tag]
-    echo Example: build-dashboard.bat v4.0.10
+    echo Example: build-dashboard.bat v4.1.0
     exit /b 1
 )
 
@@ -21,15 +21,8 @@ if errorlevel 1 (
 )
 
 rem The build context is dashboard/; the Dockerfile installs dependencies and builds the Vite app.
-rem dashboard/.dockerignore keeps the uploaded context small (no node_modules or dist).
-docker buildx build ^
-    --builder "%DOCKER_BUILD_CLOUD_BUILDER%" ^
-    --platform linux/amd64,linux/arm64/v8 ^
-    -t jchristn77/switchboard-ui:%VERSION_TAG% ^
-    -t jchristn77/switchboard-ui:latest ^
-    -f "%~dp0dashboard\Dockerfile" ^
-    --push ^
-    "%~dp0dashboard"
+rem dashboard/.dockerignore keeps the uploaded context small. Kept on one line to avoid caret-continuation issues.
+docker buildx build --builder "%DOCKER_BUILD_CLOUD_BUILDER%" --platform linux/amd64,linux/arm64/v8 -t jchristn77/switchboard-ui:%VERSION_TAG% -t jchristn77/switchboard-ui:latest -f "%~dp0dashboard\Dockerfile" --push "%~dp0dashboard"
 if errorlevel 1 (
     echo Switchboard Dashboard build failed.
     exit /b %errorlevel%

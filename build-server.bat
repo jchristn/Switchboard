@@ -1,7 +1,7 @@
 @echo off
 if "%~1"=="" (
     echo Usage: build-server.bat [version-tag]
-    echo Example: build-server.bat v4.0.10
+    echo Example: build-server.bat v4.1.0
     exit /b 1
 )
 
@@ -21,15 +21,8 @@ if errorlevel 1 (
 )
 
 rem The build context is src/; the Dockerfile copies the solution and publishes Switchboard.Server.
-rem src/.dockerignore keeps the uploaded context small.
-docker buildx build ^
-    --builder "%DOCKER_BUILD_CLOUD_BUILDER%" ^
-    --platform linux/amd64,linux/arm64/v8 ^
-    -t jchristn77/switchboard:%VERSION_TAG% ^
-    -t jchristn77/switchboard:latest ^
-    -f "%~dp0src\Switchboard.Server\Dockerfile" ^
-    --push ^
-    "%~dp0src"
+rem src/.dockerignore keeps the uploaded context small. Kept on one line to avoid caret-continuation issues.
+docker buildx build --builder "%DOCKER_BUILD_CLOUD_BUILDER%" --platform linux/amd64,linux/arm64/v8 -t jchristn77/switchboard:%VERSION_TAG% -t jchristn77/switchboard:latest -f "%~dp0src\Switchboard.Server\Dockerfile" --push "%~dp0src"
 if errorlevel 1 (
     echo Switchboard Server build failed.
     exit /b %errorlevel%

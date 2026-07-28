@@ -211,10 +211,10 @@ Pull from Docker Hub:
 
 ```bash
 # Switchboard Server
-docker pull jchristn77/switchboard:v4.0.3
+docker pull jchristn77/switchboard:v4.1.0
 
 # Switchboard Dashboard (Web UI)
-docker pull jchristn77/switchboard-ui:v4.0.3
+docker pull jchristn77/switchboard-ui:v4.1.0
 ```
 
 Docker images:
@@ -432,7 +432,7 @@ dotnet Switchboard.Server.dll
  (_-< V  V / |  _/ _| ' \| '_ \/ _ \/ _` | '_/ _` |
  /__/\_/\_/|_|\__\__|_||_|_.__/\___/\__,_|_| \__,_|
 
-Switchboard Server v4.0.x
+Switchboard Server v4.1.x
 
 Loading from settings file ./sb.json
 [INFO] Webserver started on http://localhost:8000
@@ -558,7 +558,7 @@ docker run -d \
   -v $(pwd)/sb.json:/app/sb.json \
   -v $(pwd)/logs:/app/logs \
   -v $(pwd)/data:/app/data \
-  jchristn77/switchboard:v4.0.3
+  jchristn77/switchboard:v4.1.0
 ```
 
 #### Building the Dashboard Image
@@ -847,11 +847,40 @@ curl -X POST -H "Authorization: Bearer your-token" \
 curl -H "Authorization: Bearer your-token" http://localhost:8000/_sb/v1.0/health
 ```
 
+The management API also exposes endpoints that back the dashboard's overview, settings, and
+operations surfaces:
+
+```bash
+# Bucketed request activity for the activity chart
+curl -H "Authorization: Bearer your-token" \
+  "http://localhost:8000/_sb/v1.0/history/timeseries?intervalMinutes=60"
+
+# Read the full server configuration (secrets masked) plus restart-required metadata
+curl -H "Authorization: Bearer your-token" http://localhost:8000/_sb/v1.0/settings
+
+# Update configuration (runtime-editable fields apply immediately; others need a restart)
+curl -X PUT -H "Authorization: Bearer your-token" -H "Content-Type: application/json" \
+  -d @settings.json http://localhost:8000/_sb/v1.0/settings
+
+# Validate the current configuration (or a proposed one in the request body)
+curl -X POST -H "Authorization: Bearer your-token" http://localhost:8000/_sb/v1.0/config/validate
+
+# Gracefully restart the server (returns 202, then exits so a supervisor can restart it)
+curl -X POST -H "Authorization: Bearer your-token" http://localhost:8000/_sb/v1.0/system/restart
+```
+
 See [docs/REST_API.md](docs/REST_API.md) for complete API reference.
 
 ### Running the Dashboard
 
-The web dashboard provides a user-friendly interface for managing Switchboard.
+The web dashboard is the primary way to operate a Switchboard server. It provides an overview with
+KPI cards and a request-activity chart, a request-history inspector, full CRUD for origins,
+endpoints, routes, users, credentials, blocked headers, and URL rewrites, a form-based settings
+editor that flags which changes need a restart, a one-click server restart, an OpenAPI-driven API
+Explorer, and a first-run setup wizard. It ships in English, German, Japanese, and Arabic (with
+right-to-left layout) and supports light and dark themes. Connect with an admin bearer token
+(`sbadmin` on a fresh install). See [dashboard/README.md](dashboard/README.md) for architecture and
+conventions.
 
 #### Development Mode
 

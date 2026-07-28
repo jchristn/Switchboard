@@ -784,6 +784,86 @@ GET /_sb/v1.0/history/stats
 }
 ```
 
+#### Get Activity Time Series
+
+Bucketed request counts over a window, used by the dashboard's activity chart. Empty buckets are
+zero-filled so the series is always fixed-width.
+
+```
+GET /_sb/v1.0/history/timeseries?start={iso8601}&end={iso8601}&intervalMinutes=60
+```
+
+Query parameters are optional: `end` defaults to now, `start` to 24 hours before `end`, and
+`intervalMinutes` to 60 (minimum 1).
+
+**Response:**
+
+```json
+{
+  "startUtc": "2026-07-27T00:00:00.0000000Z",
+  "endUtc": "2026-07-27T02:00:00.0000000Z",
+  "intervalMinutes": 60,
+  "buckets": [
+    { "bucketStartUtc": "2026-07-27T00:00:00Z", "total": 3, "success": 2, "failure": 1, "avgDurationMs": 200 }
+  ]
+}
+```
+
+---
+
+## System &amp; Settings
+
+### Settings
+
+#### Get Settings
+
+Returns the full server configuration with secrets (`database.password`, `management.adminToken`)
+masked as `"********"`, plus two metadata arrays: `restartRequiredSettings` (dotted paths that only
+take effect after a restart) and `runtimeEditableSettings` (paths that apply immediately).
+
+```
+GET /_sb/v1.0/settings
+```
+
+#### Update Settings
+
+Accepts the full settings tree. Runtime-editable fields (logging severity, request-history capture,
+blocked headers, management options) apply immediately; restart-required fields are persisted but
+take effect only after a restart. A masked secret value (`"********"`) is treated as "unchanged".
+
+```
+PUT /_sb/v1.0/settings
+```
+
+### Configuration Validation
+
+Validates the current configuration, or a proposed one supplied in the request body
+(`{ "endpoints": [...], "origins": [...], "routes": [...], "mappings": [...] }`).
+
+```
+POST /_sb/v1.0/config/validate
+```
+
+**Response:**
+
+```json
+{
+  "valid": false,
+  "errors": [ { "code": "OriginNotFound", "message": "...", "endpoint": "e1", "origin": "missing" } ],
+  "warnings": [ { "code": "DuplicateOriginAddress", "message": "...", "address": "localhost:8001", "origins": ["a", "b"] } ]
+}
+```
+
+### Restart Server
+
+Gracefully restarts the server: returns `202 Accepted`, then the process exits so a supervisor
+(for example, Docker's `restart: unless-stopped`) brings it back. Requires an admin (non-read-only)
+credential.
+
+```
+POST /_sb/v1.0/system/restart
+```
+
 ---
 
 ## Data Models

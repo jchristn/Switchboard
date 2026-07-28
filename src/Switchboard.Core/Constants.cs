@@ -12,7 +12,7 @@ namespace Switchboard.Core
         /// <summary>
         /// Current software version.
         /// </summary>
-        public const string SoftwareVersion = "4.0.9";
+        public const string SoftwareVersion = "4.1.0";
 
         #endregion
 

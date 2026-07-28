@@ -1,0 +1,1203 @@
+{
+  "info": {
+    "name": "Switchboard Management API",
+    "description": "Management API for Switchboard (v4.1.0). Set the `baseUrl` and `token` collection variables. All requests use bearer auth inherited from the collection. Path variables like {{guid}} / {{id}} / {{userGuid}} are collection variables you can fill in.",
+    "version": "4.1.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/_sb/v1.0"
+    },
+    {
+      "key": "token",
+      "value": "sbadmin"
+    },
+    {
+      "key": "guid",
+      "value": ""
+    },
+    {
+      "key": "id",
+      "value": ""
+    },
+    {
+      "key": "userGuid",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Origins",
+      "item": [
+        {
+          "name": "List origins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/origins?skip=0&take=25",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "origins"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "take",
+                  "value": "25"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create origin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/origins",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "origins"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"api-1\",\n  \"name\": \"API Server 1\",\n  \"hostname\": \"api.example.com\",\n  \"port\": 443,\n  \"ssl\": true,\n  \"healthCheckUrl\": \"/health\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get origin",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/origins/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "origins",
+                "{{guid}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update origin",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/origins/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "origins",
+                "{{guid}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"api-1\",\n  \"name\": \"API Server 1\",\n  \"hostname\": \"api.example.com\",\n  \"port\": 443,\n  \"ssl\": true,\n  \"healthCheckUrl\": \"/health\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete origin",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/origins/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "origins",
+                "{{guid}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Endpoints",
+      "item": [
+        {
+          "name": "List endpoints",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/endpoints",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "endpoints"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create endpoint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/endpoints",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "endpoints"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"user-api\",\n  \"name\": \"User API\",\n  \"loadBalancingMode\": \"RoundRobin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/endpoints/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "endpoints",
+                "{{guid}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update endpoint",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/endpoints/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "endpoints",
+                "{{guid}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"user-api\",\n  \"name\": \"User API\",\n  \"loadBalancingMode\": \"RoundRobin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete endpoint",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/endpoints/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "endpoints",
+                "{{guid}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Routes",
+      "item": [
+        {
+          "name": "List routes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create route",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpointIdentifier\": \"user-api\",\n  \"httpMethod\": \"GET\",\n  \"urlPattern\": \"/users/{id}\",\n  \"requiresAuthentication\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get route",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/routes/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes",
+                "{{id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update route",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes",
+                "{{id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpointIdentifier\": \"user-api\",\n  \"httpMethod\": \"GET\",\n  \"urlPattern\": \"/users/{id}\",\n  \"requiresAuthentication\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete route",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/routes/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes",
+                "{{id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Origin Mappings",
+      "item": [
+        {
+          "name": "List mappings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mappings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mappings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create mapping",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mappings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mappings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpointIdentifier\": \"user-api\",\n  \"originIdentifier\": \"api-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get mapping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mappings/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mappings",
+                "{{id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete mapping",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mappings/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mappings",
+                "{{id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "URL Rewrites",
+      "item": [
+        {
+          "name": "List rewrites",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rewrites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rewrites"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create rewrite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rewrites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rewrites"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpointIdentifier\": \"user-api\",\n  \"httpMethod\": \"GET\",\n  \"sourcePattern\": \"/api/v2/users/{id}\",\n  \"targetPattern\": \"/v1/users/{id}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get rewrite",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rewrites/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rewrites",
+                "{{id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update rewrite",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rewrites/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rewrites",
+                "{{id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpointIdentifier\": \"user-api\",\n  \"httpMethod\": \"GET\",\n  \"sourcePattern\": \"/api/v2/users/{id}\",\n  \"targetPattern\": \"/v1/users/{id}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete rewrite",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rewrites/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rewrites",
+                "{{id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blocked Headers",
+      "item": [
+        {
+          "name": "List blocked headers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/headers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "headers"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create blocked header",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/headers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "headers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"headerName\": \"x-internal-token\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete blocked header",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/headers/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "headers",
+                "{{id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"operator\",\n  \"email\": \"op@example.com\",\n  \"active\": true,\n  \"isAdmin\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{guid}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{guid}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"operator\",\n  \"email\": \"op@example.com\",\n  \"active\": true,\n  \"isAdmin\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete user",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{guid}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Credentials",
+      "item": [
+        {
+          "name": "List credentials",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credentials",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credentials"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create credential",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/credentials",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credentials"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userGuid\": \"{{userGuid}}\",\n  \"name\": \"CI token\",\n  \"active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get credential",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credentials/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credentials",
+                "{{guid}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update credential",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/credentials/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credentials",
+                "{{guid}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userGuid\": \"{{userGuid}}\",\n  \"name\": \"CI token\",\n  \"active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Regenerate bearer token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credentials/{{guid}}/regenerate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credentials",
+                "{{guid}}",
+                "regenerate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete credential",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credentials/{{guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credentials",
+                "{{guid}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Request History",
+      "item": [
+        {
+          "name": "List history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/history?skip=0&take=25",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "take",
+                  "value": "25"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Recent history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/history/recent?count=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history",
+                "recent"
+              ],
+              "query": [
+                {
+                  "key": "count",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Failed history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/history/failed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history",
+                "failed"
+              ]
+            }
+          }
+        },
+        {
+          "name": "History statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/history/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history",
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "History time series",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/history/timeseries?intervalMinutes=60",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history",
+                "timeseries"
+              ],
+              "query": [
+                {
+                  "key": "intervalMinutes",
+                  "value": "60"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get history entry",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/history/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history",
+                "{{id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete history entry",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/history/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history",
+                "{{id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Run history cleanup",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/history/cleanup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history",
+                "cleanup"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"_note\": \"PUT the object returned by GET /settings with your edits; masked secrets stay unchanged.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Current user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Validate configuration",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/config/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "config",
+                "validate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Restart server",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/system/restart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "system",
+                "restart"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

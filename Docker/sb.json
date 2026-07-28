@@ -33,7 +33,7 @@
     "DocumentPath": "/openapi.json",
     "SwaggerUiPath": "/swagger",
     "Title": "Switchboard API",
-    "Version": "4.0.9"
+    "Version": "4.1.0"
   },
   "Endpoints": [],
   "Origins": [],

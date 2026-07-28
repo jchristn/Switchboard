@@ -1,6 +1,6 @@
 {
   "name": "switchboard-dashboard",
-  "version": "2.0.0",
+  "version": "4.1.0",
   "description": "Switchboard Management Dashboard",
   "type": "module",
   "scripts": {
