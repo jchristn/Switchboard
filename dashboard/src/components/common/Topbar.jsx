@@ -18,8 +18,9 @@ function Topbar() {
   const [health, setHealth] = useState('checking');
 
   const meta = metaForPath(location.pathname);
+  // Keep the browser tab title in sync with the active page; the page title/subtitle themselves are
+  // rendered in the page workspace (PageHeader), so they are intentionally not repeated in the topbar.
   const title = meta?.titleKey ? t(meta.titleKey) : t('app.name');
-  const subtitle = meta?.subtitleKey ? t(meta.subtitleKey) : '';
 
   useEffect(() => {
     document.title = `${title} · ${t('app.name')}`;
@@ -63,10 +64,6 @@ function Topbar() {
         >
           <Icons.Menu size={20} />
         </button>
-        <div className="sb-topbar-titles">
-          <h1 className="sb-topbar-title">{title}</h1>
-          {subtitle && <span className="sb-topbar-subtitle">{subtitle}</span>}
-        </div>
       </div>
 
       <div className="sb-topbar-right">
