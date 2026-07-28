@@ -6,7 +6,11 @@ v4.1.0
 
 ### Changes in v4.1.0
 
-- Reworked the management dashboard end to end: grouped navigation, an operator overview with KPI cards and a request-activity chart, a request-history inspector, form-based settings editing with restart-required annotations, a first-run setup wizard, an OpenAPI-driven API Explorer, kebab action menus with consistent View / Edit / View JSON / Delete, an icon topbar with a GitHub link, and full internationalization (English, German, Japanese, Arabic with RTL)
+- Reworked the management dashboard end to end: grouped navigation, an operator overview with KPI cards and a request-activity chart, a request-history inspector, form-based settings editing with restart-required annotations, a first-run setup wizard, an OpenAPI-driven API Explorer, kebab action menus with consistent View / Edit / View JSON / Delete, an icon topbar with a GitHub link, and full internationalization
+- Database-managed configuration (origins, endpoints, routes, origin mappings, URL rewrites, and blocked headers created via the dashboard or management API) now projects into the running gateway automatically, so it takes effect without a restart; file/programmatic configuration remains an untouched baseline
+- Fixed origin and endpoint retrieval, update, and delete by GUID, which previously returned HTTP `500` (`no such column: guid`); GUIDs are now derived deterministically from the identifier and resolved without a persisted column
+- Expanded the dashboard to nine languages — English, Spanish, German, French, Portuguese, Mandarin, Cantonese, Japanese, and Farsi (Farsi with right-to-left layout); moved the login language selector into the login card
+- The API Endpoints table now shows each endpoint's HTTP method and URL pattern (its routes) directly in the list
 - Added management API endpoints backing the dashboard: `GET /history/timeseries` (bucketed request activity), `GET`/`PUT /settings` (global configuration with masked secrets and restart-required/runtime-editable metadata), `POST /system/restart` (graceful restart for supervised deployments), and `POST /config/validate` (configuration validation)
 - The default administrator credential is now writable, so the out-of-box admin can actually create, update, and delete resources through the dashboard and management API
 - Permission failures on management writes now return HTTP `403` instead of `401`, so a read-only credential attempting a write is no longer treated as a logged-out session

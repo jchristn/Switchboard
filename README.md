@@ -21,6 +21,7 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
 ## Table of Contents
 
 - [What is Switchboard?](#what-is-switchboard)
+- [What's New in v4.1.0](#whats-new-in-v410)
 - [Key Features](#key-features)
 - [Who is it for?](#who-is-it-for)
 - [When to Use Switchboard](#when-to-use-switchboard)
@@ -47,7 +48,7 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
 - [Support](#support)
 - [Contributing](#contributing)
 - [License](#license)
-- [Version History](#version-history)
+- [Version History](CHANGELOG.md)
 
 ---
 
@@ -64,6 +65,21 @@ Switchboard is a **lightweight application proxy** that combines reverse proxy a
 - **Protocol support** for HTTP, chunked transfer encoding, and server-sent events (SSE)
 
 Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers who need a simple, embeddable gateway without the complexity of heavyweight solutions.
+
+---
+
+## What's New in v4.1.0
+
+**Current version: `v4.1.0`.** See the [change log](CHANGELOG.md) for the complete history.
+
+Highlights in this release:
+
+- **Live configuration** – Origins, endpoints, routes, and rewrites created through the dashboard or management API now take effect on the running proxy automatically, no restart required.
+- **Reworked management dashboard** – Grouped navigation, an operator overview with KPI cards and a request-activity chart, a request-history inspector, a form-based settings editor that flags restart-required changes, an OpenAPI-driven API Explorer, and a first-run setup wizard.
+- **Expanded internationalization** – The dashboard ships in nine languages: English, Spanish, German, French, Portuguese, Mandarin, Cantonese, Japanese, and Farsi (right-to-left).
+- **New management API endpoints** – `GET /history/timeseries`, `GET`/`PUT /settings`, `POST /config/validate`, and `POST /system/restart`.
+- **Writable default admin** – The out-of-box admin credential can create, update, and delete resources; permission failures return `403` (not `401`), so a read-only user is no longer logged out when attempting a write.
+- **Fixes** – Origin/endpoint edit and delete by GUID, setup-wizard SSL port defaulting (443/80), and whole-number activity-chart axes.
 
 ---
 
@@ -877,8 +893,9 @@ The web dashboard is the primary way to operate a Switchboard server. It provide
 KPI cards and a request-activity chart, a request-history inspector, full CRUD for origins,
 endpoints, routes, users, credentials, blocked headers, and URL rewrites, a form-based settings
 editor that flags which changes need a restart, a one-click server restart, an OpenAPI-driven API
-Explorer, and a first-run setup wizard. It ships in English, German, Japanese, and Arabic (with
-right-to-left layout) and supports light and dark themes. Connect with an admin bearer token
+Explorer, and a first-run setup wizard. It ships in nine languages — English, Spanish, German,
+French, Portuguese, Mandarin, Cantonese, Japanese, and Farsi (Farsi with right-to-left layout) — and
+supports light and dark themes. Connect with an admin bearer token
 (`sbadmin` on a fresh install). See [dashboard/README.md](dashboard/README.md) for architecture and
 conventions.
 
