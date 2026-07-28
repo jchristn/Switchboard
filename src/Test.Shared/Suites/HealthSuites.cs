@@ -39,7 +39,7 @@ namespace Test.Shared
                     new TestCaseDescriptor("Health", "AllOriginsDownReturns502", "All origins down yields 502 Bad Gateway; recovery restores 200",
                         executeAsync: async ct =>
                         {
-                            ProxyHarness harness = new ProxyHarness(9230, Origins(9231, 4));
+                            ProxyHarness harness = new ProxyHarness(Origins(4));
                             try
                             {
                                 await harness.StartAsync(ct).ConfigureAwait(false);
@@ -72,7 +72,7 @@ namespace Test.Shared
                     new TestCaseDescriptor("Health", "RateLimiting", "Burst traffic against a constrained origin only ever returns 200 or 429",
                         executeAsync: async ct =>
                         {
-                            ProxyHarness harness = new ProxyHarness(9240, Origins(9241, 1), maxParallelRequests: 2, rateLimitThreshold: 3);
+                            ProxyHarness harness = new ProxyHarness(Origins(1), maxParallelRequests: 2, rateLimitThreshold: 3);
                             try
                             {
                                 await harness.StartAsync(ct).ConfigureAwait(false);
@@ -104,7 +104,7 @@ namespace Test.Shared
                     new TestCaseDescriptor("Health", "FailureDuringActiveRequests", "Load balancing survives partial origin failure mid-flight",
                         executeAsync: async ct =>
                         {
-                            ProxyHarness harness = new ProxyHarness(9250, Origins(9251, 4));
+                            ProxyHarness harness = new ProxyHarness(Origins(4));
                             try
                             {
                                 await harness.StartAsync(ct).ConfigureAwait(false);
@@ -148,11 +148,11 @@ namespace Test.Shared
                 });
         }
 
-        private static IReadOnlyList<KeyValuePair<string, int>> Origins(int basePort, int count)
+        private static IReadOnlyList<string> Origins(int count)
         {
-            List<KeyValuePair<string, int>> origins = new List<KeyValuePair<string, int>>();
+            List<string> origins = new List<string>();
             for (int i = 0; i < count; i++)
-                origins.Add(new KeyValuePair<string, int>("Server " + (i + 1), basePort + i));
+                origins.Add("Server " + (i + 1));
             return origins;
         }
 

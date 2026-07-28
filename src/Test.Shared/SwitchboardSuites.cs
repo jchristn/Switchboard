@@ -29,6 +29,7 @@ namespace Test.Shared
                 suites.AddRange(GatewaySuites.All);
                 suites.AddRange(ManagementApiSuites.All);
                 suites.AddRange(HealthSuites.All);
+                suites.AddRange(ProxyRoutingSuites.All);
                 return suites;
             }
         }

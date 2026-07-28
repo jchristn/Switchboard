@@ -4,6 +4,8 @@ namespace Test.Shared.Harness
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Net;
+    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -19,8 +21,9 @@ namespace Test.Shared.Harness
     /// </summary>
     public sealed class ProxyHarness : IDisposable
     {
-        private readonly int _ProxyPort;
-        private readonly IReadOnlyList<KeyValuePair<string, int>> _OriginPorts;
+        private readonly IReadOnlyList<string> _OriginNames;
+        private int _ProxyPort;
+        private IReadOnlyList<KeyValuePair<string, int>> _OriginPorts = new List<KeyValuePair<string, int>>();
         private readonly int _MaxParallelRequests;
         private readonly int _RateLimitThreshold;
         private readonly bool _EnableManagement;
@@ -34,22 +37,21 @@ namespace Test.Shared.Harness
         private bool _Disposed;
 
         /// <summary>
-        /// Initialize a harness definition. No ports are bound until <see cref="StartAsync"/> runs.
+        /// Initialize a harness definition. No ports are bound until <see cref="StartAsync"/> runs, at
+        /// which point a random free localhost port is allocated for the proxy and for each origin.
         /// </summary>
-        /// <param name="proxyPort">Port the Switchboard proxy listens on.</param>
-        /// <param name="originPorts">Origin server name/port pairs.</param>
+        /// <param name="originNames">Origin server names (for example "Server 1"). One backend is created per name.</param>
         /// <param name="maxParallelRequests">Per-origin parallel request cap.</param>
         /// <param name="rateLimitThreshold">Per-origin rate limit threshold.</param>
         /// <param name="enableManagement">True to enable the management REST API on the daemon.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="originNames"/> is null.</exception>
         public ProxyHarness(
-            int proxyPort,
-            IReadOnlyList<KeyValuePair<string, int>> originPorts,
+            IReadOnlyList<string> originNames,
             int maxParallelRequests = 100,
             int rateLimitThreshold = 1000,
             bool enableManagement = false)
         {
-            _ProxyPort = proxyPort;
-            _OriginPorts = originPorts ?? throw new ArgumentNullException(nameof(originPorts));
+            _OriginNames = originNames ?? throw new ArgumentNullException(nameof(originNames));
             _MaxParallelRequests = maxParallelRequests;
             _RateLimitThreshold = rateLimitThreshold;
             _EnableManagement = enableManagement;
@@ -111,6 +113,14 @@ namespace Test.Shared.Harness
             {
                 if (_Started) return;
 
+                // Allocate a random free localhost port for the proxy and for each origin so parallel
+                // runs and leftover processes never collide on a fixed port.
+                _ProxyPort = FreeTcpPort();
+                List<KeyValuePair<string, int>> originPorts = new List<KeyValuePair<string, int>>();
+                foreach (string name in _OriginNames)
+                    originPorts.Add(new KeyValuePair<string, int>(name, FreeTcpPort()));
+                _OriginPorts = originPorts;
+
                 _Settings = BuildSettings();
 
                 foreach (KeyValuePair<string, int> kvp in _OriginPorts)
@@ -146,6 +156,20 @@ namespace Test.Shared.Harness
                 if (DateTime.UtcNow > deadline)
                     throw new TimeoutException("Not all origin servers became healthy within " + timeout.TotalSeconds + "s.");
                 await Task.Delay(250, token).ConfigureAwait(false);
+            }
+        }
+
+        private static int FreeTcpPort()
+        {
+            TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            try
+            {
+                return ((IPEndPoint)listener.LocalEndpoint).Port;
+            }
+            finally
+            {
+                listener.Stop();
             }
         }
 
