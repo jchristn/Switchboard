@@ -401,7 +401,11 @@ export default function SetupWizard() {
                   <input
                     type="checkbox"
                     checked={originForm.ssl}
-                    onChange={(e) => setOriginField('ssl', e.target.checked)}
+                    onChange={(e) => {
+                      const ssl = e.target.checked;
+                      // Default the port to the conventional value for the scheme.
+                      setOriginForm((prev) => ({ ...prev, ssl, port: ssl ? 443 : 80 }));
+                    }}
                   />
                   <span>{t('origins.useSsl')}</span>
                 </label>

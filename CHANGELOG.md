@@ -8,6 +8,13 @@ v4.1.0
 
 - Reworked the management dashboard end to end: grouped navigation, an operator overview with KPI cards and a request-activity chart, a request-history inspector, form-based settings editing with restart-required annotations, a first-run setup wizard, an OpenAPI-driven API Explorer, kebab action menus with consistent View / Edit / View JSON / Delete, an icon topbar with a GitHub link, and full internationalization (English, German, Japanese, Arabic with RTL)
 - Added management API endpoints backing the dashboard: `GET /history/timeseries` (bucketed request activity), `GET`/`PUT /settings` (global configuration with masked secrets and restart-required/runtime-editable metadata), `POST /system/restart` (graceful restart for supervised deployments), and `POST /config/validate` (configuration validation)
+- The default administrator credential is now writable, so the out-of-box admin can actually create, update, and delete resources through the dashboard and management API
+- Permission failures on management writes now return HTTP `403` instead of `401`, so a read-only credential attempting a write is no longer treated as a logged-out session
+- The dashboard client only ends the session on an authentication `401`, not on an authorization failure
+- Setup wizard: toggling SSL/TLS on an origin now sets the port to the conventional value (443 with SSL, 80 without)
+- Request Activity chart: the Y-axis now uses whole-number ticks, so an empty chart shows `0` and `1` instead of duplicated labels
+- Aligned the version to `v4.1.0` across the NuGet package, Docker image tags, compose files, `sb.json`, the dashboard, build scripts, and documentation
+- Added a Postman collection covering the full management API, and a `DOCKERHUB_README.md`
 
 ### Changes in v4.0.10
 

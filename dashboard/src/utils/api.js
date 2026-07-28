@@ -92,10 +92,6 @@ export class ApiClient {
       throw new ApiError(0, null, err.message || 'No response from server');
     }
 
-    if (response.status === 401) {
-      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-    }
-
     if (response.status === 204) return null;
 
     let payload = null;
@@ -105,6 +101,15 @@ export class ApiClient {
         payload = keysToCamelCase(JSON.parse(text));
       } catch {
         payload = text;
+      }
+    }
+
+    if (response.status === 401) {
+      // A genuine authentication failure ends the session. An authorization (permission) failure is
+      // surfaced to the caller instead, so a read-only user isn't logged out for attempting a write.
+      const code = payload && typeof payload === 'object' ? payload.error : null;
+      if (code !== 'AuthorizationFailed') {
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
       }
     }
 

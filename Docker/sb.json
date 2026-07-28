@@ -12,7 +12,7 @@
   "Management": {
     "Enable": true,
     "BasePath": "/_sb/v1.0/",
-    "AdminToken": "switchboardadmin",
+    "AdminToken": "sbadmin",
     "RequireAuthentication": true
   },
   "RequestHistory": {

@@ -118,6 +118,26 @@ export default function ActivityChart({
     [buckets]
   );
 
+  // Whole-number Y-axis ticks. With a fractional step an empty chart rendered 0,0,1,1,1; a "nice"
+  // integer step keeps labels distinct (e.g. an empty chart shows just 0 and 1).
+  const yTicks = useMemo(() => {
+    const raw = maxTotal / Math.max(1, Y_GRID_LINES);
+    let step;
+    if (raw <= 1) {
+      step = 1;
+    } else {
+      const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+      const norm = raw / pow;
+      const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+      step = Math.max(1, Math.round(nice * pow));
+    }
+    const ticks = [];
+    for (let v = 0; v <= maxTotal + 1e-9; v += step) ticks.push(Math.round(v));
+    const uniq = [...new Set(ticks)];
+    if (uniq[uniq.length - 1] < maxTotal) uniq.push(Math.round(maxTotal));
+    return uniq;
+  }, [maxTotal]);
+
   const allZero = useMemo(() => buckets.every((b) => (b.total || 0) === 0), [buckets]);
 
   const rangeOptions = Object.entries(TIME_RANGES).map(([id, cfg]) => ({
@@ -193,11 +213,10 @@ export default function ActivityChart({
           aria-label={title || t('chart.title')}
         >
           {/* y grid lines + labels */}
-          {Array.from({ length: Y_GRID_LINES + 1 }).map((_, i) => {
-            const value = (maxTotal / Y_GRID_LINES) * i;
+          {yTicks.map((value) => {
             const y = yFor(value);
             return (
-              <g key={`grid-${i}`}>
+              <g key={`grid-${value}`}>
                 <line
                   x1={PAD_LEFT}
                   x2={VIEW_W - PAD_RIGHT}

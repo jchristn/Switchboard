@@ -218,7 +218,9 @@
                 Description = "Auto-generated credential created on first startup",
                 BearerToken = bearerToken,
                 Active = true,
-                IsReadOnly = true
+                // The default administrator must be able to administer — a read-only default
+                // credential can authenticate but cannot create/update/delete anything.
+                IsReadOnly = false
             };
 
             adminCredential = _Client.Credentials.CreateAsync(adminCredential).GetAwaiter().GetResult();

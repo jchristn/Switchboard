@@ -388,7 +388,9 @@ namespace Switchboard.Core.Services
         private async Task SendForbidden(HttpContextBase ctx, string message)
         {
             SwitchboardApiErrorResponse error = new SwitchboardApiErrorResponse(ApiErrorEnum.AuthorizationFailed, description: message);
-            ctx.Response.StatusCode = error.StatusCode;
+            // A permission failure is 403, not 401: the caller authenticated fine, they just can't
+            // perform this write. Returning 401 here would make a client treat the session as expired.
+            ctx.Response.StatusCode = 403;
             ctx.Response.ContentType = "application/json";
             string response = JsonSerializer.Serialize(error, _JsonOptions);
             await ctx.Response.Send(response).ConfigureAwait(false);
