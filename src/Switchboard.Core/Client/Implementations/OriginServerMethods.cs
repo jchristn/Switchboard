@@ -46,9 +46,6 @@ namespace Switchboard.Core.Client.Implementations
             if (String.IsNullOrWhiteSpace(config.Identifier))
                 throw new ArgumentException("Identifier cannot be null or empty.", nameof(config));
 
-            if (config.GUID == Guid.Empty)
-                config.GUID = Guid.NewGuid();
-
             config.CreatedUtc = DateTime.UtcNow;
             config.ModifiedUtc = DateTime.UtcNow;
 
@@ -58,7 +55,14 @@ namespace Switchboard.Core.Client.Implementations
         /// <inheritdoc />
         public async Task<OriginServerConfig?> GetByGuidAsync(Guid guid, CancellationToken token = default)
         {
-            return await _Database.SelectByGuidAsync<OriginServerConfig>(guid, token).ConfigureAwait(false);
+            // Origin servers are keyed by identifier and carry no persisted GUID column; the GUID is
+            // derived from the identifier, so resolve by matching in memory rather than querying a
+            // non-existent guid column.
+            List<OriginServerConfig> configs = await _Database.SelectAsync<OriginServerConfig>(
+                c => c.GUID == guid,
+                token).ConfigureAwait(false);
+
+            return configs.FirstOrDefault();
         }
 
         /// <inheritdoc />

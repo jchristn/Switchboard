@@ -21,6 +21,7 @@ namespace Test.Shared
                 List<TestSuiteDescriptor> suites = new List<TestSuiteDescriptor>();
                 suites.AddRange(UnitSuites.All);
                 suites.AddRange(SettingsImportSuites.All);
+                suites.AddRange(ConfigurationReloadSuites.All);
                 suites.AddRange(ClientCrudSuites.All);
                 suites.AddRange(RequestHistoryCaptureSuites.All);
                 suites.AddRange(ProxySuites.All);
@@ -42,6 +43,7 @@ namespace Test.Shared
             {
                 return UnitSuites.All
                     .Concat(SettingsImportSuites.All)
+                    .Concat(ConfigurationReloadSuites.All)
                     .Concat(ClientCrudSuites.All)
                     .Concat(RequestHistoryCaptureSuites.All)
                     .ToList();

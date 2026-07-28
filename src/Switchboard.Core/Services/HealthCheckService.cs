@@ -49,7 +49,8 @@
         private bool _IsDisposed = false;
 
         private CancellationTokenSource _TokenSource = new CancellationTokenSource();
-        private Dictionary<string, Task> _HealthCheckTasks = new Dictionary<string, Task>();
+        private readonly object _TasksLock = new object();
+        private Dictionary<string, CancellationTokenSource> _OriginTokens = new Dictionary<string, CancellationTokenSource>();
 
         #endregion
 
@@ -72,15 +73,59 @@
 
             foreach (OriginServer origin in _Settings.Origins)
             {
-                _HealthCheckTasks.Add(
-                    origin.Identifier,
-                    Task.Run(() => HealthCheckTask(origin, _TokenSource.Token), _TokenSource.Token));
+                StartOriginTask(origin);
             }
         }
 
         #endregion
 
         #region Public-Methods
+
+        /// <summary>
+        /// Reconcile the running health-check tasks against the current set of origin servers in
+        /// settings. Starts tasks for newly added origins and cancels tasks for origins that have
+        /// been removed. Existing origins are left running so their health state is preserved.
+        /// Thread-safe.
+        /// </summary>
+        public void SyncOrigins()
+        {
+            if (_IsDisposed) return;
+
+            lock (_TasksLock)
+            {
+                HashSet<string> current = new HashSet<string>();
+                if (_Settings.Origins != null)
+                {
+                    foreach (OriginServer origin in _Settings.Origins)
+                        current.Add(origin.Identifier);
+                }
+
+                // Cancel and remove tasks for origins that no longer exist.
+                foreach (string identifier in new List<string>(_OriginTokens.Keys))
+                {
+                    if (!current.Contains(identifier))
+                    {
+                        try { _OriginTokens[identifier].Cancel(); } catch { }
+                        _OriginTokens[identifier].Dispose();
+                        _OriginTokens.Remove(identifier);
+                        _Logging?.Debug(_Header + "stopped health checks for removed origin " + identifier);
+                    }
+                }
+
+                // Start tasks for origins that are new.
+                if (_Settings.Origins != null)
+                {
+                    foreach (OriginServer origin in _Settings.Origins)
+                    {
+                        if (!_OriginTokens.ContainsKey(origin.Identifier))
+                        {
+                            StartOriginTask(origin);
+                            _Logging?.Debug(_Header + "started health checks for new origin " + origin.Identifier);
+                        }
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Dispose.
@@ -92,6 +137,18 @@
             {
                 if (disposing)
                 {
+                    try { _TokenSource.Cancel(); } catch { }
+
+                    lock (_TasksLock)
+                    {
+                        foreach (CancellationTokenSource cts in _OriginTokens.Values)
+                        {
+                            try { cts.Dispose(); } catch { }
+                        }
+                        _OriginTokens.Clear();
+                    }
+
+                    _TokenSource.Dispose();
                     _Random = null;
                     _Serializer = null;
                     _Logging = null;
@@ -114,6 +171,13 @@
         #endregion
 
         #region Private-Methods
+
+        private void StartOriginTask(OriginServer origin)
+        {
+            CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(_TokenSource.Token);
+            _OriginTokens[origin.Identifier] = cts;
+            _ = Task.Run(() => HealthCheckTask(origin, cts.Token), cts.Token);
+        }
 
         private async Task HealthCheckTask(OriginServer origin, CancellationToken token = default)
         {

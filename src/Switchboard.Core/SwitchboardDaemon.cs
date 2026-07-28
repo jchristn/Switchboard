@@ -90,6 +90,9 @@
 
                 if (_ManagementService != null)
                     _ManagementService.Logging = value;
+
+                if (_ConfigurationReloadService != null)
+                    _ConfigurationReloadService.Logging = value;
             }
         }
 
@@ -112,6 +115,7 @@
         private SwitchboardClient _Client = null;
         private ManagementService _ManagementService = null;
         private RequestHistoryCaptureService _RequestHistoryService = null;
+        private ConfigurationReloadService _ConfigurationReloadService = null;
 
         private bool _IsDisposed = false;
 
@@ -146,6 +150,9 @@
             {
                 if (disposing)
                 {
+                    _ConfigurationReloadService?.Dispose();
+                    _ConfigurationReloadService = null;
+
                     _ManagementService?.Dispose();
                     _ManagementService = null;
 
@@ -339,6 +346,20 @@
             // Import configuration from settings file to database
             ImportSettingsToDatabase();
 
+            // Project database-managed configuration (dashboard/management API changes) into the live
+            // in-memory settings. The file-loaded settings are the baseline; database-only resources
+            // are merged on top so they take effect without a restart. Hydrate once now, before the
+            // gateway and health-check services are constructed, so they see the full configuration.
+            _ConfigurationReloadService = new ConfigurationReloadService(_Settings, _Client, _Logging);
+            try
+            {
+                _ConfigurationReloadService.ReloadAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "unable to load database configuration at startup, using file settings only: " + e.Message);
+            }
+
             #endregion
 
             #region Services
@@ -347,6 +368,13 @@
                 _Settings,
                 _Logging,
                 _Serializer);
+
+            // Reconcile health checks on every subsequent reload. Only watch for ongoing changes when
+            // the management API is enabled, since that is the only way configuration is mutated in the
+            // database at runtime (via the dashboard or API).
+            _ConfigurationReloadService.HealthCheckService = _HealthCheckService;
+            if (_Settings.Management.Enable)
+                _ConfigurationReloadService.StartMonitor();
 
             _GatewayService = new GatewayService(
                 _Settings,

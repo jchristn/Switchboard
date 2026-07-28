@@ -543,7 +543,11 @@ namespace Switchboard.Core.Services
                 OriginServerConfig? config = await ReadBody<OriginServerConfig>(ctx).ConfigureAwait(false);
                 if (config == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
-                config.GUID = guid;
+                OriginServerConfig? existing = await _Client.OriginServers.GetByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
+                if (existing == null) { await SendNotFound(ctx, "Origin server not found").ConfigureAwait(false); return; }
+
+                // The identifier is the primary key; the URL GUID identifies the record to update.
+                config.Identifier = existing.Identifier;
                 OriginServerConfig updated = await _Client.OriginServers.UpdateAsync(config, ctx.Token).ConfigureAwait(false);
 
                 _Logging.Info(_Header + "updated origin server " + updated.Identifier);
@@ -639,7 +643,11 @@ namespace Switchboard.Core.Services
                 ApiEndpointConfig? config = await ReadBody<ApiEndpointConfig>(ctx).ConfigureAwait(false);
                 if (config == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
 
-                config.GUID = guid;
+                ApiEndpointConfig? existing = await _Client.ApiEndpoints.GetByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
+                if (existing == null) { await SendNotFound(ctx, "Endpoint not found").ConfigureAwait(false); return; }
+
+                // The identifier is the primary key; the URL GUID identifies the record to update.
+                config.Identifier = existing.Identifier;
                 ApiEndpointConfig updated = await _Client.ApiEndpoints.UpdateAsync(config, ctx.Token).ConfigureAwait(false);
                 _Logging.Info(_Header + "updated endpoint " + updated.Identifier);
                 await SendOk(ctx, updated).ConfigureAwait(false);

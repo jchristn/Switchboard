@@ -4,6 +4,7 @@ namespace Switchboard.Core.Models
 {
     using System;
     using System.Text.Json.Serialization;
+    using Switchboard.Core;
 
     /// <summary>
     /// Origin server configuration.
@@ -16,8 +17,10 @@ namespace Switchboard.Core.Models
 
         /// <summary>
         /// Unique GUID for this origin server.
+        /// Derived deterministically from <see cref="Identifier"/> so it is stable across reads; the
+        /// database keys origin servers by identifier and does not persist a GUID column.
         /// </summary>
-        public Guid GUID { get; set; } = Guid.NewGuid();
+        public Guid GUID => DeterministicGuid.FromString(Identifier);
 
         /// <summary>
         /// Unique identifier for this origin server.

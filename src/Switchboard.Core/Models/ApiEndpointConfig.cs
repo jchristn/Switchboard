@@ -3,6 +3,7 @@
 namespace Switchboard.Core.Models
 {
     using System;
+    using Switchboard.Core;
 
     /// <summary>
     /// API endpoint configuration.
@@ -16,8 +17,10 @@ namespace Switchboard.Core.Models
 
         /// <summary>
         /// Unique GUID for this API endpoint.
+        /// Derived deterministically from <see cref="Identifier"/> so it is stable across reads; the
+        /// database keys endpoints by identifier and does not persist a GUID column.
         /// </summary>
-        public Guid GUID { get; set; } = Guid.NewGuid();
+        public Guid GUID => DeterministicGuid.FromString(Identifier);
 
         /// <summary>
         /// Unique identifier for this API endpoint.
