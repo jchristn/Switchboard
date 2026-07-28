@@ -32,31 +32,26 @@
         /// <returns>Rewritten URL or original URL if no change.</returns>
         public static string RewriteUrl(string method, string url, ApiEndpoint endpoint)
         {
-            if (String.IsNullOrEmpty(method)) return method;
+            if (String.IsNullOrEmpty(method)) return url;
             if (String.IsNullOrEmpty(url)) return url;
             if (endpoint == null || endpoint.RewriteUrls == null || endpoint.RewriteUrls.Count == 0) return url;
-            if (!endpoint.RewriteUrls.Keys.Contains(method)) return url;
-
-            NameValueCollection nvc = new NameValueCollection(StringComparer.InvariantCultureIgnoreCase);
 
             Matcher matcher = new Matcher(url);
 
-            foreach (KeyValuePair<string, Dictionary<string, string>> kvpOuter in endpoint.RewriteUrls)
+            // Method-specific rewrites take precedence over any-method (empty key) rewrites.
+            foreach (string key in new string[] { method, String.Empty })
             {
-                if (String.IsNullOrEmpty(kvpOuter.Key)) continue;
-                if (kvpOuter.Value == null || kvpOuter.Value.Count == 0) continue;
+                if (!endpoint.RewriteUrls.TryGetValue(key, out Dictionary<string, string> rules)) continue;
+                if (rules == null || rules.Count == 0) continue;
 
-                if (kvpOuter.Key.Equals(method))
+                foreach (KeyValuePair<string, string> kvpInner in rules)
                 {
-                    foreach (KeyValuePair<string, string> kvpInner in kvpOuter.Value)
-                    {
-                        if (String.IsNullOrEmpty(kvpInner.Key)) continue;
-                        if (String.IsNullOrEmpty(kvpInner.Value)) continue;
+                    if (String.IsNullOrEmpty(kvpInner.Key)) continue;
+                    if (String.IsNullOrEmpty(kvpInner.Value)) continue;
 
-                        if (matcher.Match(kvpInner.Key, out nvc))
-                        {
-                            return ReplaceParameters(kvpInner.Value, nvc);
-                        }
+                    if (matcher.Match(kvpInner.Key, out NameValueCollection nvc))
+                    {
+                        return ReplaceParameters(kvpInner.Value, nvc);
                     }
                 }
             }

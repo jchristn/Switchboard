@@ -31,15 +31,12 @@ namespace Switchboard.Core.Models
 
         /// <summary>
         /// HTTP method this rewrite applies to.
+        /// An empty value means the rewrite applies to any HTTP method.
         /// </summary>
         public string HttpMethod
         {
             get => _HttpMethod;
-            set
-            {
-                if (String.IsNullOrEmpty(value)) throw new ArgumentNullException(nameof(HttpMethod));
-                _HttpMethod = value.ToUpperInvariant();
-            }
+            set => _HttpMethod = String.IsNullOrEmpty(value) ? String.Empty : value.ToUpperInvariant();
         }
 
         /// <summary>

@@ -7,6 +7,7 @@ namespace Switchboard.Core.Client.Implementations
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Switchboard.Core;
     using Switchboard.Core.Client.Interfaces;
     using Switchboard.Core.Database;
     using Switchboard.Core.Models;
@@ -43,8 +44,13 @@ namespace Switchboard.Core.Client.Implementations
             if (rewrite == null)
                 throw new ArgumentNullException(nameof(rewrite));
 
+            // URL rewrites are keyed by endpoint identifier (the persisted foreign key). The endpoint
+            // GUID is derived from the identifier and not required from the caller.
+            if (String.IsNullOrEmpty(rewrite.EndpointIdentifier))
+                throw new ArgumentException("EndpointIdentifier cannot be empty.", nameof(rewrite));
+
             if (rewrite.EndpointGUID == Guid.Empty)
-                throw new ArgumentException("EndpointGUID cannot be empty.", nameof(rewrite));
+                rewrite.EndpointGUID = DeterministicGuid.FromString(rewrite.EndpointIdentifier);
 
             rewrite.CreatedUtc = DateTime.UtcNow;
 

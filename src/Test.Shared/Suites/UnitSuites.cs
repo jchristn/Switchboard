@@ -141,6 +141,41 @@ namespace Test.Shared
                         ApiEndpoint bare = new ApiEndpoint();
                         Check.Equal("/anything", UrlTools.RewriteUrl("GET", "/anything", bare), "empty table passthrough");
                         return Task.CompletedTask;
+                    }),
+
+                    Case("UrlRewrite", "AnyMethodRewriteApplies", "Empty-method (any) rewrite applies regardless of request method", ct =>
+                    {
+                        ApiEndpoint anyEp = new ApiEndpoint();
+                        anyEp.OriginServers = new List<string> { "s1" };
+                        anyEp.RewriteUrls = new Dictionary<string, Dictionary<string, string>>
+                        {
+                            { "", new Dictionary<string, string> { { "/foo", "/bar" }, { "/users/{id}", "/v1/users/{id}" } } }
+                        };
+                        Check.Equal("/bar", UrlTools.RewriteUrl("GET", "/foo", anyEp), "any-method GET");
+                        Check.Equal("/bar", UrlTools.RewriteUrl("POST", "/foo", anyEp), "any-method POST");
+                        Check.Equal("/v1/users/42", UrlTools.RewriteUrl("DELETE", "/users/42", anyEp), "any-method param substitution");
+                        return Task.CompletedTask;
+                    }),
+
+                    Case("UrlRewrite", "MethodSpecificBeatsAnyMethod", "Method-specific rewrite takes precedence over any-method rewrite", ct =>
+                    {
+                        ApiEndpoint ep = new ApiEndpoint();
+                        ep.OriginServers = new List<string> { "s1" };
+                        ep.RewriteUrls = new Dictionary<string, Dictionary<string, string>>
+                        {
+                            { "GET", new Dictionary<string, string> { { "/x", "/get-x" } } },
+                            { "", new Dictionary<string, string> { { "/x", "/any-x" } } }
+                        };
+                        Check.Equal("/get-x", UrlTools.RewriteUrl("GET", "/x", ep), "method-specific wins");
+                        Check.Equal("/any-x", UrlTools.RewriteUrl("POST", "/x", ep), "falls back to any-method");
+                        return Task.CompletedTask;
+                    }),
+
+                    Case("UrlRewrite", "EmptyHttpMethodAllowedOnModel", "UrlRewrite accepts an empty HTTP method (any)", ct =>
+                    {
+                        UrlRewrite rw = new UrlRewrite { EndpointIdentifier = "e", HttpMethod = "", SourcePattern = "/foo", TargetPattern = "/bar" };
+                        Check.Equal("", rw.HttpMethod, "empty method stored as empty");
+                        return Task.CompletedTask;
                     })
                 });
         }
