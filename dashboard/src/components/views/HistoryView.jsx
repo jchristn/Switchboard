@@ -133,7 +133,8 @@ function HistoryView() {
         end: end.toISOString(),
         intervalMinutes: Math.max(1, Math.round(range.bucketMs / 60000)),
       });
-      setTimeseries(Array.isArray(data) ? data : []);
+      // The endpoint returns { startUtc, endUtc, intervalMinutes, buckets: [...] }; the chart wants the buckets.
+      setTimeseries(Array.isArray(data?.buckets) ? data.buckets : Array.isArray(data) ? data : []);
     } catch {
       // New endpoint may not exist yet (404) — render the chart empty rather than error.
       setTimeseries([]);

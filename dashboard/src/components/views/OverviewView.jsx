@@ -90,8 +90,15 @@ function OverviewView() {
 
       // Timeseries endpoint is new; if it 404s (rejected) show the chart empty
       // rather than surfacing an error on the page.
+      // The endpoint returns { startUtc, endUtc, intervalMinutes, buckets: [...] }; the chart wants the buckets.
       const seriesValue = settled(series);
-      setTimeseries(Array.isArray(seriesValue) ? seriesValue : []);
+      setTimeseries(
+        Array.isArray(seriesValue?.buckets)
+          ? seriesValue.buckets
+          : Array.isArray(seriesValue)
+            ? seriesValue
+            : []
+      );
 
       setLastLoaded(new Date());
       setLoading(false);
