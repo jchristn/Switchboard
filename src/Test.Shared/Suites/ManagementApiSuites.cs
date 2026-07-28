@@ -278,6 +278,274 @@ namespace Test.Shared
                                 Check.True(root["valid"]!.GetValue<bool>(), "config valid");
                             }
                         }
+                    }),
+
+                    // ---- Health / current user / OpenAPI ----
+                    Case("HealthEndpoint", "GET /health returns 200", async (h, ct) =>
+                    {
+                        (int s, _) = await Send(h, HttpMethod.Get, "/health");
+                        Check.Equal(200, s, "health status");
+                    }),
+
+                    Case("MeEndpoint", "GET /me returns the current user for the admin token and 401 without one", async (h, ct) =>
+                    {
+                        (int s, string b) = await Send(h, HttpMethod.Get, "/me");
+                        Check.Equal(200, s, "me status");
+                        Check.Contains(b, "admin", "me identifies the admin user");
+                        (int ns, _) = await Send(h, HttpMethod.Get, "/me", token: null);
+                        Check.Equal(401, ns, "me without a token");
+                    }),
+
+                    Case("OpenApiDocument", "GET /openapi.json returns the OpenAPI document", async (h, ct) =>
+                    {
+                        using (RestRequest req = new RestRequest(h.Url("/openapi.json")))
+                        using (RestResponse resp = await req.SendAsync())
+                        {
+                            Check.Equal(200, resp.StatusCode, "openapi status");
+                            Check.Contains(resp.DataAsString, "openapi", "openapi document body");
+                        }
+                    }),
+
+                    Case("SwaggerUi", "GET /swagger returns the Swagger UI", async (h, ct) =>
+                    {
+                        using (RestRequest req = new RestRequest(h.Url("/swagger")))
+                        using (RestResponse resp = await req.SendAsync())
+                            Check.Equal(200, resp.StatusCode, "swagger status");
+                    }),
+
+                    // ---- Origins CRUD ----
+                    Case("OriginCrud", "Origin create, get, list, update, and delete", async (h, ct) =>
+                    {
+                        (int cs, string cb) = await Send(h, HttpMethod.Post, "/origins",
+                            new { Identifier = "crud-origin", Name = "CRUD Origin", Hostname = "localhost", Port = 9001, Ssl = false });
+                        Check.Equal(201, cs, "create origin");
+                        string guid = GuidOf(cb);
+
+                        (int gs, string gb) = await Send(h, HttpMethod.Get, "/origins/" + guid);
+                        Check.Equal(200, gs, "get origin");
+                        Check.Contains(gb, "crud-origin", "origin identifier present");
+
+                        (_, string lb) = await Send(h, HttpMethod.Get, "/origins");
+                        Check.Contains(lb, "crud-origin", "list contains origin");
+
+                        (int us, _) = await Send(h, HttpMethod.Put, "/origins/" + guid,
+                            new { Identifier = "crud-origin", Name = "CRUD Origin Edited", Hostname = "localhost", Port = 9002, Ssl = true });
+                        Check.Equal(200, us, "update origin");
+                        (_, string gb2) = await Send(h, HttpMethod.Get, "/origins/" + guid);
+                        Check.Contains(gb2, "Edited", "update persisted");
+
+                        (int ds, _) = await Send(h, HttpMethod.Delete, "/origins/" + guid);
+                        Check.Equal(204, ds, "delete origin");
+                        (int nf, _) = await Send(h, HttpMethod.Get, "/origins/" + guid);
+                        Check.Equal(404, nf, "get after delete");
+                    }),
+
+                    // ---- Endpoints CRUD ----
+                    Case("EndpointCrud", "Endpoint create, get, list, update, and delete", async (h, ct) =>
+                    {
+                        (int cs, string cb) = await Send(h, HttpMethod.Post, "/endpoints",
+                            new { Identifier = "crud-endpoint", Name = "CRUD Endpoint", LoadBalancingMode = "RoundRobin", TimeoutMs = 60000, MaxRequestBodySize = 1048576 });
+                        Check.Equal(201, cs, "create endpoint");
+                        string guid = GuidOf(cb);
+
+                        (int gs, string gb) = await Send(h, HttpMethod.Get, "/endpoints/" + guid);
+                        Check.Equal(200, gs, "get endpoint");
+                        Check.Contains(gb, "crud-endpoint", "endpoint identifier present");
+
+                        (_, string lb) = await Send(h, HttpMethod.Get, "/endpoints");
+                        Check.Contains(lb, "crud-endpoint", "list contains endpoint");
+
+                        (int us, _) = await Send(h, HttpMethod.Put, "/endpoints/" + guid,
+                            new { Identifier = "crud-endpoint", Name = "CRUD Endpoint Edited", LoadBalancingMode = "Random", TimeoutMs = 30000, MaxRequestBodySize = 1048576 });
+                        Check.Equal(200, us, "update endpoint");
+
+                        (int ds, _) = await Send(h, HttpMethod.Delete, "/endpoints/" + guid);
+                        Check.Equal(204, ds, "delete endpoint");
+                        (int nf, _) = await Send(h, HttpMethod.Get, "/endpoints/" + guid);
+                        Check.Equal(404, nf, "get after delete");
+                    }),
+
+                    // ---- Routes CRUD ----
+                    Case("RouteCrud", "Route create, get, update, and delete", async (h, ct) =>
+                    {
+                        (_, string eb) = await Send(h, HttpMethod.Post, "/endpoints",
+                            new { Identifier = "route-crud-ep", Name = "Route CRUD", LoadBalancingMode = "RoundRobin" });
+                        string eguid = GuidOf(eb);
+
+                        (int cs, _) = await Send(h, HttpMethod.Post, "/routes",
+                            new { EndpointIdentifier = "route-crud-ep", EndpointGUID = eguid, HttpMethod = "GET", UrlPattern = "/rc/{id}", RequiresAuthentication = false });
+                        Check.Equal(201, cs, "create route");
+                        int rid = await FindId(h, "/routes", "UrlPattern", "/rc/{id}");
+
+                        (int gs, _) = await Send(h, HttpMethod.Get, "/routes/" + rid);
+                        Check.Equal(200, gs, "get route");
+                        (int us, _) = await Send(h, HttpMethod.Put, "/routes/" + rid,
+                            new { EndpointIdentifier = "route-crud-ep", EndpointGUID = eguid, HttpMethod = "POST", UrlPattern = "/rc/{id}", RequiresAuthentication = true, SortOrder = 0 });
+                        Check.Equal(200, us, "update route");
+                        (int ds, _) = await Send(h, HttpMethod.Delete, "/routes/" + rid);
+                        Check.Equal(204, ds, "delete route");
+
+                        await Send(h, HttpMethod.Delete, "/endpoints/" + eguid);
+                    }),
+
+                    // ---- Mappings CRUD ----
+                    Case("MappingCrud", "Mapping create, get, and delete", async (h, ct) =>
+                    {
+                        (_, string eb) = await Send(h, HttpMethod.Post, "/endpoints",
+                            new { Identifier = "map-crud-ep", Name = "Map EP", LoadBalancingMode = "RoundRobin" });
+                        string eguid = GuidOf(eb);
+                        (_, string ob) = await Send(h, HttpMethod.Post, "/origins",
+                            new { Identifier = "map-crud-origin", Hostname = "localhost", Port = 9003 });
+                        string oguid = GuidOf(ob);
+
+                        (int cs, _) = await Send(h, HttpMethod.Post, "/mappings",
+                            new { EndpointIdentifier = "map-crud-ep", EndpointGUID = eguid, OriginIdentifier = "map-crud-origin", OriginGUID = oguid });
+                        Check.Equal(201, cs, "create mapping");
+                        int mid = await FindId(h, "/mappings", "OriginIdentifier", "map-crud-origin");
+
+                        (int gs, _) = await Send(h, HttpMethod.Get, "/mappings/" + mid);
+                        Check.Equal(200, gs, "get mapping");
+                        (int ds, _) = await Send(h, HttpMethod.Delete, "/mappings/" + mid);
+                        Check.Equal(204, ds, "delete mapping");
+
+                        await Send(h, HttpMethod.Delete, "/endpoints/" + eguid);
+                        await Send(h, HttpMethod.Delete, "/origins/" + oguid);
+                    }),
+
+                    // ---- Rewrites CRUD (any-method create carries no GUID) ----
+                    Case("RewriteCrud", "Rewrite create (any method), get, update, and delete", async (h, ct) =>
+                    {
+                        (_, string eb) = await Send(h, HttpMethod.Post, "/endpoints",
+                            new { Identifier = "rw-crud-ep", Name = "RW EP", LoadBalancingMode = "RoundRobin" });
+                        string eguid = GuidOf(eb);
+
+                        (int cs, _) = await Send(h, HttpMethod.Post, "/rewrites",
+                            new { EndpointIdentifier = "rw-crud-ep", HttpMethod = "", SourcePattern = "/old", TargetPattern = "/new", SortOrder = 0 });
+                        Check.Equal(201, cs, "create rewrite with empty (any) method");
+                        int rwid = await FindId(h, "/rewrites", "SourcePattern", "/old");
+
+                        (int gs, _) = await Send(h, HttpMethod.Get, "/rewrites/" + rwid);
+                        Check.Equal(200, gs, "get rewrite");
+                        (int us, _) = await Send(h, HttpMethod.Put, "/rewrites/" + rwid,
+                            new { EndpointIdentifier = "rw-crud-ep", HttpMethod = "GET", SourcePattern = "/old", TargetPattern = "/newer", SortOrder = 1 });
+                        Check.Equal(200, us, "update rewrite");
+                        (int ds, _) = await Send(h, HttpMethod.Delete, "/rewrites/" + rwid);
+                        Check.Equal(204, ds, "delete rewrite");
+
+                        await Send(h, HttpMethod.Delete, "/endpoints/" + eguid);
+                    }),
+
+                    // ---- Blocked headers CRUD ----
+                    Case("BlockedHeaderCrud", "Blocked header create, get, and delete", async (h, ct) =>
+                    {
+                        (int cs, _) = await Send(h, HttpMethod.Post, "/headers", new { HeaderName = "X-Crud-Test" });
+                        Check.Equal(201, cs, "create header");
+                        int hid = await FindId(h, "/headers", "HeaderName", "x-crud-test", ignoreCase: true);
+
+                        (int gs, _) = await Send(h, HttpMethod.Get, "/headers/" + hid);
+                        Check.Equal(200, gs, "get header");
+                        (int ds, _) = await Send(h, HttpMethod.Delete, "/headers/" + hid);
+                        Check.Equal(204, ds, "delete header");
+                    }),
+
+                    // ---- Users CRUD ----
+                    Case("UserCrud", "User create, get, list, update, and delete", async (h, ct) =>
+                    {
+                        (int cs, string cb) = await Send(h, HttpMethod.Post, "/users",
+                            new { Username = "cruduser", Email = "crud@example.com", FirstName = "Crud", LastName = "User", Active = true, IsAdmin = false });
+                        Check.Equal(201, cs, "create user");
+                        string guid = GuidOf(cb);
+
+                        (int gs, string gb) = await Send(h, HttpMethod.Get, "/users/" + guid);
+                        Check.Equal(200, gs, "get user");
+                        Check.Contains(gb, "cruduser", "username present");
+
+                        (_, string lb) = await Send(h, HttpMethod.Get, "/users");
+                        Check.Contains(lb, "cruduser", "list contains user");
+
+                        (int us, _) = await Send(h, HttpMethod.Put, "/users/" + guid,
+                            new { Username = "cruduser", Email = "crud2@example.com", FirstName = "Crud", LastName = "Edited", Active = true, IsAdmin = false });
+                        Check.Equal(200, us, "update user");
+
+                        (int ds, _) = await Send(h, HttpMethod.Delete, "/users/" + guid);
+                        Check.Equal(204, ds, "delete user");
+                        (int nf, _) = await Send(h, HttpMethod.Get, "/users/" + guid);
+                        Check.Equal(404, nf, "get after delete");
+                    }),
+
+                    // ---- Credentials CRUD + regenerate ----
+                    Case("CredentialCrud", "Credential create, get, list, update, regenerate, and delete", async (h, ct) =>
+                    {
+                        (_, string ub) = await Send(h, HttpMethod.Post, "/users",
+                            new { Username = "creduser", Email = "c@example.com", FirstName = "Cred", LastName = "User", Active = true, IsAdmin = false });
+                        string uguid = GuidOf(ub);
+
+                        (int cs, string cb) = await Send(h, HttpMethod.Post, "/credentials",
+                            new { UserGUID = uguid, Name = "Crud Cred", Active = true, IsReadOnly = false });
+                        Check.Equal(201, cs, "create credential");
+                        string cguid = GuidOf(cb);
+
+                        (int gs, _) = await Send(h, HttpMethod.Get, "/credentials/" + cguid);
+                        Check.Equal(200, gs, "get credential");
+                        (_, string lb) = await Send(h, HttpMethod.Get, "/credentials");
+                        Check.Contains(lb, "Crud Cred", "list contains credential");
+
+                        (int us, _) = await Send(h, HttpMethod.Put, "/credentials/" + cguid,
+                            new { UserGUID = uguid, Name = "Crud Cred Edited", Active = true, IsReadOnly = true });
+                        Check.Equal(200, us, "update credential");
+                        (int rs, _) = await Send(h, HttpMethod.Post, "/credentials/" + cguid + "/regenerate");
+                        Check.Equal(200, rs, "regenerate credential");
+                        (int ds, _) = await Send(h, HttpMethod.Delete, "/credentials/" + cguid);
+                        Check.Equal(204, ds, "delete credential");
+
+                        await Send(h, HttpMethod.Delete, "/users/" + uguid);
+                    }),
+
+                    // ---- Request history endpoints ----
+                    Case("HistoryEndpoints", "Request history list, recent, failed, stats, get-by-id, delete, and cleanup", async (h, ct) =>
+                    {
+                        RequestHistory ok = await InsertHistoryRowReturning(h, true, 12, ct);
+                        RequestHistory bad = await InsertHistoryRowReturning(h, false, 34, ct);
+
+                        (int ls, _) = await Send(h, HttpMethod.Get, "/history"); Check.Equal(200, ls, "history list");
+                        (int rs, _) = await Send(h, HttpMethod.Get, "/history/recent?count=10"); Check.Equal(200, rs, "history recent");
+                        (int fs, _) = await Send(h, HttpMethod.Get, "/history/failed"); Check.Equal(200, fs, "history failed");
+                        (int ss, _) = await Send(h, HttpMethod.Get, "/history/stats"); Check.Equal(200, ss, "history stats");
+
+                        (int gs, _) = await Send(h, HttpMethod.Get, "/history/" + ok.RequestId); Check.Equal(200, gs, "history get by request id");
+                        (int ds, _) = await Send(h, HttpMethod.Delete, "/history/" + bad.RequestId); Check.Equal(204, ds, "history delete by request id");
+                        (int nf, _) = await Send(h, HttpMethod.Get, "/history/" + bad.RequestId); Check.Equal(404, nf, "history get after delete");
+                        (int cs, _) = await Send(h, HttpMethod.Post, "/history/cleanup?days=30"); Check.True(cs == 200 || cs == 204, "history cleanup");
+                    }),
+
+                    // ---- Authentication / authorization on writes ----
+                    Case("WriteRequiresAuth", "A write without a token returns 401", async (h, ct) =>
+                    {
+                        (int s, _) = await Send(h, HttpMethod.Post, "/origins",
+                            new { Identifier = "noauth-origin", Hostname = "localhost", Port = 9004 }, token: null);
+                        Check.Equal(401, s, "write without token is unauthorized");
+                    }),
+
+                    Case("ReadOnlyCredentialForbidden", "A read-only credential can read but is forbidden (403) from writing", async (h, ct) =>
+                    {
+                        (_, string ub) = await Send(h, HttpMethod.Post, "/users",
+                            new { Username = "rouser", Email = "ro@example.com", FirstName = "RO", LastName = "User", Active = true, IsAdmin = false });
+                        string uguid = GuidOf(ub);
+                        (int cs, string cb) = await Send(h, HttpMethod.Post, "/credentials",
+                            new { UserGUID = uguid, Name = "RO Cred", Active = true, IsReadOnly = true });
+                        Check.Equal(201, cs, "create read-only credential");
+                        string roToken = JsonNode.Parse(cb)!["BearerToken"]?.GetValue<string>() ?? string.Empty;
+                        Check.True(!string.IsNullOrEmpty(roToken), "credential returns a bearer token");
+                        string cguid = GuidOf(cb);
+
+                        (int rs, _) = await Send(h, HttpMethod.Get, "/origins", token: roToken);
+                        Check.Equal(200, rs, "read-only credential can read");
+                        (int ws, _) = await Send(h, HttpMethod.Post, "/origins",
+                            new { Identifier = "ro-denied", Hostname = "localhost", Port = 9005 }, token: roToken);
+                        Check.Equal(403, ws, "read-only credential write is forbidden (403, not 401)");
+
+                        await Send(h, HttpMethod.Delete, "/credentials/" + cguid);
+                        await Send(h, HttpMethod.Delete, "/users/" + uguid);
                     })
                 });
         }
@@ -295,6 +563,61 @@ namespace Test.Shared
             };
 
             await h.Daemon!.Client.RequestHistory.CreateAsync(row, ct).ConfigureAwait(false);
+        }
+
+        private static async Task<RequestHistory> InsertHistoryRowReturning(ProxyHarness h, bool success, long durationMs, System.Threading.CancellationToken ct)
+        {
+            RequestHistory row = new RequestHistory
+            {
+                HttpMethod = "GET",
+                RequestPath = "/history-crud-test",
+                StatusCode = success ? 200 : 500,
+                Success = success,
+                DurationMs = durationMs
+            };
+
+            return await h.Daemon!.Client.RequestHistory.CreateAsync(row, ct).ConfigureAwait(false);
+        }
+
+        // Issue a management API request (path relative to /_sb/v1.0). A null token omits the
+        // Authorization header; a non-null body is JSON-serialized. Returns status and body text.
+        private static async Task<(int Status, string Body)> Send(
+            ProxyHarness h, HttpMethod method, string path, object? body = null, string? token = AdminToken)
+        {
+            using (RestRequest req = new RestRequest(h.Url("/_sb/v1.0" + path), method))
+            {
+                if (token != null) req.Authorization.BearerToken = token;
+
+                string? payload = null;
+                if (body != null)
+                {
+                    req.ContentType = "application/json";
+                    payload = JsonSerializer.Serialize(body);
+                }
+
+                using (RestResponse resp = payload != null ? await req.SendAsync(payload) : await req.SendAsync())
+                    return (resp.StatusCode, resp.DataAsString ?? string.Empty);
+            }
+        }
+
+        private static string GuidOf(string json) => JsonNode.Parse(json)!["GUID"]!.GetValue<string>();
+
+        // Locate the auto-increment Id of a listed resource by matching a string field, since create
+        // responses do not carry the generated Id.
+        private static async Task<int> FindId(ProxyHarness h, string listPath, string field, string value, bool ignoreCase = false)
+        {
+            (int status, string bodyText) = await Send(h, HttpMethod.Get, listPath);
+            Check.Equal(200, status, "list for id lookup: " + listPath);
+            if (JsonNode.Parse(bodyText) is JsonArray arr)
+            {
+                foreach (JsonNode? item in arr)
+                {
+                    string? v = item?[field]?.GetValue<string>();
+                    if (v != null && (ignoreCase ? string.Equals(v, value, StringComparison.OrdinalIgnoreCase) : v == value))
+                        return item!["Id"]!.GetValue<int>();
+                }
+            }
+            throw new Exception("could not locate " + field + "=" + value + " in " + listPath);
         }
 
         private static TestCaseDescriptor Case(string caseId, string displayName, System.Func<ProxyHarness, System.Threading.CancellationToken, Task> body)
