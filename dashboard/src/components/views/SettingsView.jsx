@@ -434,7 +434,7 @@ function SettingsView() {
                       aria-label={t('common.delete')}
                       title={t('common.delete')}
                     >
-                      <Icons.Trash size={15} />
+                      <Icons.Close size={16} />
                     </button>
                   )}
                 </li>

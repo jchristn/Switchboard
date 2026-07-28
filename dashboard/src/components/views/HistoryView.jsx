@@ -372,18 +372,7 @@ function HistoryView() {
         />
       </div>
 
-      <TablePagination
-        total={total}
-        pageNumber={pageNumber}
-        pageSize={pageSize}
-        onPageChange={setPageNumber}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPageNumber(1);
-        }}
-        onRefresh={refreshAll}
-      >
-        <FilterBar>
+      <FilterBar>
           <FilterGrid>
             <Field label={t('history.filterMethod')}>
               <select
@@ -451,8 +440,19 @@ function HistoryView() {
               </button>
             </FilterActions>
           )}
-        </FilterBar>
-      </TablePagination>
+      </FilterBar>
+
+      <TablePagination
+        total={total}
+        pageNumber={pageNumber}
+        pageSize={pageSize}
+        onPageChange={setPageNumber}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPageNumber(1);
+        }}
+        onRefresh={refreshAll}
+      />
 
       <DataTable
         columns={columns}

@@ -166,21 +166,24 @@
 .settings-header-list {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: 0;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+/* Plain rows: header text on the left, a remove (X) control on the right — no card per header. */
 .settings-header-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-3);
-  padding: var(--spacing-2) var(--spacing-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface-alt);
+  padding-block: var(--spacing-2);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.settings-header-item:last-child {
+  border-block-end: none;
 }
 
 .settings-header-item code {

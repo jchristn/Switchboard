@@ -14,18 +14,28 @@
   margin-top: var(--spacing-2);
 }
 
-/* Two-pane layout */
+/* Stacked layout: a full-width operation dropdown, then the request card, then the response */
 .api-explorer__layout {
-  display: grid;
-  grid-template-columns: minmax(280px, 360px) 1fr;
-  gap: var(--spacing-5);
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  align-items: stretch;
 }
 
-@media (max-width: 900px) {
-  .api-explorer__layout {
-    grid-template-columns: 1fr;
-  }
+.api-explorer__selectbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.api-explorer__select-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.api-explorer__select {
+  width: 100%;
 }
 
 /* ---- Left pane ---- */

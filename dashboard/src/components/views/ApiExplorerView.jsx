@@ -26,6 +26,18 @@ const CONTENT_TYPES = [
 ];
 const HISTORY_LIMIT = 12;
 const OTHER_TAG = '__other__';
+const SYSTEM_TAG = '__system_endpoints__';
+
+// Extract {name} path parameters from a route URL pattern so they can be filled in the builder.
+function extractPathParams(path) {
+  const out = [];
+  const re = /\{([^}]+)\}/g;
+  let m;
+  while ((m = re.exec(path || '')) !== null) {
+    out.push({ name: m[1], in: 'path', required: true, schema: { type: 'string' } });
+  }
+  return out;
+}
 
 const historyKey = (serverUrl) => `sb_api_explorer_history::${serverUrl || ''}`;
 const operationKey = (method, path) => `${method.toUpperCase()} ${path}`;
@@ -155,8 +167,8 @@ function ApiExplorerView() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
-  const [search, setSearch] = useState('');
   const [selectedKey, setSelectedKey] = useState(null);
+  const [systemOps, setSystemOps] = useState([]);
 
   // Request builder state (reset whenever the selected operation changes).
   const [paramValues, setParamValues] = useState({});
@@ -192,6 +204,37 @@ function ApiExplorerView() {
     loadSpec();
   }, [loadSpec]);
 
+  // ---- Load the system's configured API endpoints (routes) as executable operations ----
+  const loadSystemOps = useCallback(async () => {
+    try {
+      const [eps, routes] = await Promise.all([apiClient.getEndpoints(), apiClient.getRoutes()]);
+      const nameByEndpoint = new Map(
+        (Array.isArray(eps) ? eps : []).map((e) => [e.identifier, e.name || e.identifier])
+      );
+      const ops = (Array.isArray(routes) ? routes : []).map((r) => {
+        const method = String(r.httpMethod || 'GET').toUpperCase();
+        const path = r.urlPattern || '/';
+        return {
+          key: operationKey(method, path),
+          method,
+          path,
+          operationId: '',
+          summary: nameByEndpoint.get(r.endpointIdentifier) || r.endpointIdentifier || '',
+          tags: [SYSTEM_TAG],
+          parameters: extractPathParams(path),
+          requestBody: null,
+        };
+      });
+      setSystemOps(ops);
+    } catch {
+      setSystemOps([]);
+    }
+  }, [apiClient]);
+
+  useEffect(() => {
+    loadSystemOps();
+  }, [loadSystemOps]);
+
   // ---- Request history (localStorage, keyed by server) ----
   useEffect(() => {
     try {
@@ -219,7 +262,9 @@ function ApiExplorerView() {
   );
 
   // ---- Derived operation data ----
-  const operations = useMemo(() => flattenOperations(spec), [spec]);
+  // Management API operations from the OpenAPI document, plus the proxy API endpoints configured in
+  // the system (each endpoint route becomes a selectable operation executed through the gateway).
+  const operations = useMemo(() => [...flattenOperations(spec), ...systemOps], [spec, systemOps]);
   const operationsByKey = useMemo(() => {
     const map = new Map();
     operations.forEach((op) => map.set(op.key, op));
@@ -227,19 +272,6 @@ function ApiExplorerView() {
   }, [operations]);
 
   const groups = useMemo(() => groupOperations(operations, spec?.tags), [operations, spec]);
-
-  const filteredGroups = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    if (!needle) return groups;
-    const match = (op) =>
-      op.path.toLowerCase().includes(needle) ||
-      op.summary.toLowerCase().includes(needle) ||
-      op.operationId.toLowerCase().includes(needle) ||
-      op.method.toLowerCase().includes(needle);
-    return groups
-      .map((g) => ({ ...g, operations: g.operations.filter(match) }))
-      .filter((g) => g.operations.length > 0);
-  }, [groups, search]);
 
   const selected = selectedKey ? operationsByKey.get(selectedKey) : null;
 
@@ -480,7 +512,8 @@ function ApiExplorerView() {
     [t]
   );
 
-  const tagLabel = (tag) => (tag === OTHER_TAG ? t('apiExplorer.otherGroup') : tag);
+  const tagLabel = (tag) =>
+    tag === OTHER_TAG ? t('apiExplorer.otherGroup') : tag === SYSTEM_TAG ? t('nav.endpoints') : tag;
 
   // ---- Render ----
   if (loading) {
@@ -510,21 +543,34 @@ function ApiExplorerView() {
       />
 
       <div className="api-explorer__layout">
-        {/* Left pane: search + operation list */}
-        <aside className="api-explorer__sidebar" aria-label={t('apiExplorer.operations')}>
-          <div className="api-explorer__search">
-            <span className="api-explorer__search-icon" aria-hidden="true">
-              <Icons.Search size={16} />
-            </span>
-            <input
-              type="search"
-              className="sb-input"
-              placeholder={t('apiExplorer.searchPlaceholder')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label={t('apiExplorer.searchPlaceholder')}
-            />
-          </div>
+        {/* Full-width operation dropdown: categories are optgroups, operations are options */}
+        <div className="api-explorer__selectbar">
+          <label className="api-explorer__select-label" htmlFor="ax-operation">
+            {t('apiExplorer.operations')}
+          </label>
+          <select
+            id="ax-operation"
+            className="sb-input api-explorer__select"
+            value={selectedKey || ''}
+            onChange={(e) => {
+              const op = operationsByKey.get(e.target.value);
+              if (op) selectOperation(op);
+            }}
+          >
+            <option value="" disabled>
+              {t('apiExplorer.selectPrompt')}
+            </option>
+            {groups.map((group) => (
+              <optgroup key={group.tag} label={`${tagLabel(group.tag)} (${group.operations.length})`}>
+                {group.operations.map((op) => (
+                  <option key={op.key} value={op.key}>
+                    {op.method} {op.path}
+                    {op.summary ? ` — ${op.summary}` : ''}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
 
           {history.length > 0 && (
             <Collapsible title={t('apiExplorer.recent')} defaultOpen={false} className="api-explorer__recent">
@@ -545,47 +591,9 @@ function ApiExplorerView() {
               </ul>
             </Collapsible>
           )}
+        </div>
 
-          <div className="api-explorer__groups">
-            {filteredGroups.length === 0 ? (
-              <EmptyState message={t('apiExplorer.noOperations')} />
-            ) : (
-              filteredGroups.map((group) => (
-                <Collapsible
-                  key={group.tag}
-                  title={tagLabel(group.tag)}
-                  defaultOpen
-                  right={<Badge tone="neutral">{group.operations.length}</Badge>}
-                >
-                  <ul className="api-explorer__op-list">
-                    {group.operations.map((op) => (
-                      <li key={op.key}>
-                        <button
-                          type="button"
-                          className={`api-explorer__op ${
-                            op.key === selectedKey ? 'api-explorer__op--active' : ''
-                          }`.trim()}
-                          onClick={() => selectOperation(op)}
-                          aria-pressed={op.key === selectedKey}
-                        >
-                          <MethodBadge method={op.method} />
-                          <span className="api-explorer__op-body">
-                            <span className="api-explorer__op-path">{op.path}</span>
-                            {op.summary && (
-                              <span className="api-explorer__op-summary">{op.summary}</span>
-                            )}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </Collapsible>
-              ))
-            )}
-          </div>
-        </aside>
-
-        {/* Right pane: request builder */}
+        {/* Request builder, then the response below it */}
         <section className="api-explorer__main" aria-label={t('apiExplorer.requestBuilder')}>
           {!selected ? (
             <EmptyState
