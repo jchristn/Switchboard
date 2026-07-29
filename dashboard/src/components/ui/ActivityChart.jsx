@@ -118,9 +118,11 @@ export default function ActivityChart({
     [buckets]
   );
 
-  // Whole-number Y-axis ticks. With a fractional step an empty chart rendered 0,0,1,1,1; a "nice"
-  // integer step keeps labels distinct (e.g. an empty chart shows just 0 and 1).
-  const yTicks = useMemo(() => {
+  // Whole-number, evenly spaced Y-axis ticks. A "nice" integer step is chosen from the data max,
+  // then the axis maximum is rounded up to a whole multiple of that step so every tick — including
+  // the topmost — sits on the same even grid (0, step, 2*step, ... axisMax). Bars are scaled against
+  // axisMax so their heights match the gridlines.
+  const { axisMax, yTicks } = useMemo(() => {
     const raw = maxTotal / Math.max(1, Y_GRID_LINES);
     let step;
     if (raw <= 1) {
@@ -131,11 +133,10 @@ export default function ActivityChart({
       const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
       step = Math.max(1, Math.round(nice * pow));
     }
+    const max = Math.max(step, Math.ceil(maxTotal / step) * step);
     const ticks = [];
-    for (let v = 0; v <= maxTotal + 1e-9; v += step) ticks.push(Math.round(v));
-    const uniq = [...new Set(ticks)];
-    if (uniq[uniq.length - 1] < maxTotal) uniq.push(Math.round(maxTotal));
-    return uniq;
+    for (let v = 0; v <= max + 1e-9; v += step) ticks.push(Math.round(v));
+    return { axisMax: max, yTicks: ticks };
   }, [maxTotal]);
 
   const allZero = useMemo(() => buckets.every((b) => (b.total || 0) === 0), [buckets]);
@@ -149,7 +150,7 @@ export default function ActivityChart({
   const barWidth = Math.max(1, barSlot * 0.7);
   const labelEvery = Math.max(1, Math.ceil(buckets.length / 8));
 
-  const yFor = (value) => PAD_TOP + PLOT_H - (value / maxTotal) * PLOT_H;
+  const yFor = (value) => PAD_TOP + PLOT_H - (value / axisMax) * PLOT_H;
 
   const showTooltip = (e, bucket) => {
     setTooltip({
@@ -242,8 +243,8 @@ export default function ActivityChart({
             const x = PAD_LEFT + i * barSlot + (barSlot - barWidth) / 2;
             const failure = b.failure || 0;
             const success = b.success || 0;
-            const failH = (failure / maxTotal) * PLOT_H;
-            const succH = (success / maxTotal) * PLOT_H;
+            const failH = (failure / axisMax) * PLOT_H;
+            const succH = (success / axisMax) * PLOT_H;
             const baseY = PAD_TOP + PLOT_H;
             const failY = baseY - failH;
             const succY = failY - succH;

@@ -124,8 +124,16 @@ function HistoryView() {
   // ---- Timeseries (chart) ----
   const loadTimeseries = useCallback(async () => {
     const range = TIME_RANGES[rangeId] || TIME_RANGES.hour;
-    const end = new Date();
-    const start = new Date(end.getTime() - range.windowMs);
+    // Align the requested window to the same bucket grid the chart renders on. Sending a raw "now"
+    // (with seconds/millis) would make the server's buckets start on a fractional-bucket offset, and
+    // the client would then floor them back onto its clean grid — shifting every bar by up to one
+    // bucket relative to the request times shown in the table. Flooring the end to the bucket grid
+    // and stepping back a whole number of buckets keeps server and chart buckets aligned 1:1.
+    const endMs = Date.now();
+    const endStart = Math.floor(endMs / range.bucketMs) * range.bucketMs;
+    const startMs = endStart - (range.buckets - 1) * range.bucketMs;
+    const end = new Date(endMs);
+    const start = new Date(startMs);
     setChartLoading(true);
     try {
       const data = await apiClient.getHistoryTimeseries({
