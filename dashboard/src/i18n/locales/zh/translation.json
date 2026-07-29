@@ -508,7 +508,7 @@
     "status": "状态",
     "active": "活动",
     "readOnly": "只读",
-    "readOnlyAccess": "只读 API 访问（可读取数据，但无法创建、更新或删除）",
+    "readOnlyAccess": "只读",
     "selectUser": "选择一个用户…",
     "guid": "GUID",
     "unnamed": "未命名凭据",

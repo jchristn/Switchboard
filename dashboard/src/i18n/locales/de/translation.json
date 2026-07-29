@@ -508,7 +508,7 @@
     "status": "Status",
     "active": "Aktiv",
     "readOnly": "Schreibgeschützt",
-    "readOnlyAccess": "Schreibgeschützter API-Zugriff (kann Daten lesen, aber nicht erstellen, aktualisieren oder löschen)",
+    "readOnlyAccess": "Schreibgeschützt",
     "selectUser": "Einen Benutzer auswählen…",
     "guid": "GUID",
     "unnamed": "Unbenannte Anmeldedaten",

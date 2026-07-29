@@ -1544,6 +1544,11 @@ namespace Switchboard.Core.Services
 
         private static bool TryParseUtc(string value, out DateTime result)
         {
+            // Query values can arrive percent-encoded (e.g. the ':' in an ISO timestamp sent as %3A by
+            // URLSearchParams), so decode before parsing. UnescapeDataString is a no-op on values that
+            // are already decoded, so this is safe regardless of how the query was delivered.
+            if (!String.IsNullOrEmpty(value)) value = Uri.UnescapeDataString(value);
+
             return DateTime.TryParse(
                 value,
                 System.Globalization.CultureInfo.InvariantCulture,

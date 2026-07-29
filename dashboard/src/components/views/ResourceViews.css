@@ -110,8 +110,14 @@
 
 .rv-token-note {
   margin-block-end: var(--spacing-3);
-  color: var(--color-warning);
+  /* Dark red so the "shown only once" warning stays legible on the light background. */
+  color: #991b1b;
   font-size: var(--font-size-sm);
+}
+
+/* The default warning color already reads well on the dark background. */
+[data-theme='dark'] .rv-token-note {
+  color: var(--color-warning);
 }
 
 .rv-token-box {

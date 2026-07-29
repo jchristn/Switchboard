@@ -508,7 +508,7 @@
     "status": "Estado",
     "active": "Activo",
     "readOnly": "Solo lectura",
-    "readOnlyAccess": "Acceso de solo lectura a la API (puede leer datos pero no crear, actualizar ni eliminar)",
+    "readOnlyAccess": "Solo lectura",
     "selectUser": "Selecciona un usuario…",
     "guid": "GUID",
     "unnamed": "Credencial sin nombre",

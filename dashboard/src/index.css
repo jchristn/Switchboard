@@ -96,20 +96,29 @@
   --transition-normal: 250ms ease;
 }
 
-/* Dark theme */
+/* Dark theme — near-black, faintly green-tinted surfaces anchored on the logo's dark green,
+   replacing the previous slate/blue-grey palette. */
 [data-theme='dark'] {
-  --color-bg-primary: #0f172a;
-  --color-bg-secondary: #1e293b;
-  --color-bg-tertiary: #334155;
+  /* Surfaces: black to near-black greens (cards darkest, then app background, then sunken/hover) */
+  --color-bg-primary: #0a0f0c;
+  --color-bg-secondary: #0f1512;
+  --color-bg-tertiary: #18211c;
 
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #cbd5e1;
-  --color-text-tertiary: #64748b;
+  --color-text-primary: #f1f6f2;
+  --color-text-secondary: #c3cfc7;
+  --color-text-tertiary: #6f7d74;
 
-  --color-border: #334155;
-  --color-border-hover: #475569;
+  --color-border: #1e2823;
+  --color-border-hover: #2c3a32;
 
-  --color-chart-grid: #334155;
+  /* Green accents kept bright enough to read against the near-black surfaces */
+  --color-primary: #2f9e43;
+  --color-primary-hover: #37b04d;
+  --color-accent: var(--color-primary);
+  --color-accent-hover: var(--color-primary-hover);
+
+  --color-chart-grid: #1e2823;
+  --color-chart-1: #2f9e43;
   --color-focus-ring: rgba(74, 222, 128, 0.35);
 }
 

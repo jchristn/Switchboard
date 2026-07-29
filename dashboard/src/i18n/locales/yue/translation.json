@@ -508,7 +508,7 @@
     "status": "狀態",
     "active": "有效",
     "readOnly": "唯讀",
-    "readOnlyAccess": "唯讀 API 存取權（可以讀取資料，但唔可以建立、更新或刪除）",
+    "readOnlyAccess": "唯讀",
     "selectUser": "揀選一個用戶…",
     "guid": "GUID",
     "unnamed": "未命名憑據",

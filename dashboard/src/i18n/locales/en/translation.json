@@ -508,7 +508,7 @@
     "status": "Status",
     "active": "Active",
     "readOnly": "Read-only",
-    "readOnlyAccess": "Read-only API access (can read data but cannot create, update, or delete)",
+    "readOnlyAccess": "Read-only",
     "selectUser": "Select a user…",
     "guid": "GUID",
     "unnamed": "Unnamed credential",

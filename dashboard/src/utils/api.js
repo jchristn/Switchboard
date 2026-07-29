@@ -333,13 +333,44 @@ export class ApiClient {
   async execute(method, path, { headers, body } = {}) {
     const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
     const started = performance.now();
-    const res = await fetch(url, {
-      method,
-      headers: { Authorization: `Bearer ${this.token}`, ...(headers || {}) },
-      body,
-    });
-    const text = await res.text();
+    let res;
+    try {
+      res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${this.token}`, ...(headers || {}) },
+        body,
+        // Do not follow redirects. A proxied API endpoint frequently redirects to an external
+        // origin that does not return CORS headers for the dashboard; following it would surface
+        // as an opaque "Failed to fetch" instead of the redirect the endpoint actually returned.
+        redirect: 'manual',
+      });
+    } catch (err) {
+      throw new ApiError(
+        0,
+        null,
+        (err && err.message) ||
+          'Failed to fetch. The endpoint may be unreachable or blocked the request (CORS).'
+      );
+    }
     const durationMs = Math.round(performance.now() - started);
+
+    // A cross-origin redirect that was not followed comes back as an opaque response with no
+    // readable status or body. Report it as a redirect rather than letting it look like a failure.
+    if (res.type === 'opaqueredirect') {
+      return {
+        status: 0,
+        statusText: 'Redirect (not followed)',
+        headers: {},
+        body:
+          'The endpoint returned an HTTP redirect. The API Explorer does not follow redirects, ' +
+          'which commonly point to an external origin the browser cannot read (CORS).',
+        durationMs,
+        bytes: 0,
+        redirected: true,
+      };
+    }
+
+    const text = await res.text();
     const respHeaders = {};
     res.headers.forEach((v, k) => {
       respHeaders[k] = v;

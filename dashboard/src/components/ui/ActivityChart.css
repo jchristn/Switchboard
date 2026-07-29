@@ -124,7 +124,7 @@
 
 .sb-chart__axis-text {
   fill: var(--color-text-subtle);
-  font-size: 11px;
+  font-size: 9px;
   font-family: var(--font-family);
 }
 

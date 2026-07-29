@@ -508,7 +508,7 @@
     "status": "ステータス",
     "active": "有効",
     "readOnly": "読み取り専用",
-    "readOnlyAccess": "読み取り専用の API アクセス（データの読み取りは可能ですが、作成・更新・削除はできません）",
+    "readOnlyAccess": "読み取り専用",
     "selectUser": "ユーザーを選択…",
     "guid": "GUID",
     "unnamed": "名前なしの認証情報",
