@@ -7,7 +7,6 @@ namespace Switchboard.Core.Services
     using System.IO;
     using System.Linq;
     using System.Text.Json;
-    using System.Text.Json.Nodes;
     using System.Threading.Tasks;
     using SerializationHelper;
     using SyslogLogging;
@@ -1572,17 +1571,11 @@ namespace Switchboard.Core.Services
                     return;
                 }
 
-                JsonObject root = (JsonSerializer.SerializeToNode(_SwitchboardSettings, _JsonOptions) as JsonObject)
-                    ?? new JsonObject();
-
-                MaskSecrets(root);
-
-                root["restartRequiredSettings"] = ToJsonArray(_RestartRequiredSettings);
-                root["runtimeEditableSettings"] = ToJsonArray(_RuntimeEditableSettings);
+                SettingsResponse view = BuildSettingsView();
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
-                await ctx.Response.Send(root.ToJsonString(_JsonOptions)).ConfigureAwait(false);
+                await ctx.Response.Send(JsonSerializer.Serialize(view, _JsonOptions)).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
         }
@@ -1608,41 +1601,33 @@ namespace Switchboard.Core.Services
 
                 _Logging.Info(_Header + "settings updated");
 
-                JsonObject root = (JsonSerializer.SerializeToNode(_SwitchboardSettings, _JsonOptions) as JsonObject)
-                    ?? new JsonObject();
-                MaskSecrets(root);
-                root["restartRequiredSettings"] = ToJsonArray(_RestartRequiredSettings);
-                root["runtimeEditableSettings"] = ToJsonArray(_RuntimeEditableSettings);
+                SettingsResponse view = BuildSettingsView();
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
-                await ctx.Response.Send(root.ToJsonString(_JsonOptions)).ConfigureAwait(false);
+                await ctx.Response.Send(JsonSerializer.Serialize(view, _JsonOptions)).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
         }
 
-        private static void MaskSecrets(JsonObject root)
+        // Build the settings response as a strongly-typed view: an independent copy of the live
+        // settings (via a serialize/deserialize round-trip so the live object is never mutated) with
+        // secrets masked and the restart/runtime metadata attached.
+        private SettingsResponse BuildSettingsView()
         {
-            if (root["Database"] is JsonObject db
-                && db["Password"] is JsonValue
-                && !String.IsNullOrEmpty(db["Password"]!.GetValue<string?>()))
-            {
-                db["Password"] = MaskValue;
-            }
+            string json = JsonSerializer.Serialize(_SwitchboardSettings, _JsonOptions);
+            SettingsResponse view = JsonSerializer.Deserialize<SettingsResponse>(json, _JsonOptions)
+                ?? new SettingsResponse();
 
-            if (root["Management"] is JsonObject mgmt
-                && mgmt["AdminToken"] is JsonValue
-                && !String.IsNullOrEmpty(mgmt["AdminToken"]!.GetValue<string?>()))
-            {
-                mgmt["AdminToken"] = MaskValue;
-            }
-        }
+            if (view.Database != null && !String.IsNullOrEmpty(view.Database.Password))
+                view.Database.Password = MaskValue;
 
-        private static JsonArray ToJsonArray(string[] values)
-        {
-            JsonArray array = new JsonArray();
-            foreach (string value in values) array.Add(value);
-            return array;
+            if (view.Management != null && !String.IsNullOrEmpty(view.Management.AdminToken))
+                view.Management.AdminToken = MaskValue;
+
+            view.RestartRequiredSettings = _RestartRequiredSettings;
+            view.RuntimeEditableSettings = _RuntimeEditableSettings;
+            return view;
         }
 
         /// <summary>

@@ -3,7 +3,6 @@ namespace Test.Shared
     using System;
     using System.Collections.Generic;
     using System.Text.Json;
-    using System.Text.Json.Nodes;
     using System.Threading.Tasks;
 
     using RestWrapper;
@@ -22,6 +21,10 @@ namespace Test.Shared
     public static class ManagementApiSuites
     {
         private const string AdminToken = "sbadmin";
+
+        // Responses mix PascalCase (resource models) and camelCase (computed endpoints); case-insensitive
+        // matching lets a single named type deserialize either.
+        private static readonly JsonSerializerOptions _Json = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
         /// <summary>
         /// All management API suites.
@@ -109,20 +112,18 @@ namespace Test.Shared
                             {
                                 Check.Equal(200, resp.StatusCode, "timeseries status");
 
-                                JsonNode root = JsonNode.Parse(resp.DataAsString)!;
-                                JsonArray buckets = root["buckets"]!.AsArray();
-                                Check.True(buckets.Count >= 1, "bucket count");
+                                TimeSeriesResponse ts = JsonSerializer.Deserialize<TimeSeriesResponse>(resp.DataAsString, _Json)!;
+                                Check.True(ts.Buckets.Count >= 1, "bucket count");
 
                                 // All inserted rows fall in the single hour-wide bucket.
                                 long total = 0, success = 0, failure = 0;
                                 double weightedDuration = 0;
-                                foreach (JsonNode? b in buckets)
+                                foreach (TimeSeriesBucket b in ts.Buckets)
                                 {
-                                    long t = b!["Total"]!.GetValue<long>();
-                                    total += t;
-                                    success += b["Success"]!.GetValue<long>();
-                                    failure += b["Failure"]!.GetValue<long>();
-                                    weightedDuration += b["AvgDurationMs"]!.GetValue<double>() * t;
+                                    total += b.Total;
+                                    success += b.Success;
+                                    failure += b.Failure;
+                                    weightedDuration += b.AvgDurationMs * b.Total;
                                 }
 
                                 Check.True(total >= 3, "aggregated total");
@@ -172,33 +173,33 @@ namespace Test.Shared
                             {
                                 Check.Equal(200, resp.StatusCode, "settings get status");
 
-                                JsonNode root = JsonNode.Parse(resp.DataAsString)!;
-                                Check.Equal("********", root["Management"]!["AdminToken"]!.GetValue<string>(), "admin token masked");
+                                SettingsResponse settings = JsonSerializer.Deserialize<SettingsResponse>(resp.DataAsString, _Json)!;
+                                Check.Equal("********", settings.Management.AdminToken, "admin token masked");
                                 Check.False(resp.DataAsString.Contains(AdminToken), "raw admin token not present");
-                                Check.True(root["restartRequiredSettings"]!.AsArray().Count > 0, "restart list present");
-                                Check.True(root["runtimeEditableSettings"]!.AsArray().Count > 0, "runtime list present");
+                                Check.True(settings.RestartRequiredSettings.Length > 0, "restart list present");
+                                Check.True(settings.RuntimeEditableSettings.Length > 0, "runtime list present");
                             }
                         }
                     }),
 
                     Case("SettingsPutRoundTrip", "PUT /settings applies a hot-swappable field live and preserves masked secrets", async (h, ct) =>
                     {
-                        JsonObject settings;
+                        SettingsResponse settings;
                         using (RestRequest getReq = new RestRequest(h.Url("/_sb/v1.0/settings")))
                         {
                             getReq.Authorization.BearerToken = AdminToken;
                             using (RestResponse getResp = await getReq.SendAsync())
-                                settings = JsonNode.Parse(getResp.DataAsString)!.AsObject();
+                                settings = JsonSerializer.Deserialize<SettingsResponse>(getResp.DataAsString, _Json)!;
                         }
 
                         // Mutate a runtime-editable field and round-trip the masked admin token unchanged.
-                        settings["Logging"]!["MinimumSeverity"] = 4;
+                        settings.Logging.MinimumSeverity = 4;
 
                         using (RestRequest putReq = new RestRequest(h.Url("/_sb/v1.0/settings"), HttpMethod.Put))
                         {
                             putReq.Authorization.BearerToken = AdminToken;
                             putReq.ContentType = "application/json";
-                            using (RestResponse putResp = await putReq.SendAsync(settings.ToJsonString()))
+                            using (RestResponse putResp = await putReq.SendAsync(JsonSerializer.Serialize(settings, _Json)))
                                 Check.Equal(200, putResp.StatusCode, "settings put status");
                         }
 
@@ -210,8 +211,8 @@ namespace Test.Shared
                             using (RestResponse verifyResp = await verifyReq.SendAsync())
                             {
                                 Check.Equal(200, verifyResp.StatusCode, "settings verify status");
-                                JsonNode root = JsonNode.Parse(verifyResp.DataAsString)!;
-                                Check.Equal(4, root["Logging"]!["MinimumSeverity"]!.GetValue<int>(), "severity applied live");
+                                SettingsResponse verified = JsonSerializer.Deserialize<SettingsResponse>(verifyResp.DataAsString, _Json)!;
+                                Check.Equal(4, verified.Logging.MinimumSeverity, "severity applied live");
                             }
                         }
                     }),
@@ -250,8 +251,8 @@ namespace Test.Shared
                             using (RestResponse resp = await req.SendAsync(JsonSerializer.Serialize(bad)))
                             {
                                 Check.Equal(200, resp.StatusCode, "validate status");
-                                JsonNode root = JsonNode.Parse(resp.DataAsString)!;
-                                Check.False(root["valid"]!.GetValue<bool>(), "config invalid");
+                                ConfigValidationResult result = JsonSerializer.Deserialize<ConfigValidationResult>(resp.DataAsString, _Json)!;
+                                Check.False(result.Valid, "config invalid");
                                 Check.Contains(resp.DataAsString, "OriginNotFound", "missing origin error code");
                             }
                         }
@@ -274,8 +275,8 @@ namespace Test.Shared
                             using (RestResponse resp = await req.SendAsync(JsonSerializer.Serialize(good)))
                             {
                                 Check.Equal(200, resp.StatusCode, "validate status");
-                                JsonNode root = JsonNode.Parse(resp.DataAsString)!;
-                                Check.True(root["valid"]!.GetValue<bool>(), "config valid");
+                                ConfigValidationResult result = JsonSerializer.Deserialize<ConfigValidationResult>(resp.DataAsString, _Json)!;
+                                Check.True(result.Valid, "config valid");
                             }
                         }
                     }),
@@ -375,7 +376,7 @@ namespace Test.Shared
                         (int cs, _) = await Send(h, HttpMethod.Post, "/routes",
                             new { EndpointIdentifier = "route-crud-ep", EndpointGUID = eguid, HttpMethod = "GET", UrlPattern = "/rc/{id}", RequiresAuthentication = false });
                         Check.Equal(201, cs, "create route");
-                        int rid = await FindId(h, "/routes", "UrlPattern", "/rc/{id}");
+                        int rid = await FindId<EndpointRoute>(h, "/routes", x => x.UrlPattern, x => x.Id, "/rc/{id}");
 
                         (int gs, _) = await Send(h, HttpMethod.Get, "/routes/" + rid);
                         Check.Equal(200, gs, "get route");
@@ -401,7 +402,7 @@ namespace Test.Shared
                         (int cs, _) = await Send(h, HttpMethod.Post, "/mappings",
                             new { EndpointIdentifier = "map-crud-ep", EndpointGUID = eguid, OriginIdentifier = "map-crud-origin", OriginGUID = oguid });
                         Check.Equal(201, cs, "create mapping");
-                        int mid = await FindId(h, "/mappings", "OriginIdentifier", "map-crud-origin");
+                        int mid = await FindId<EndpointOriginMapping>(h, "/mappings", x => x.OriginIdentifier, x => x.Id, "map-crud-origin");
 
                         (int gs, _) = await Send(h, HttpMethod.Get, "/mappings/" + mid);
                         Check.Equal(200, gs, "get mapping");
@@ -422,7 +423,7 @@ namespace Test.Shared
                         (int cs, _) = await Send(h, HttpMethod.Post, "/rewrites",
                             new { EndpointIdentifier = "rw-crud-ep", HttpMethod = "", SourcePattern = "/old", TargetPattern = "/new", SortOrder = 0 });
                         Check.Equal(201, cs, "create rewrite with empty (any) method");
-                        int rwid = await FindId(h, "/rewrites", "SourcePattern", "/old");
+                        int rwid = await FindId<UrlRewrite>(h, "/rewrites", x => x.SourcePattern, x => x.Id, "/old");
 
                         (int gs, _) = await Send(h, HttpMethod.Get, "/rewrites/" + rwid);
                         Check.Equal(200, gs, "get rewrite");
@@ -440,7 +441,7 @@ namespace Test.Shared
                     {
                         (int cs, _) = await Send(h, HttpMethod.Post, "/headers", new { HeaderName = "X-Crud-Test" });
                         Check.Equal(201, cs, "create header");
-                        int hid = await FindId(h, "/headers", "HeaderName", "x-crud-test", ignoreCase: true);
+                        int hid = await FindId<BlockedHeader>(h, "/headers", x => x.HeaderName, x => x.Id, "x-crud-test", ignoreCase: true);
 
                         (int gs, _) = await Send(h, HttpMethod.Get, "/headers/" + hid);
                         Check.Equal(200, gs, "get header");
@@ -534,7 +535,7 @@ namespace Test.Shared
                         (int cs, string cb) = await Send(h, HttpMethod.Post, "/credentials",
                             new { UserGUID = uguid, Name = "RO Cred", Active = true, IsReadOnly = true });
                         Check.Equal(201, cs, "create read-only credential");
-                        string roToken = JsonNode.Parse(cb)!["BearerToken"]?.GetValue<string>() ?? string.Empty;
+                        string roToken = JsonSerializer.Deserialize<Credential>(cb, _Json)?.BearerToken ?? string.Empty;
                         Check.True(!string.IsNullOrEmpty(roToken), "credential returns a bearer token");
                         string cguid = GuidOf(cb);
 
@@ -600,24 +601,25 @@ namespace Test.Shared
             }
         }
 
-        private static string GuidOf(string json) => JsonNode.Parse(json)!["GUID"]!.GetValue<string>();
+        private static string GuidOf(string json) => JsonSerializer.Deserialize<ResourceRef>(json, _Json)?.GUID ?? string.Empty;
 
-        // Locate the auto-increment Id of a listed resource by matching a string field, since create
-        // responses do not carry the generated Id.
-        private static async Task<int> FindId(ProxyHarness h, string listPath, string field, string value, bool ignoreCase = false)
+        // Locate the auto-increment Id of a listed resource by matching a field, since create responses
+        // do not carry the generated Id. Strongly typed over the resource model T with selectors for the
+        // field to match and the Id to return.
+        private static async Task<int> FindId<T>(
+            ProxyHarness h, string listPath, Func<T, string?> field, Func<T, int> id, string value, bool ignoreCase = false)
         {
             (int status, string bodyText) = await Send(h, HttpMethod.Get, listPath);
             Check.Equal(200, status, "list for id lookup: " + listPath);
-            if (JsonNode.Parse(bodyText) is JsonArray arr)
+
+            List<T> items = JsonSerializer.Deserialize<List<T>>(bodyText, _Json) ?? new List<T>();
+            foreach (T item in items)
             {
-                foreach (JsonNode? item in arr)
-                {
-                    string? v = item?[field]?.GetValue<string>();
-                    if (v != null && (ignoreCase ? string.Equals(v, value, StringComparison.OrdinalIgnoreCase) : v == value))
-                        return item!["Id"]!.GetValue<int>();
-                }
+                string? v = field(item);
+                if (v != null && (ignoreCase ? string.Equals(v, value, StringComparison.OrdinalIgnoreCase) : v == value))
+                    return id(item);
             }
-            throw new Exception("could not locate " + field + "=" + value + " in " + listPath);
+            throw new Exception("could not locate '" + value + "' in " + listPath);
         }
 
         private static TestCaseDescriptor Case(string caseId, string displayName, System.Func<ProxyHarness, System.Threading.CancellationToken, Task> body)
@@ -631,6 +633,28 @@ namespace Test.Shared
                     await TestHarnesses.Management.StartAsync(ct).ConfigureAwait(false);
                     await body(TestHarnesses.Management, ct).ConfigureAwait(false);
                 });
+        }
+
+        // ---- Named response shapes for deserialization (no System.Text.Json DOM types) ----
+
+        // Wrapper for GET /history/timeseries. Buckets reuse the real TimeSeriesBucket model; the
+        // camelCase JSON binds to its PascalCase properties via case-insensitive matching.
+        private sealed class TimeSeriesResponse
+        {
+            public List<TimeSeriesBucket> Buckets { get; set; } = new List<TimeSeriesBucket>();
+        }
+
+        // Subset of the POST /config/validate response needed by the assertions.
+        private sealed class ConfigValidationResult
+        {
+            public bool Valid { get; set; }
+        }
+
+        // Minimal projection to read a resource's GUID (and Id) from a create/list response.
+        private sealed class ResourceRef
+        {
+            public string GUID { get; set; } = string.Empty;
+            public int Id { get; set; }
         }
     }
 }
