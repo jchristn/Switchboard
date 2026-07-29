@@ -183,7 +183,7 @@ namespace Test.Shared
 
             public string Url(string pathAndQuery)
             {
-                return "http://localhost:" + _ProxyPort + pathAndQuery;
+                return "http://127.0.0.1:" + _ProxyPort + pathAndQuery;
             }
 
             public async Task<RoutingResponse> GetAsync(string path, CancellationToken token, IReadOnlyDictionary<string, string>? headers = null)
@@ -232,7 +232,7 @@ namespace Test.Shared
             {
                 SwitchboardSettings settings = new SwitchboardSettings();
 
-                settings.Webserver.Hostname = "localhost";
+                settings.Webserver.Hostname = "127.0.0.1";
                 settings.Webserver.Port = proxyPort;
                 settings.Logging.ConsoleLogging = false;
                 settings.Logging.MinimumSeverity = 7;
@@ -282,7 +282,7 @@ namespace Test.Shared
                 OriginServer origin = new OriginServer();
                 origin.Identifier = name;
                 origin.Name = name;
-                origin.Hostname = "localhost";
+                origin.Hostname = "127.0.0.1";
                 origin.Port = port;
                 origin.Ssl = false;
                 origin.HealthCheckUrl = "/";

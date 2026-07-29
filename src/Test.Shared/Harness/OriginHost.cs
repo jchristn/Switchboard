@@ -34,7 +34,9 @@ namespace Test.Shared.Harness
             _ServerName = serverName ?? throw new ArgumentNullException(nameof(serverName));
             _Port = port;
             _Settings = new WebserverSettings();
-            _Settings.Hostname = "localhost";
+            // Bind the IPv4 loopback explicitly so the proxy (and health checks) reach the origin
+            // without the ~2s IPv6 (::1) connect fallback that "localhost" incurs on Windows.
+            _Settings.Hostname = "127.0.0.1";
             _Settings.Port = _Port;
         }
 

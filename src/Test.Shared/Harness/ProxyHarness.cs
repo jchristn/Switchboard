@@ -97,7 +97,7 @@ namespace Test.Shared.Harness
         /// <returns>Absolute URL against the proxy.</returns>
         public string Url(string pathAndQuery)
         {
-            return "http://localhost:" + _ProxyPort + pathAndQuery;
+            return "http://127.0.0.1:" + _ProxyPort + pathAndQuery;
         }
 
         /// <summary>
@@ -177,7 +177,11 @@ namespace Test.Shared.Harness
         {
             SwitchboardSettings settings = new SwitchboardSettings();
 
-            settings.Webserver.Hostname = "localhost";
+            // Use the IPv4 loopback, not "localhost". On Windows "localhost" resolves to IPv6 (::1)
+            // first, and every connection to an IPv4-only listener waits out a failed ::1 connect
+            // (~2s) before falling back — paid on both the client->proxy and proxy->origin hops, which
+            // is what made the integration suite slow.
+            settings.Webserver.Hostname = "127.0.0.1";
             settings.Webserver.Port = _ProxyPort;
 
             settings.Logging.ConsoleLogging = false;
@@ -331,7 +335,7 @@ namespace Test.Shared.Harness
                 {
                     Identifier = kvp.Key,
                     Name = kvp.Key,
-                    Hostname = "localhost",
+                    Hostname = "127.0.0.1",
                     Port = kvp.Value,
                     Ssl = false,
                     HealthCheckIntervalMs = 1000,

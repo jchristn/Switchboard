@@ -55,7 +55,7 @@ namespace Test.Shared
                             {
                                 using (TcpClient tcp = new TcpClient())
                                 {
-                                    await tcp.ConnectAsync("localhost", h.ProxyPort).ConfigureAwait(false);
+                                    await tcp.ConnectAsync("127.0.0.1", h.ProxyPort).ConfigureAwait(false);
                                     using (NetworkStream ns = tcp.GetStream())
                                     {
                                         byte[] request = Encoding.ASCII.GetBytes("GET /unauthenticated HTTP/1.0\r\nHost: localhost\r\n\r\n");
