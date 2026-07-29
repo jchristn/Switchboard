@@ -149,6 +149,18 @@ namespace SampleApplication
             settings.Endpoints.Add(BuildEndpoint("route3", "Route 3 (nodes 1 and 3)",
                 SingleGetRoute("/route3"), new List<string> { "node1", "node3" }));
 
+            // GET /api/users/{id} -> URL rewrite demo, any node. The client calls the public,
+            // versioned URL "/api/users/{id}", but Switchboard rewrites it to the origin's internal
+            // URL "/internal/v2/users/{id}" before forwarding. The origin never sees the original URL;
+            // it responds showing the URL it received (rewritten) alongside the reconstructed original.
+            ApiEndpoint rewriteEndpoint = BuildEndpoint("users-rewrite", "Users (URL rewrite demo)",
+                SingleGetRoute("/api/users/{id}"), new List<string> { "node1", "node2", "node3" });
+            rewriteEndpoint.RewriteUrls = new Dictionary<string, Dictionary<string, string>>
+            {
+                { "GET", new Dictionary<string, string> { { "/api/users/{id}", "/internal/v2/users/{id}" } } }
+            };
+            settings.Endpoints.Add(rewriteEndpoint);
+
             return settings;
         }
 
@@ -228,6 +240,7 @@ namespace SampleApplication
             Console.WriteLine("    curl " + baseUrl + "/route2      # node 2 or 3");
             Console.WriteLine("    curl " + baseUrl + "/route3      # node 1 or 3");
             Console.WriteLine("    curl -X POST -d 'hi' " + baseUrl + "/echo   # any node, echoes body");
+            Console.WriteLine("    curl " + baseUrl + "/api/users/42   # URL rewrite: origin receives /internal/v2/users/42");
             Console.WriteLine();
             Console.WriteLine("  Repeat a request to see load balancing rotate between eligible nodes.");
             Console.WriteLine("  Press Ctrl+C to stop.");

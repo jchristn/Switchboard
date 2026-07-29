@@ -150,6 +150,26 @@ namespace SampleApplication
                 return;
             }
 
+            // URL rewrite demonstration. Switchboard rewrites the client's original request
+            // "/api/users/{id}" to "/internal/v2/users/{id}" before forwarding, so this origin only
+            // ever receives the rewritten path. The origin echoes the rewritten path it actually got
+            // and reconstructs the original by reversing this sample's known rewrite rule, so the
+            // response makes both URLs visible to the caller.
+            string rewrittenPrefix = "/internal/v2/users/";
+            string originalPrefix = "/api/users/";
+            if (method == HttpMethod.GET && path.StartsWith(rewrittenPrefix, StringComparison.Ordinal))
+            {
+                string userId = path.Substring(rewrittenPrefix.Length);
+                string originalUrl = originalPrefix + userId;
+
+                ctx.Response.StatusCode = 200;
+                await ctx.Response.Send(
+                    "Hello from the URL rewrite demo, served by node " + _NodeNumber + "." + Environment.NewLine +
+                    "  Original URL (requested by the client): " + originalUrl + Environment.NewLine +
+                    "  Rewritten URL (received by this origin): " + path).ConfigureAwait(false);
+                return;
+            }
+
             if (method == HttpMethod.POST && path == "/echo")
             {
                 string body = ctx.Request.DataAsString ?? String.Empty;

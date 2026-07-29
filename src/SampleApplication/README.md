@@ -21,8 +21,23 @@ load-balancing behavior is easy to observe with `curl`.
 | `GET /route2` | nodes 2, 3 | `Hello from route2, served by node {N} (valid values: 2 or 3)` |
 | `GET /route3` | nodes 1, 3 | `Hello from route3, served by node {N} (valid values: 1 or 3)` |
 | `POST /echo` | any node | `Hello from the echo route, served by node {N}.  You said: {request body}` |
+| `GET /api/users/{id}` | any node | URL rewrite demo — response shows the original and rewritten URLs (see below) |
 
 Repeat any request to watch the load balancer rotate (round-robin) between the eligible nodes.
+
+### URL rewrite
+
+`GET /api/users/{id}` demonstrates URL rewriting. The client calls the public, versioned URL, but
+Switchboard rewrites it to the origin's internal URL (`/internal/v2/users/{id}`) **before** forwarding.
+The origin only ever receives the rewritten path, so its response reports both the original URL and
+the rewritten URL it actually received:
+
+```
+$ curl http://localhost:8000/api/users/42
+Hello from the URL rewrite demo, served by node 1.
+  Original URL (requested by the client): /api/users/42
+  Rewritten URL (received by this origin): /internal/v2/users/42
+```
 
 ## Run it
 
@@ -40,6 +55,7 @@ curl http://localhost:8000/route1
 curl http://localhost:8000/route2
 curl http://localhost:8000/route3
 curl -X POST -d 'switchboard rocks' http://localhost:8000/echo
+curl http://localhost:8000/api/users/42
 ```
 
 Press `Ctrl+C` to stop. The daemon writes a local SQLite file (`sampleapplication.db`) in the working
