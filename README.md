@@ -66,6 +66,37 @@ Switchboard is a **lightweight application proxy** that combines reverse proxy a
 
 Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers who need a simple, embeddable gateway without the complexity of heavyweight solutions.
 
+<details>
+<summary><strong>📸 Screenshots — a tour of the management dashboard</strong></summary>
+
+<br>
+
+**Request history & activity** — the operator view, with a live request-activity chart (success vs. failure over time), retained / failures / success-rate / average-duration KPIs, filtering, and a paginated history table.
+
+![Request history and activity chart](assets/ss1.png)
+
+**Request details** — drill into any proxied request to see status, timing, request/response sizes, identifiers, and captured headers, then replay it in the API Explorer.
+
+![Request details](assets/ss3.png)
+
+**Origin servers** — the backend targets Switchboard proxies to, with hostname, port, TLS, health status, and concurrency limits; click any row for the full origin configuration.
+
+![Origin servers](assets/ss2.png)
+
+![Origin details](assets/ss4.png)
+
+**API endpoints** — route groups showing each endpoint's URL routes, per-route HTTP methods, and load-balancing mode, with an inline route editor.
+
+![API endpoints](assets/ss5.png)
+
+![API endpoint route editor](assets/ss6.png)
+
+**API Explorer** — an OpenAPI-driven console to browse and try the management API against the running server, complete with generated cURL and `fetch()` snippets.
+
+![API Explorer](assets/ss7.png)
+
+</details>
+
 ---
 
 ## What's New in v4.1.0
