@@ -86,7 +86,7 @@ one or more origin servers, and endpoints that map routes to those origins:
 ## Links
 
 - Source, full documentation, and issues: https://github.com/jchristn/switchboard
-- REST API reference: https://github.com/jchristn/switchboard/blob/main/docs/REST_API.md
+- REST API reference: https://github.com/jchristn/switchboard/blob/main/REST_API.md
 - Changelog: https://github.com/jchristn/switchboard/blob/main/CHANGELOG.md
 
 Licensed under the MIT license.

@@ -229,7 +229,7 @@ namespace Test.Shared
                         Check.True(g.ParameterizedUrls != null, "default not null");
                         g.ParameterizedUrls = null!;
                         Check.True(g.ParameterizedUrls != null, "null coalesced to empty");
-                        Check.Equal(0, g.ParameterizedUrls.Count, "coalesced empty");
+                        Check.Equal(0, g.ParameterizedUrls!.Count, "coalesced empty");
                         return Task.CompletedTask;
                     }),
 

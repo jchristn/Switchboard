@@ -2728,6 +2728,22 @@
         <member name="M:Switchboard.Core.Database.SqlServer.SqlServerDatabaseDriver.DisposeAsyncCore">
             <inheritdoc />
         </member>
+        <member name="T:Switchboard.Core.DeterministicGuid">
+            <summary>
+            Produces stable, deterministic GUIDs from string identifiers.
+            Origin servers and API endpoints are keyed by their string identifier in the database and do
+            not persist a GUID column; deriving the GUID from the identifier keeps it stable across reads
+            so callers can address these resources by GUID without a persisted value.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.DeterministicGuid.FromString(System.String)">
+            <summary>
+            Compute a stable GUID for the supplied identifier.
+            Returns <see cref="F:System.Guid.Empty"/> when the value is null or empty.
+            </summary>
+            <param name="value">Identifier.</param>
+            <returns>Deterministic GUID.</returns>
+        </member>
         <member name="T:Switchboard.Core.LoadBalancingMode">
             <summary>
             Load balancing mode.
@@ -2784,6 +2800,8 @@
         <member name="P:Switchboard.Core.Models.ApiEndpointConfig.GUID">
             <summary>
             Unique GUID for this API endpoint.
+            Derived deterministically from <see cref="P:Switchboard.Core.Models.ApiEndpointConfig.Identifier"/> so it is stable across reads; the
+            database keys endpoints by identifier and does not persist a GUID column.
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.ApiEndpointConfig.Identifier">
@@ -3293,6 +3311,8 @@
         <member name="P:Switchboard.Core.Models.OriginServerConfig.GUID">
             <summary>
             Unique GUID for this origin server.
+            Derived deterministically from <see cref="P:Switchboard.Core.Models.OriginServerConfig.Identifier"/> so it is stable across reads; the
+            database keys origin servers by identifier and does not persist a GUID column.
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.OriginServerConfig.Identifier">
@@ -3795,6 +3815,7 @@
         <member name="P:Switchboard.Core.Models.UrlRewrite.HttpMethod">
             <summary>
             HTTP method this rewrite applies to.
+            An empty value means the rewrite applies to any HTTP method.
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.UrlRewrite.SourcePattern">
@@ -4249,6 +4270,61 @@
             URL.
             </summary>
         </member>
+        <member name="T:Switchboard.Core.Services.ConfigurationReloadService">
+            <summary>
+            Projects database-managed configuration (created and edited through the management API and
+            dashboard) into the live in-memory settings the gateway and health-check services consume.
+            The settings loaded from the configuration file at startup are treated as an immutable
+            baseline; database-only resources (those not present in the baseline) are merged on top so
+            dashboard-created origins and endpoints take effect without a restart. A background monitor
+            polls for changes and reloads only when the projected configuration actually changes.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ConfigurationReloadService.Logging">
+            <summary>
+            Logging module.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ConfigurationReloadService.HealthCheckService">
+            <summary>
+            Health-check service to reconcile after each reload so newly added origins begin health
+            checks and removed origins stop. May be null (for example during the initial hydrate,
+            before the health-check service is constructed).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ConfigurationReloadService.PollIntervalMs">
+            <summary>
+            Interval, in milliseconds, at which the background monitor polls the database for
+            configuration changes. Default is 3000. Minimum is 500.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.ConfigurationReloadService.#ctor(Switchboard.Core.SwitchboardSettings,Switchboard.Core.Client.SwitchboardClient,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Settings. The current Origins/Endpoints/BlockedHeaders are captured as the immutable baseline.</param>
+            <param name="client">Switchboard client for database access.</param>
+            <param name="logging">Logging.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.ConfigurationReloadService.StartMonitor">
+            <summary>
+            Start the background monitor that reloads configuration when the database changes.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.ConfigurationReloadService.ReloadAsync(System.Threading.CancellationToken)">
+            <summary>
+            Reload configuration from the database into settings, merging database-only resources on
+            top of the baseline. No-op (returns false) when the projected configuration is unchanged
+            since the last reload.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>True if settings were updated; false if nothing changed.</returns>
+        </member>
+        <member name="M:Switchboard.Core.Services.ConfigurationReloadService.Dispose">
+            <summary>
+            Dispose.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.Services.GatewayService">
             <summary>
             Gateway service.
@@ -4329,6 +4405,14 @@
             <param name="settings">Settings.</param>
             <param name="logging">Logging.</param>
             <param name="serializer">Serializer.</param>
+        </member>
+        <member name="M:Switchboard.Core.Services.HealthCheckService.SyncOrigins">
+            <summary>
+            Reconcile the running health-check tasks against the current set of origin servers in
+            settings. Starts tasks for newly added origins and cancels tasks for origins that have
+            been removed. Existing origins are left running so their health state is preserved.
+            Thread-safe.
+            </summary>
         </member>
         <member name="M:Switchboard.Core.Services.HealthCheckService.Dispose(System.Boolean)">
             <summary>

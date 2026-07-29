@@ -1452,12 +1452,24 @@ namespace Switchboard.Core.Services
 
                 List<TimeSeriesBucket> buckets = BuildTimeSeries(rows, start, end, intervalMinutes);
 
+                // Project buckets with camelCase field names so the entire timeseries payload is
+                // consistently camelCase (matching the wrapper below and the dashboard chart, which
+                // reads bucket.total / bucket.success / bucket.bucketStartUtc). Serializing the
+                // TimeSeriesBucket model directly would emit PascalCase (Total, Success,
+                // BucketStartUtc), which the chart reads as undefined and renders as an empty graph.
                 await SendOk(ctx, new
                 {
                     startUtc = start.ToString("o"),
                     endUtc = end.ToString("o"),
                     intervalMinutes,
-                    buckets
+                    buckets = buckets.Select(b => new
+                    {
+                        bucketStartUtc = b.BucketStartUtc.ToString("o"),
+                        total = b.Total,
+                        success = b.Success,
+                        failure = b.Failure,
+                        avgDurationMs = b.AvgDurationMs
+                    }).ToList()
                 }).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }

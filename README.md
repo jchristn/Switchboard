@@ -885,7 +885,7 @@ curl -X POST -H "Authorization: Bearer your-token" http://localhost:8000/_sb/v1.
 curl -X POST -H "Authorization: Bearer your-token" http://localhost:8000/_sb/v1.0/system/restart
 ```
 
-See [docs/REST_API.md](docs/REST_API.md) for complete API reference.
+See [REST_API.md](REST_API.md) for complete API reference.
 
 ### Running the Dashboard
 
