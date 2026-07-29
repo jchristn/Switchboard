@@ -1,12 +1,14 @@
 # Switchboard REST API Reference
 
-This document provides a comprehensive reference for the Switchboard Management REST API.
+This document is a reference for the Switchboard Management REST API. Field names and capitalization
+below match exactly what the server sends and accepts.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Authentication](#authentication)
 - [Base URL](#base-url)
+- [JSON Conventions & Capitalization](#json-conventions--capitalization)
 - [Common Response Formats](#common-response-formats)
 - [Error Handling](#error-handling)
 - [Endpoints](#endpoints)
@@ -21,19 +23,24 @@ This document provides a comprehensive reference for the Switchboard Management 
   - [Users](#users)
   - [Credentials](#credentials)
   - [Request History](#request-history)
+  - [Settings](#settings)
+  - [System](#system)
+  - [Configuration Validation](#configuration-validation)
 - [Data Models](#data-models)
 
 ---
 
 ## Overview
 
-The Switchboard Management API provides RESTful endpoints for configuring and monitoring the Switchboard proxy at runtime. All endpoints return JSON responses and accept JSON request bodies where applicable.
+The Switchboard Management API provides RESTful endpoints for configuring and monitoring the
+Switchboard proxy at runtime. All endpoints return JSON and accept JSON request bodies where
+applicable.
 
 ### Features
 
 - Full CRUD operations for all configuration entities
 - Bearer token authentication
-- Pagination support via `skip` and `take` query parameters
+- Pagination via `skip` and `take` query parameters
 - Search/filtering on applicable endpoints
 
 ---
@@ -63,8 +70,9 @@ curl -H "Authorization: Bearer sbadmin" http://localhost:8000/_sb/v1.0/health
 
 On first startup, Switchboard creates a default administrator:
 - **Username**: `admin`
-- **Bearer Token**: `sbadmin` (displayed once on first startup)
-- **Access**: Full administrator — can create, update, and delete resources. Rotate or replace it before running in production.
+- **Bearer Token**: `sbadmin` (the value of `Management.AdminToken`)
+- **Access**: Full administrator — can create, update, and delete resources. Rotate or replace it
+  before running in production.
 
 Write operations (POST/PUT/DELETE) require a credential that is not read-only. A read-only credential
 may read but receives `403 Forbidden` (`AuthorizationFailed`) on a write; the session is not ended.
@@ -81,28 +89,44 @@ http://localhost:8000/_sb/v1.0/
 
 ---
 
-## OpenAPI Documentation
+## JSON Conventions & Capitalization
 
-The Management API provides self-documenting endpoints for API discovery:
+Capitalization is **not uniform** across the API, so match these conventions exactly:
+
+| Category | Casing | Examples |
+|----------|--------|----------|
+| **Resource models** (origins, endpoints, routes, mappings, rewrites, blocked headers, users, credentials, request history) | **PascalCase** | `Identifier`, `Hostname`, `Port`, `Ssl`, `TimestampUtc`, `HttpMethod`, `UrlPattern` |
+| **Identifier suffixes** | `GUID` / `Id` (as shown) | `GUID`, `EndpointGUID`, `OriginGUID`, `UserGUID`, `Id` |
+| **Error responses** | **PascalCase** | `Error`, `Message`, `StatusCode`, `Description` |
+| **Settings config tree** | **PascalCase** | `Logging`, `Webserver`, `Database`, `Management` |
+| **Settings metadata arrays** | **camelCase** | `restartRequiredSettings`, `runtimeEditableSettings` |
+| **Computed endpoints** (`/health`, `/me`, `/history/stats`, `/history/timeseries`, `/history/cleanup`, `/config/validate`) | **camelCase** | `totalRequests`, `bucketStartUtc`, `firstName` |
+| **Query-string parameters** | lowercase / camelCase | `skip`, `take`, `search`, `start`, `end`, `intervalMinutes` |
+
+### Request bodies
+
+Send request-body fields in **PascalCase** (matching the resource models). Origins and endpoints
+accept either case, but routes, mappings, rewrites, and blocked headers are **case-sensitive and
+require PascalCase** — a camelCase body for those resources fails. When in doubt, use PascalCase
+everywhere; it is accepted by every endpoint.
+
+The official dashboard converts automatically (PascalCase on the wire, camelCase internally), so it is
+consistent with the shapes documented here.
+
+---
+
+## OpenAPI Documentation
 
 | Endpoint | Description |
 |----------|-------------|
 | `GET /openapi.json` | OpenAPI 3.0.3 specification document |
 | `GET /swagger` | Interactive Swagger UI |
 
-These endpoints do not require authentication to allow API discoverability and tooling integration.
+These endpoints do not require authentication, to allow API discovery and tooling integration.
 
-### Swagger UI
-
-Access the interactive API documentation at:
 ```
 http://localhost:8000/swagger
 ```
-
-The Swagger UI allows you to:
-- Browse all available endpoints
-- View request/response schemas
-- Test API calls directly from the browser (with Bearer token authentication)
 
 ---
 
@@ -118,7 +142,7 @@ The Swagger UI allows you to:
 
 ### Pagination
 
-List endpoints support pagination via query parameters:
+List endpoints support pagination via query-string parameters (lowercase):
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -136,15 +160,19 @@ GET /_sb/v1.0/origins?skip=10&take=25
 
 ### Error Response Structure
 
+Error responses are **PascalCase**:
+
 ```json
 {
-  "error": "NotFound",
-  "message": "The requested resource was not found.",
-  "statusCode": 404,
-  "description": "Origin server not found",
-  "context": null
+  "Error": "NotFound",
+  "Message": "The requested resource was not found.",
+  "StatusCode": 404,
+  "Description": "Origin server not found"
 }
 ```
+
+`Description` is present when the server has additional context; some errors return only `Error`,
+`Message`, and `StatusCode`.
 
 ### Error Codes
 
@@ -179,14 +207,12 @@ GET /_sb/v1.0/origins?skip=10&take=25
 GET /_sb/v1.0/health
 ```
 
-Returns the health status of the Switchboard instance.
-
-**Response:**
+Returns the health status of the Switchboard instance. Response fields are **camelCase**:
 
 ```json
 {
   "status": "healthy",
-  "timestamp": "2024-01-15T10:30:00.000Z",
+  "timestamp": "2026-07-29T10:30:00.0000000Z",
   "version": "4.1.0"
 }
 ```
@@ -201,15 +227,12 @@ Returns the health status of the Switchboard instance.
 GET /_sb/v1.0/me
 ```
 
-Returns information about the currently authenticated user.
-
-**Response:**
+Returns information about the currently authenticated user. Response fields are **camelCase**:
 
 ```json
 {
   "guid": "550e8400-e29b-41d4-a716-446655440000",
   "username": "admin",
-  "email": "admin@example.com",
   "firstName": "Admin",
   "lastName": "User",
   "isAdmin": true,
@@ -229,13 +252,7 @@ Origin servers are backend services that Switchboard proxies requests to.
 GET /_sb/v1.0/origins
 ```
 
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `search` | string | Filter by identifier or name |
-| `skip` | integer | Records to skip |
-| `take` | integer | Maximum records to return |
+**Query Parameters:** `search` (filter by identifier or name), `skip`, `take`
 
 **Response:** Array of [OriginServerConfig](#originserverconfig)
 
@@ -245,35 +262,19 @@ GET /_sb/v1.0/origins
 POST /_sb/v1.0/origins
 ```
 
-**Request Body:** [OriginServerConfig](#originserverconfig) (GUID is auto-generated)
+**Request Body:** [OriginServerConfig](#originserverconfig) (`GUID` is derived from `Identifier`)
 
-**Response:** `201 Created` with created [OriginServerConfig](#originserverconfig)
+**Response:** `201 Created` with the created [OriginServerConfig](#originserverconfig)
 
-#### Get Origin Server
-
-```
-GET /_sb/v1.0/origins/{guid}
-```
-
-**Response:** [OriginServerConfig](#originserverconfig)
-
-#### Update Origin Server
+#### Get / Update / Delete Origin Server
 
 ```
-PUT /_sb/v1.0/origins/{guid}
-```
-
-**Request Body:** [OriginServerConfig](#originserverconfig)
-
-**Response:** Updated [OriginServerConfig](#originserverconfig)
-
-#### Delete Origin Server
-
-```
+GET    /_sb/v1.0/origins/{guid}
+PUT    /_sb/v1.0/origins/{guid}
 DELETE /_sb/v1.0/origins/{guid}
 ```
 
-**Response:** `204 No Content`
+`GET`/`PUT` return the [OriginServerConfig](#originserverconfig); `DELETE` returns `204 No Content`.
 
 ---
 
@@ -281,57 +282,22 @@ DELETE /_sb/v1.0/origins/{guid}
 
 API endpoints define the routes that Switchboard handles and how they map to origin servers.
 
-#### List API Endpoints
+#### List / Create
 
 ```
-GET /_sb/v1.0/endpoints
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `search` | string | Filter by identifier or name |
-| `skip` | integer | Records to skip |
-| `take` | integer | Maximum records to return |
-
-**Response:** Array of [ApiEndpointConfig](#apiendpointconfig)
-
-#### Create API Endpoint
-
-```
+GET  /_sb/v1.0/endpoints          (query: search, skip, take)
 POST /_sb/v1.0/endpoints
 ```
 
-**Request Body:** [ApiEndpointConfig](#apiendpointconfig)
+**Response:** Array of / created [ApiEndpointConfig](#apiendpointconfig)
 
-**Response:** `201 Created` with created [ApiEndpointConfig](#apiendpointconfig)
-
-#### Get API Endpoint
+#### Get / Update / Delete
 
 ```
-GET /_sb/v1.0/endpoints/{guid}
-```
-
-**Response:** [ApiEndpointConfig](#apiendpointconfig)
-
-#### Update API Endpoint
-
-```
-PUT /_sb/v1.0/endpoints/{guid}
-```
-
-**Request Body:** [ApiEndpointConfig](#apiendpointconfig)
-
-**Response:** Updated [ApiEndpointConfig](#apiendpointconfig)
-
-#### Delete API Endpoint
-
-```
+GET    /_sb/v1.0/endpoints/{guid}
+PUT    /_sb/v1.0/endpoints/{guid}
 DELETE /_sb/v1.0/endpoints/{guid}
 ```
-
-**Response:** `204 No Content`
 
 ---
 
@@ -339,56 +305,16 @@ DELETE /_sb/v1.0/endpoints/{guid}
 
 Routes define URL patterns that map to API endpoints.
 
-#### List Routes
-
 ```
-GET /_sb/v1.0/routes
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `skip` | integer | Records to skip |
-| `take` | integer | Maximum records to return |
-
-**Response:** Array of [EndpointRoute](#endpointroute)
-
-#### Create Route
-
-```
-POST /_sb/v1.0/routes
-```
-
-**Request Body:** [EndpointRoute](#endpointroute)
-
-**Response:** `201 Created` with created [EndpointRoute](#endpointroute)
-
-#### Get Route
-
-```
-GET /_sb/v1.0/routes/{id}
-```
-
-**Response:** [EndpointRoute](#endpointroute)
-
-#### Update Route
-
-```
-PUT /_sb/v1.0/routes/{id}
-```
-
-**Request Body:** [EndpointRoute](#endpointroute)
-
-**Response:** Updated [EndpointRoute](#endpointroute)
-
-#### Delete Route
-
-```
+GET    /_sb/v1.0/routes            (query: skip, take)
+POST   /_sb/v1.0/routes
+GET    /_sb/v1.0/routes/{id}
+PUT    /_sb/v1.0/routes/{id}
 DELETE /_sb/v1.0/routes/{id}
 ```
 
-**Response:** `204 No Content`
+**Body / Response:** [EndpointRoute](#endpointroute). The `{id}` is the integer primary key. Set
+`EndpointGUID` on create (it is required).
 
 ---
 
@@ -396,46 +322,15 @@ DELETE /_sb/v1.0/routes/{id}
 
 Mappings associate API endpoints with their backend origin servers.
 
-#### List Mappings
-
 ```
-GET /_sb/v1.0/mappings
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `skip` | integer | Records to skip |
-| `take` | integer | Maximum records to return |
-
-**Response:** Array of [EndpointOriginMapping](#endpointoriginmapping)
-
-#### Create Mapping
-
-```
-POST /_sb/v1.0/mappings
-```
-
-**Request Body:** [EndpointOriginMapping](#endpointoriginmapping)
-
-**Response:** `201 Created` with created [EndpointOriginMapping](#endpointoriginmapping)
-
-#### Get Mapping
-
-```
-GET /_sb/v1.0/mappings/{id}
-```
-
-**Response:** [EndpointOriginMapping](#endpointoriginmapping)
-
-#### Delete Mapping
-
-```
+GET    /_sb/v1.0/mappings          (query: skip, take)
+POST   /_sb/v1.0/mappings
+GET    /_sb/v1.0/mappings/{id}
 DELETE /_sb/v1.0/mappings/{id}
 ```
 
-**Response:** `204 No Content`
+**Body / Response:** [EndpointOriginMapping](#endpointoriginmapping). There is no `PUT` for mappings.
+Set both `EndpointGUID` and `OriginGUID` on create.
 
 ---
 
@@ -443,56 +338,15 @@ DELETE /_sb/v1.0/mappings/{id}
 
 URL rewrites transform request URLs before forwarding to origin servers.
 
-#### List Rewrites
-
 ```
-GET /_sb/v1.0/rewrites
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `skip` | integer | Records to skip |
-| `take` | integer | Maximum records to return |
-
-**Response:** Array of [UrlRewrite](#urlrewrite)
-
-#### Create Rewrite
-
-```
-POST /_sb/v1.0/rewrites
-```
-
-**Request Body:** [UrlRewrite](#urlrewrite)
-
-**Response:** `201 Created` with created [UrlRewrite](#urlrewrite)
-
-#### Get Rewrite
-
-```
-GET /_sb/v1.0/rewrites/{id}
-```
-
-**Response:** [UrlRewrite](#urlrewrite)
-
-#### Update Rewrite
-
-```
-PUT /_sb/v1.0/rewrites/{id}
-```
-
-**Request Body:** [UrlRewrite](#urlrewrite)
-
-**Response:** Updated [UrlRewrite](#urlrewrite)
-
-#### Delete Rewrite
-
-```
+GET    /_sb/v1.0/rewrites          (query: skip, take)
+POST   /_sb/v1.0/rewrites
+GET    /_sb/v1.0/rewrites/{id}
+PUT    /_sb/v1.0/rewrites/{id}
 DELETE /_sb/v1.0/rewrites/{id}
 ```
 
-**Response:** `204 No Content`
+**Body / Response:** [UrlRewrite](#urlrewrite).
 
 ---
 
@@ -500,46 +354,14 @@ DELETE /_sb/v1.0/rewrites/{id}
 
 Globally blocked headers are not forwarded from client requests to origin servers.
 
-#### List Blocked Headers
-
 ```
-GET /_sb/v1.0/headers
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `skip` | integer | Records to skip |
-| `take` | integer | Maximum records to return |
-
-**Response:** Array of [BlockedHeader](#blockedheader)
-
-#### Create Blocked Header
-
-```
-POST /_sb/v1.0/headers
-```
-
-**Request Body:** [BlockedHeader](#blockedheader)
-
-**Response:** `201 Created` with created [BlockedHeader](#blockedheader)
-
-#### Get Blocked Header
-
-```
-GET /_sb/v1.0/headers/{id}
-```
-
-**Response:** [BlockedHeader](#blockedheader)
-
-#### Delete Blocked Header
-
-```
+GET    /_sb/v1.0/headers           (query: skip, take)
+POST   /_sb/v1.0/headers
+GET    /_sb/v1.0/headers/{id}
 DELETE /_sb/v1.0/headers/{id}
 ```
 
-**Response:** `204 No Content`
+**Body / Response:** [BlockedHeader](#blockedheader). There is no `PUT` for blocked headers.
 
 ---
 
@@ -547,57 +369,15 @@ DELETE /_sb/v1.0/headers/{id}
 
 User accounts for Management API access.
 
-#### List Users
-
 ```
-GET /_sb/v1.0/users
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `search` | string | Filter by username, email, or name |
-| `skip` | integer | Records to skip |
-| `take` | integer | Maximum records to return |
-
-**Response:** Array of [UserMaster](#usermaster)
-
-#### Create User
-
-```
-POST /_sb/v1.0/users
-```
-
-**Request Body:** [UserMaster](#usermaster) (GUID is auto-generated)
-
-**Response:** `201 Created` with created [UserMaster](#usermaster)
-
-#### Get User
-
-```
-GET /_sb/v1.0/users/{guid}
-```
-
-**Response:** [UserMaster](#usermaster)
-
-#### Update User
-
-```
-PUT /_sb/v1.0/users/{guid}
-```
-
-**Request Body:** [UserMaster](#usermaster)
-
-**Response:** Updated [UserMaster](#usermaster)
-
-#### Delete User
-
-```
+GET    /_sb/v1.0/users             (query: search, skip, take)
+POST   /_sb/v1.0/users
+GET    /_sb/v1.0/users/{guid}
+PUT    /_sb/v1.0/users/{guid}
 DELETE /_sb/v1.0/users/{guid}
 ```
 
-**Response:** `204 No Content`
+**Body / Response:** [UserMaster](#usermaster) (`GUID` is auto-generated).
 
 ---
 
@@ -605,75 +385,19 @@ DELETE /_sb/v1.0/users/{guid}
 
 Bearer token credentials for API authentication.
 
-#### List Credentials
-
 ```
-GET /_sb/v1.0/credentials
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `search` | string | Filter by name or description |
-| `skip` | integer | Records to skip |
-| `take` | integer | Maximum records to return |
-
-**Response:** Array of [Credential](#credential)
-
-#### Create Credential
-
-```
-POST /_sb/v1.0/credentials
-```
-
-**Request Body:** [Credential](#credential)
-
-**Response:** `201 Created` with created [Credential](#credential)
-
-> **Important:** The `bearerToken` is only returned on creation. Store it securely.
-
-#### Get Credential
-
-```
-GET /_sb/v1.0/credentials/{guid}
-```
-
-**Response:** [Credential](#credential)
-
-#### Update Credential
-
-```
-PUT /_sb/v1.0/credentials/{guid}
-```
-
-**Request Body:** [Credential](#credential)
-
-**Response:** Updated [Credential](#credential)
-
-> **Note:** Read-only credentials cannot be updated.
-
-#### Delete Credential
-
-```
+GET    /_sb/v1.0/credentials                 (query: search, skip, take)
+POST   /_sb/v1.0/credentials
+GET    /_sb/v1.0/credentials/{guid}
+PUT    /_sb/v1.0/credentials/{guid}
 DELETE /_sb/v1.0/credentials/{guid}
+POST   /_sb/v1.0/credentials/{guid}/regenerate
 ```
 
-**Response:** `204 No Content`
+**Body / Response:** [Credential](#credential).
 
-> **Note:** Read-only credentials cannot be deleted.
-
-#### Regenerate Bearer Token
-
-```
-POST /_sb/v1.0/credentials/{guid}/regenerate
-```
-
-Generates a new bearer token for the credential.
-
-**Response:** Updated [Credential](#credential) with new `bearerToken`
-
-> **Note:** Read-only credentials cannot have their tokens regenerated.
+> **Important:** `BearerToken` is only returned on creation and on `regenerate`. Store it securely.
+> Read-only credentials cannot be updated, deleted, or regenerated.
 
 ---
 
@@ -687,97 +411,50 @@ Track and analyze requests passing through Switchboard.
 GET /_sb/v1.0/history
 ```
 
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `skip` | integer | Records to skip |
-| `take` | integer | Maximum records to return |
-| `start` | datetime | Start of time range (ISO 8601) |
-| `end` | datetime | End of time range (ISO 8601) |
-| `endpoint` | guid | Filter by endpoint GUID |
-| `origin` | guid | Filter by origin GUID |
+**Query Parameters:** `skip`, `take`, `start` (ISO 8601), `end` (ISO 8601), `endpoint` (GUID),
+`origin` (GUID)
 
 **Response:** Array of [RequestHistory](#requesthistory)
 
-#### Get Recent Requests
+#### Recent / Failed
 
 ```
-GET /_sb/v1.0/history/recent
+GET /_sb/v1.0/history/recent       (query: count, default 100, max 1000)
+GET /_sb/v1.0/history/failed       (query: skip, take)
 ```
-
-**Query Parameters:**
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `count` | integer | 100 | Number of recent requests (max: 1000) |
 
 **Response:** Array of [RequestHistory](#requesthistory)
 
-#### Get Failed Requests
+#### Get / Delete by ID
 
 ```
-GET /_sb/v1.0/history/failed
-```
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `skip` | integer | Records to skip |
-| `take` | integer | Maximum records to return |
-
-**Response:** Array of [RequestHistory](#requesthistory) where `success = false`
-
-#### Get Request by ID
-
-```
-GET /_sb/v1.0/history/{id}
-```
-
-The `{id}` is the request's `requestId` (a GUID), as returned by the list endpoints
-(e.g., `550e8400-e29b-41d4-a716-446655440000`). A numeric primary key is also accepted but is not
-populated by the default store, so use the `requestId`.
-
-**Response:** [RequestHistory](#requesthistory)
-
-#### Delete Request History
-
-```
+GET    /_sb/v1.0/history/{id}
 DELETE /_sb/v1.0/history/{id}
 ```
 
-**Response:** `204 No Content`
+`{id}` is the request's `RequestId` (a GUID), as returned by the list endpoints. Because each row's
+`GUID` mirrors its `RequestId`, either value resolves. `GET` returns the [RequestHistory](#requesthistory);
+`DELETE` returns `204 No Content`.
 
-#### Run Cleanup
+#### Cleanup
 
 ```
-POST /_sb/v1.0/history/cleanup
+POST /_sb/v1.0/history/cleanup     (query: days)
 ```
 
-Manually trigger history cleanup.
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `days` | integer | Delete records older than this many days |
-
-**Response:**
+Deletes records older than `days`. Response is **camelCase**:
 
 ```json
-{
-  "deletedRecords": 150
-}
+{ "deletedRecords": 150 }
 ```
 
-#### Get Statistics
+#### Statistics
 
 ```
 GET /_sb/v1.0/history/stats
 ```
 
-**Response:**
+Response fields are **camelCase**:
 
 ```json
 {
@@ -787,7 +464,7 @@ GET /_sb/v1.0/history/stats
 }
 ```
 
-#### Get Activity Time Series
+#### Activity Time Series
 
 Bucketed request counts over a window, used by the dashboard's activity chart. Empty buckets are
 zero-filled so the series is always fixed-width.
@@ -797,57 +474,72 @@ GET /_sb/v1.0/history/timeseries?start={iso8601}&end={iso8601}&intervalMinutes=6
 ```
 
 Query parameters are optional: `end` defaults to now, `start` to 24 hours before `end`, and
-`intervalMinutes` to 60 (minimum 1).
-
-**Response:**
+`intervalMinutes` to 60 (minimum 1). The response wrapper and buckets are **camelCase**:
 
 ```json
 {
-  "startUtc": "2026-07-27T00:00:00.0000000Z",
-  "endUtc": "2026-07-27T02:00:00.0000000Z",
+  "startUtc": "2026-07-28T00:00:00.0000000Z",
+  "endUtc": "2026-07-29T00:00:00.0000000Z",
   "intervalMinutes": 60,
   "buckets": [
-    { "bucketStartUtc": "2026-07-27T00:00:00Z", "total": 3, "success": 2, "failure": 1, "avgDurationMs": 200 }
+    { "bucketStartUtc": "2026-07-28T00:00:00.0000000Z", "total": 3, "success": 2, "failure": 1, "avgDurationMs": 200 }
   ]
 }
 ```
 
 ---
 
-## System &amp; Settings
-
 ### Settings
 
 #### Get Settings
-
-Returns the full server configuration with secrets (`database.password`, `management.adminToken`)
-masked as `"********"`, plus two metadata arrays: `restartRequiredSettings` (dotted paths that only
-take effect after a restart) and `runtimeEditableSettings` (paths that apply immediately).
 
 ```
 GET /_sb/v1.0/settings
 ```
 
-#### Update Settings
+Returns the full server configuration with secrets (`Database.Password`, `Management.AdminToken`)
+masked as `"********"`. The top-level configuration objects are **PascalCase** (`Logging`,
+`Endpoints`, `Origins`, `BlockedHeaders`, `Webserver`, `OpenApi`, `Database`, `Management`,
+`RequestHistory`), plus two **camelCase** metadata arrays:
 
-Accepts the full settings tree. Runtime-editable fields (logging severity, request-history capture,
-blocked headers, management options) apply immediately; restart-required fields are persisted but
-take effect only after a restart. A masked secret value (`"********"`) is treated as "unchanged".
+- `restartRequiredSettings` — dotted paths that only take effect after a restart
+- `runtimeEditableSettings` — dotted paths that apply immediately
+
+#### Update Settings
 
 ```
 PUT /_sb/v1.0/settings
 ```
 
-### Configuration Validation
+Accepts the full settings tree. Runtime-editable fields (logging severity, request-history capture,
+blocked headers, management options) apply immediately; restart-required fields are persisted but
+take effect only after a restart. A masked secret value (`"********"`) is treated as "unchanged".
 
-Validates the current configuration, or a proposed one supplied in the request body
-(`{ "endpoints": [...], "origins": [...], "routes": [...], "mappings": [...] }`).
+---
+
+### System
+
+#### Restart Server
+
+```
+POST /_sb/v1.0/system/restart
+```
+
+Gracefully restarts the server: returns `202 Accepted`, then the process exits so a supervisor
+(for example, Docker's `restart: unless-stopped`) brings it back. Requires an admin (non-read-only)
+credential.
+
+---
+
+### Configuration Validation
 
 ```
 POST /_sb/v1.0/config/validate
 ```
 
-**Response:**
+Validates the current configuration, or a proposed one supplied in the request body
+(`{ "endpoints": [...], "origins": [...], "routes": [...], "mappings": [...] }`). Response fields are
+**camelCase**:
 
 ```json
 {
@@ -857,69 +549,58 @@ POST /_sb/v1.0/config/validate
 }
 ```
 
-### Restart Server
-
-Gracefully restarts the server: returns `202 Accepted`, then the process exits so a supervisor
-(for example, Docker's `restart: unless-stopped`) brings it back. Requires an admin (non-read-only)
-credential.
-
-```
-POST /_sb/v1.0/system/restart
-```
-
 ---
 
 ## Data Models
 
-### OriginServerConfig
+> Field names below are the exact PascalCase keys returned and accepted by the API.
 
-Represents a backend server that Switchboard proxies requests to.
+### OriginServerConfig
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `guid` | string (GUID) | No | Auto-generated | Unique identifier |
-| `identifier` | string | Yes | - | Unique identifier for referencing |
-| `name` | string | No | null | Display name |
-| `hostname` | string | Yes | `"localhost"` | Server hostname |
-| `port` | integer | Yes | 8000 | TCP port (0-65535) |
-| `ssl` | boolean | No | false | Enable HTTPS |
-| `healthCheckIntervalMs` | integer | No | 5000 | Health check interval (min: 1000) |
-| `healthCheckMethod` | string | No | `"HEAD"` | HTTP method for health checks |
-| `healthCheckUrl` | string | No | `"/"` | URL path for health checks |
-| `unhealthyThreshold` | integer | No | 2 | Failed checks before marking unhealthy |
-| `healthyThreshold` | integer | No | 1 | Successful checks before marking healthy |
-| `maxParallelRequests` | integer | No | 10 | Maximum concurrent requests |
-| `rateLimitRequestsThreshold` | integer | No | 30 | Total requests before rate limiting |
-| `logRequest` | boolean | No | false | Log requests to this origin |
-| `logRequestBody` | boolean | No | false | Log request bodies |
-| `logResponse` | boolean | No | false | Log responses |
-| `logResponseBody` | boolean | No | false | Log response bodies |
-| `captureRequestBody` | boolean | No | false | Capture request body in history |
-| `captureResponseBody` | boolean | No | false | Capture response body in history |
-| `captureRequestHeaders` | boolean | No | true | Capture request headers in history |
-| `captureResponseHeaders` | boolean | No | true | Capture response headers in history |
-| `maxCaptureRequestBodySize` | integer | No | 65536 | Max request body capture size (bytes) |
-| `maxCaptureResponseBodySize` | integer | No | 65536 | Max response body capture size (bytes) |
-| `createdUtc` | datetime | No | Current time | Creation timestamp |
-| `modifiedUtc` | datetime | No | null | Last modification timestamp |
+| `GUID` | string (GUID) | No | Derived from `Identifier` | Unique identifier (deterministic; read-only) |
+| `Identifier` | string | Yes | - | Unique identifier for referencing |
+| `Name` | string | No | null | Display name |
+| `Hostname` | string | Yes | `"localhost"` | Server hostname |
+| `Port` | integer | Yes | 8000 | TCP port (0-65535) |
+| `Ssl` | boolean | No | false | Enable HTTPS |
+| `HealthCheckIntervalMs` | integer | No | 5000 | Health check interval (min: 1000) |
+| `HealthCheckMethod` | string | No | `"HEAD"` | HTTP method for health checks |
+| `HealthCheckUrl` | string | No | `"/"` | URL path for health checks |
+| `UnhealthyThreshold` | integer | No | 2 | Failed checks before marking unhealthy |
+| `HealthyThreshold` | integer | No | 1 | Successful checks before marking healthy |
+| `MaxParallelRequests` | integer | No | 10 | Maximum concurrent requests |
+| `RateLimitRequestsThreshold` | integer | No | 30 | Total requests before rate limiting |
+| `LogRequest` | boolean | No | false | Log requests to this origin |
+| `LogRequestBody` | boolean | No | false | Log request bodies |
+| `LogResponse` | boolean | No | false | Log responses |
+| `LogResponseBody` | boolean | No | false | Log response bodies |
+| `CaptureRequestBody` | boolean | No | false | Capture request body in history |
+| `CaptureResponseBody` | boolean | No | false | Capture response body in history |
+| `CaptureRequestHeaders` | boolean | No | true | Capture request headers in history |
+| `CaptureResponseHeaders` | boolean | No | true | Capture response headers in history |
+| `MaxCaptureRequestBodySize` | integer | No | 65536 | Max request body capture size (bytes) |
+| `MaxCaptureResponseBodySize` | integer | No | 65536 | Max response body capture size (bytes) |
+| `CreatedUtc` | datetime | No | Current time | Creation timestamp |
+| `ModifiedUtc` | datetime | No | null | Last modification timestamp |
 
 **Example:**
 
 ```json
 {
-  "guid": "550e8400-e29b-41d4-a716-446655440000",
-  "identifier": "backend-api-1",
-  "name": "Backend API Server 1",
-  "hostname": "api.example.com",
-  "port": 443,
-  "ssl": true,
-  "healthCheckIntervalMs": 5000,
-  "healthCheckMethod": "GET",
-  "healthCheckUrl": "/health",
-  "unhealthyThreshold": 2,
-  "healthyThreshold": 1,
-  "maxParallelRequests": 20,
-  "rateLimitRequestsThreshold": 50
+  "GUID": "550e8400-e29b-41d4-a716-446655440000",
+  "Identifier": "backend-api-1",
+  "Name": "Backend API Server 1",
+  "Hostname": "api.example.com",
+  "Port": 443,
+  "Ssl": true,
+  "HealthCheckMethod": "GET",
+  "HealthCheckUrl": "/health",
+  "UnhealthyThreshold": 2,
+  "HealthyThreshold": 1,
+  "MaxParallelRequests": 20,
+  "RateLimitRequestsThreshold": 50
 }
 ```
 
@@ -927,47 +608,41 @@ Represents a backend server that Switchboard proxies requests to.
 
 ### ApiEndpointConfig
 
-Represents an API endpoint configuration.
-
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `guid` | string (GUID) | No | Auto-generated | Unique identifier |
-| `identifier` | string | Yes | - | Unique identifier for referencing |
-| `name` | string | No | null | Display name |
-| `timeoutMs` | integer | No | 60000 | Request timeout in milliseconds |
-| `loadBalancingMode` | string | No | `"RoundRobin"` | Load balancing algorithm |
-| `blockHttp10` | boolean | No | false | Block HTTP/1.0 requests |
-| `maxRequestBodySize` | integer | No | 536870912 | Maximum request body size (512MB) |
-| `logRequestFull` | boolean | No | false | Log full request details |
-| `logRequestBody` | boolean | No | false | Log request bodies |
-| `logResponseBody` | boolean | No | false | Log response bodies |
-| `includeAuthContextHeader` | boolean | No | true | Include auth context header |
-| `authContextHeader` | string | No | `"x-sb-auth-context"` | Auth context header name |
-| `useGlobalBlockedHeaders` | boolean | No | true | Use global blocked headers list |
-| `captureRequestBody` | boolean | No | false | Capture request body in history |
-| `captureResponseBody` | boolean | No | false | Capture response body in history |
-| `captureRequestHeaders` | boolean | No | true | Capture request headers in history |
-| `captureResponseHeaders` | boolean | No | true | Capture response headers in history |
-| `maxCaptureRequestBodySize` | integer | No | 65536 | Max request body capture size |
-| `maxCaptureResponseBodySize` | integer | No | 65536 | Max response body capture size |
-| `createdUtc` | datetime | No | Current time | Creation timestamp |
-| `modifiedUtc` | datetime | No | null | Last modification timestamp |
-
-**Load Balancing Modes:**
-- `RoundRobin` - Distribute requests sequentially across origins
-- `Random` - Randomly select an origin for each request
+| `GUID` | string (GUID) | No | Derived from `Identifier` | Unique identifier (deterministic; read-only) |
+| `Identifier` | string | Yes | - | Unique identifier for referencing |
+| `Name` | string | No | null | Display name |
+| `TimeoutMs` | integer | No | 60000 | Request timeout in milliseconds |
+| `LoadBalancingMode` | string | No | `"RoundRobin"` | `"RoundRobin"` or `"Random"` |
+| `BlockHttp10` | boolean | No | false | Block HTTP/1.0 requests |
+| `MaxRequestBodySize` | integer | No | 536870912 | Maximum request body size (512MB) |
+| `LogRequestFull` | boolean | No | false | Log full request details |
+| `LogRequestBody` | boolean | No | false | Log request bodies |
+| `LogResponseBody` | boolean | No | false | Log response bodies |
+| `IncludeAuthContextHeader` | boolean | No | true | Include auth context header |
+| `AuthContextHeader` | string | No | `"x-sb-auth-context"` | Auth context header name |
+| `UseGlobalBlockedHeaders` | boolean | No | true | Use global blocked headers list |
+| `CaptureRequestBody` | boolean | No | false | Capture request body in history |
+| `CaptureResponseBody` | boolean | No | false | Capture response body in history |
+| `CaptureRequestHeaders` | boolean | No | true | Capture request headers in history |
+| `CaptureResponseHeaders` | boolean | No | true | Capture response headers in history |
+| `MaxCaptureRequestBodySize` | integer | No | 65536 | Max request body capture size |
+| `MaxCaptureResponseBodySize` | integer | No | 65536 | Max response body capture size |
+| `CreatedUtc` | datetime | No | Current time | Creation timestamp |
+| `ModifiedUtc` | datetime | No | null | Last modification timestamp |
 
 **Example:**
 
 ```json
 {
-  "guid": "660e8400-e29b-41d4-a716-446655440001",
-  "identifier": "user-api",
-  "name": "User Management API",
-  "timeoutMs": 30000,
-  "loadBalancingMode": "RoundRobin",
-  "includeAuthContextHeader": true,
-  "authContextHeader": "x-sb-auth-context"
+  "GUID": "660e8400-e29b-41d4-a716-446655440001",
+  "Identifier": "user-api",
+  "Name": "User Management API",
+  "TimeoutMs": 30000,
+  "LoadBalancingMode": "RoundRobin",
+  "IncludeAuthContextHeader": true,
+  "AuthContextHeader": "x-sb-auth-context"
 }
 ```
 
@@ -975,37 +650,30 @@ Represents an API endpoint configuration.
 
 ### EndpointRoute
 
-Defines a URL pattern that maps to an API endpoint.
-
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `id` | integer | No | Auto-generated | Primary key |
-| `endpointIdentifier` | string | Yes | - | Parent endpoint identifier |
-| `endpointGUID` | string (GUID) | No | - | Parent endpoint GUID |
-| `httpMethod` | string | Yes | `"GET"` | HTTP method |
-| `urlPattern` | string | Yes | `"/"` | URL pattern with parameters |
-| `requiresAuthentication` | boolean | No | false | Require authentication |
-| `sortOrder` | integer | No | 0 | Matching priority (lower = first) |
-| `createdUtc` | datetime | No | Current time | Creation timestamp |
+| `Id` | integer | No | Auto-generated | Primary key |
+| `EndpointIdentifier` | string | Yes | - | Parent endpoint identifier |
+| `EndpointGUID` | string (GUID) | Yes | - | Parent endpoint GUID (required on create) |
+| `HttpMethod` | string | Yes | `"GET"` | HTTP method |
+| `UrlPattern` | string | Yes | `"/"` | URL pattern with parameters |
+| `RequiresAuthentication` | boolean | No | false | Require authentication |
+| `SortOrder` | integer | No | 0 | Matching priority (lower = first) |
+| `CreatedUtc` | datetime | No | Current time | Creation timestamp |
 
 **HTTP Methods:** `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`
-
-**URL Pattern Examples:**
-- `/api/users` - Exact match
-- `/api/users/{id}` - Parameter match
-- `/api/users/{userId}/orders/{orderId}` - Multiple parameters
 
 **Example:**
 
 ```json
 {
-  "id": 1,
-  "endpointIdentifier": "user-api",
-  "endpointGUID": "660e8400-e29b-41d4-a716-446655440001",
-  "httpMethod": "GET",
-  "urlPattern": "/api/users/{id}",
-  "requiresAuthentication": true,
-  "sortOrder": 0
+  "Id": 1,
+  "EndpointIdentifier": "user-api",
+  "EndpointGUID": "660e8400-e29b-41d4-a716-446655440001",
+  "HttpMethod": "GET",
+  "UrlPattern": "/api/users/{id}",
+  "RequiresAuthentication": true,
+  "SortOrder": 0
 }
 ```
 
@@ -1013,28 +681,26 @@ Defines a URL pattern that maps to an API endpoint.
 
 ### EndpointOriginMapping
 
-Maps an API endpoint to one or more origin servers.
-
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `id` | integer | No | Auto-generated | Primary key |
-| `endpointIdentifier` | string | Yes | - | Endpoint identifier |
-| `endpointGUID` | string (GUID) | No | - | Endpoint GUID |
-| `originIdentifier` | string | Yes | - | Origin server identifier |
-| `originGUID` | string (GUID) | No | - | Origin server GUID |
-| `sortOrder` | integer | No | 0 | Load balancing priority |
-| `createdUtc` | datetime | No | Current time | Creation timestamp |
+| `Id` | integer | No | Auto-generated | Primary key |
+| `EndpointIdentifier` | string | Yes | - | Endpoint identifier |
+| `EndpointGUID` | string (GUID) | Yes | - | Endpoint GUID (required on create) |
+| `OriginIdentifier` | string | Yes | - | Origin server identifier |
+| `OriginGUID` | string (GUID) | Yes | - | Origin server GUID (required on create) |
+| `SortOrder` | integer | No | 0 | Load balancing priority |
+| `CreatedUtc` | datetime | No | Current time | Creation timestamp |
 
 **Example:**
 
 ```json
 {
-  "id": 1,
-  "endpointIdentifier": "user-api",
-  "endpointGUID": "660e8400-e29b-41d4-a716-446655440001",
-  "originIdentifier": "backend-api-1",
-  "originGUID": "550e8400-e29b-41d4-a716-446655440000",
-  "sortOrder": 0
+  "Id": 1,
+  "EndpointIdentifier": "user-api",
+  "EndpointGUID": "660e8400-e29b-41d4-a716-446655440001",
+  "OriginIdentifier": "backend-api-1",
+  "OriginGUID": "550e8400-e29b-41d4-a716-446655440000",
+  "SortOrder": 0
 }
 ```
 
@@ -1042,29 +708,27 @@ Maps an API endpoint to one or more origin servers.
 
 ### UrlRewrite
 
-Transforms request URLs before forwarding to origin servers.
-
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `id` | integer | No | Auto-generated | Primary key |
-| `endpointIdentifier` | string | Yes | - | Parent endpoint identifier |
-| `endpointGUID` | string (GUID) | No | - | Parent endpoint GUID |
-| `httpMethod` | string | No | `""` | HTTP method this rewrite applies to; an empty value applies to any method |
-| `sourcePattern` | string | Yes | - | URL pattern to match |
-| `targetPattern` | string | Yes | - | URL pattern to rewrite to |
-| `sortOrder` | integer | No | 0 | Priority (lower = first) |
-| `createdUtc` | datetime | No | Current time | Creation timestamp |
+| `Id` | integer | No | Auto-generated | Primary key |
+| `EndpointIdentifier` | string | Yes | - | Parent endpoint identifier |
+| `EndpointGUID` | string (GUID) | No | - | Parent endpoint GUID |
+| `HttpMethod` | string | No | `""` | HTTP method this rewrite applies to; an empty value applies to any method |
+| `SourcePattern` | string | Yes | - | URL pattern to match |
+| `TargetPattern` | string | Yes | - | URL pattern to rewrite to |
+| `SortOrder` | integer | No | 0 | Priority (lower = first) |
+| `CreatedUtc` | datetime | No | Current time | Creation timestamp |
 
 **Example:**
 
 ```json
 {
-  "id": 1,
-  "endpointIdentifier": "user-api",
-  "httpMethod": "GET",
-  "sourcePattern": "/v2/users/{id}",
-  "targetPattern": "/api/v1/users/{id}",
-  "sortOrder": 0
+  "Id": 1,
+  "EndpointIdentifier": "user-api",
+  "HttpMethod": "GET",
+  "SourcePattern": "/v2/users/{id}",
+  "TargetPattern": "/api/v1/users/{id}",
+  "SortOrder": 0
 }
 ```
 
@@ -1072,69 +736,54 @@ Transforms request URLs before forwarding to origin servers.
 
 ### BlockedHeader
 
-Headers that are not forwarded to origin servers.
-
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `id` | integer | No | Auto-generated | Primary key |
-| `headerName` | string | Yes | - | Header name (case-insensitive) |
-| `createdUtc` | datetime | No | Current time | Creation timestamp |
+| `Id` | integer | No | Auto-generated | Primary key |
+| `HeaderName` | string | Yes | - | Header name (case-insensitive) |
+| `CreatedUtc` | datetime | No | Current time | Creation timestamp |
 
 **Example:**
 
 ```json
 {
-  "id": 1,
-  "headerName": "x-internal-token"
+  "Id": 1,
+  "HeaderName": "x-internal-token"
 }
 ```
 
-**Default Blocked Headers:**
-- `alt-svc`
-- `connection`
-- `date`
-- `host`
-- `keep-alive`
-- `proxy-authorization`
-- `proxy-connection`
-- `set-cookie`
-- `transfer-encoding`
-- `upgrade`
-- `via`
-- `x-forwarded-for`
-- `x-request-id`
+**Default Blocked Headers:** `alt-svc`, `connection`, `date`, `host`, `keep-alive`,
+`proxy-authorization`, `proxy-connection`, `set-cookie`, `transfer-encoding`, `upgrade`, `via`,
+`x-forwarded-for`, `x-request-id`
 
 ---
 
 ### UserMaster
 
-User account for Management API access.
-
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `guid` | string (GUID) | No | Auto-generated | Unique identifier |
-| `username` | string | Yes | - | Login username |
-| `email` | string | No | null | Email address |
-| `firstName` | string | No | null | First name |
-| `lastName` | string | No | null | Last name |
-| `active` | boolean | No | true | Account is active |
-| `isAdmin` | boolean | No | false | Administrator privileges |
-| `createdUtc` | datetime | No | Current time | Creation timestamp |
-| `modifiedUtc` | datetime | No | null | Last modification timestamp |
-| `lastLoginUtc` | datetime | No | null | Last login timestamp |
+| `GUID` | string (GUID) | No | Auto-generated | Unique identifier |
+| `Username` | string | Yes | - | Login username |
+| `Email` | string | No | null | Email address |
+| `FirstName` | string | No | null | First name |
+| `LastName` | string | No | null | Last name |
+| `Active` | boolean | No | true | Account is active |
+| `IsAdmin` | boolean | No | false | Administrator privileges |
+| `CreatedUtc` | datetime | No | Current time | Creation timestamp |
+| `ModifiedUtc` | datetime | No | null | Last modification timestamp |
+| `LastLoginUtc` | datetime | No | null | Last login timestamp |
 
 **Example:**
 
 ```json
 {
-  "guid": "770e8400-e29b-41d4-a716-446655440002",
-  "username": "jsmith",
-  "email": "jsmith@example.com",
-  "firstName": "John",
-  "lastName": "Smith",
-  "active": true,
-  "isAdmin": false,
-  "createdUtc": "2024-01-15T10:00:00Z"
+  "GUID": "770e8400-e29b-41d4-a716-446655440002",
+  "Username": "jsmith",
+  "Email": "jsmith@example.com",
+  "FirstName": "John",
+  "LastName": "Smith",
+  "Active": true,
+  "IsAdmin": false,
+  "CreatedUtc": "2026-07-15T10:00:00.0000000Z"
 }
 ```
 
@@ -1142,37 +791,34 @@ User account for Management API access.
 
 ### Credential
 
-Bearer token credential for API authentication.
-
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `guid` | string (GUID) | No | Auto-generated | Unique identifier |
-| `userGUID` | string (GUID) | Yes | - | Parent user GUID |
-| `name` | string | No | null | Display name (e.g., "API Token 1") |
-| `description` | string | No | null | Description of token usage |
-| `bearerToken` | string | Yes* | Auto-generated | Bearer token value |
-| `active` | boolean | No | true | Credential is active |
-| `isReadOnly` | boolean | No | false | Cannot be modified/deleted |
-| `expiresUtc` | datetime | No | null | Expiration timestamp (null = never) |
-| `createdUtc` | datetime | No | Current time | Creation timestamp |
-| `modifiedUtc` | datetime | No | null | Last modification timestamp |
-| `lastUsedUtc` | datetime | No | null | Last usage timestamp |
+| `GUID` | string (GUID) | No | Auto-generated | Unique identifier |
+| `UserGUID` | string (GUID) | Yes | - | Parent user GUID |
+| `Name` | string | No | null | Display name (e.g., "API Token 1") |
+| `Description` | string | No | null | Description of token usage |
+| `BearerToken` | string | No* | Auto-generated | Bearer token value (returned only on create/regenerate) |
+| `Active` | boolean | No | true | Credential is active |
+| `IsReadOnly` | boolean | No | false | Cannot be modified/deleted |
+| `ExpiresUtc` | datetime | No | null | Expiration timestamp (null = never) |
+| `CreatedUtc` | datetime | No | Current time | Creation timestamp |
+| `ModifiedUtc` | datetime | No | null | Last modification timestamp |
+| `LastUsedUtc` | datetime | No | null | Last usage timestamp |
 
-> *`bearerToken` is auto-generated if not provided on creation.
+> *`BearerToken` is auto-generated if not provided on creation.
 
 **Example:**
 
 ```json
 {
-  "guid": "880e8400-e29b-41d4-a716-446655440003",
-  "userGUID": "770e8400-e29b-41d4-a716-446655440002",
-  "name": "Dashboard Access",
-  "description": "Token for dashboard authentication",
-  "bearerToken": "abc123xyz...",
-  "active": true,
-  "isReadOnly": false,
-  "expiresUtc": "2025-01-15T00:00:00Z",
-  "createdUtc": "2024-01-15T10:00:00Z"
+  "GUID": "880e8400-e29b-41d4-a716-446655440003",
+  "UserGUID": "770e8400-e29b-41d4-a716-446655440002",
+  "Name": "Dashboard Access",
+  "Description": "Token for dashboard authentication",
+  "BearerToken": "abc123xyz...",
+  "Active": true,
+  "IsReadOnly": false,
+  "CreatedUtc": "2026-07-15T10:00:00.0000000Z"
 }
 ```
 
@@ -1180,54 +826,52 @@ Bearer token credential for API authentication.
 
 ### RequestHistory
 
-Record of a processed request.
-
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | long | Auto-increment ID |
-| `guid` | string (GUID) | Unique identifier |
-| `requestId` | string (GUID) | Request correlation ID |
-| `timestampUtc` | datetime | Request timestamp |
-| `httpMethod` | string | HTTP method |
-| `requestPath` | string | Request path (without query) |
-| `queryString` | string | Query string (without leading ?) |
-| `endpointIdentifier` | string | Matched endpoint identifier |
-| `endpointGUID` | string (GUID) | Matched endpoint GUID |
-| `originIdentifier` | string | Selected origin identifier |
-| `originGUID` | string (GUID) | Selected origin GUID |
-| `clientIp` | string | Client IP address |
-| `requestBodySize` | long | Request body size in bytes |
-| `requestBody` | string | Request body (if captured) |
-| `requestHeaders` | string | Request headers as JSON |
-| `statusCode` | integer | Response status code |
-| `responseBodySize` | long | Response body size in bytes |
-| `responseBody` | string | Response body (if captured) |
-| `responseHeaders` | string | Response headers as JSON |
-| `durationMs` | long | Total duration in milliseconds |
-| `wasAuthenticated` | boolean | Request was authenticated |
-| `errorMessage` | string | Error message if failed |
-| `success` | boolean | Request was successful (2xx/3xx) |
+| `Id` | long | Auto-increment ID (not populated by the default SQLite store; use `RequestId`) |
+| `GUID` | string (GUID) | Mirrors `RequestId` (stable across reads) |
+| `RequestId` | string (GUID) | Request correlation ID (primary key) |
+| `TimestampUtc` | datetime | Request timestamp |
+| `HttpMethod` | string | HTTP method |
+| `RequestPath` | string | Request path (without query) |
+| `QueryString` | string | Query string (without leading `?`) |
+| `EndpointIdentifier` | string | Matched endpoint identifier |
+| `EndpointGUID` | string (GUID) | Matched endpoint GUID |
+| `OriginIdentifier` | string | Selected origin identifier |
+| `OriginGUID` | string (GUID) | Selected origin GUID |
+| `ClientIp` | string | Client IP address |
+| `RequestBodySize` | long | Request body size in bytes |
+| `RequestBody` | string | Request body (if captured) |
+| `RequestHeaders` | string | Request headers as JSON |
+| `StatusCode` | integer | Response status code |
+| `ResponseBodySize` | long | Response body size in bytes |
+| `ResponseBody` | string | Response body (if captured) |
+| `ResponseHeaders` | string | Response headers as JSON |
+| `DurationMs` | long | Total duration in milliseconds |
+| `WasAuthenticated` | boolean | Request was authenticated |
+| `ErrorMessage` | string | Error message if failed |
+| `Success` | boolean | Request was successful (2xx/3xx) |
 
 **Example:**
 
 ```json
 {
-  "id": 12345,
-  "guid": "990e8400-e29b-41d4-a716-446655440004",
-  "requestId": "aa0e8400-e29b-41d4-a716-446655440005",
-  "timestampUtc": "2024-01-15T10:30:45.123Z",
-  "httpMethod": "GET",
-  "requestPath": "/api/users/123",
-  "queryString": "include=profile",
-  "endpointIdentifier": "user-api",
-  "originIdentifier": "backend-api-1",
-  "clientIp": "192.168.1.100",
-  "requestBodySize": 0,
-  "statusCode": 200,
-  "responseBodySize": 1024,
-  "durationMs": 45,
-  "wasAuthenticated": true,
-  "success": true
+  "Id": 0,
+  "GUID": "aa0e8400-e29b-41d4-a716-446655440005",
+  "RequestId": "aa0e8400-e29b-41d4-a716-446655440005",
+  "TimestampUtc": "2026-07-28T10:30:45.1230000Z",
+  "HttpMethod": "GET",
+  "RequestPath": "/api/users/123",
+  "QueryString": "include=profile",
+  "EndpointIdentifier": "user-api",
+  "OriginIdentifier": "backend-api-1",
+  "ClientIp": "192.0.2.100",
+  "RequestBodySize": 0,
+  "StatusCode": 200,
+  "ResponseBodySize": 1024,
+  "DurationMs": 45,
+  "WasAuthenticated": true,
+  "Success": true
 }
 ```
 
@@ -1237,6 +881,8 @@ Record of a processed request.
 
 ### Complete Workflow: Set Up a New API
 
+Request bodies use PascalCase.
+
 #### 1. Create an Origin Server
 
 ```bash
@@ -1244,12 +890,12 @@ curl -X POST http://localhost:8000/_sb/v1.0/origins \
   -H "Authorization: Bearer sbadmin" \
   -H "Content-Type: application/json" \
   -d '{
-    "identifier": "my-backend",
-    "name": "My Backend Server",
-    "hostname": "api.example.com",
-    "port": 443,
-    "ssl": true,
-    "healthCheckUrl": "/health"
+    "Identifier": "my-backend",
+    "Name": "My Backend Server",
+    "Hostname": "api.example.com",
+    "Port": 443,
+    "Ssl": true,
+    "HealthCheckUrl": "/health"
   }'
 ```
 
@@ -1260,35 +906,26 @@ curl -X POST http://localhost:8000/_sb/v1.0/endpoints \
   -H "Authorization: Bearer sbadmin" \
   -H "Content-Type: application/json" \
   -d '{
-    "identifier": "my-api",
-    "name": "My API",
-    "loadBalancingMode": "RoundRobin"
+    "Identifier": "my-api",
+    "Name": "My API",
+    "LoadBalancingMode": "RoundRobin"
   }'
 ```
+
+The endpoint's `GUID` is derived from its `Identifier`; read it from the response for the next steps.
 
 #### 3. Create Routes
 
 ```bash
-# Public health check route
 curl -X POST http://localhost:8000/_sb/v1.0/routes \
   -H "Authorization: Bearer sbadmin" \
   -H "Content-Type: application/json" \
   -d '{
-    "endpointIdentifier": "my-api",
-    "httpMethod": "GET",
-    "urlPattern": "/health",
-    "requiresAuthentication": false
-  }'
-
-# Protected user routes
-curl -X POST http://localhost:8000/_sb/v1.0/routes \
-  -H "Authorization: Bearer sbadmin" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "endpointIdentifier": "my-api",
-    "httpMethod": "GET",
-    "urlPattern": "/api/users/{id}",
-    "requiresAuthentication": true
+    "EndpointIdentifier": "my-api",
+    "EndpointGUID": "<endpoint-guid>",
+    "HttpMethod": "GET",
+    "UrlPattern": "/api/users/{id}",
+    "RequiresAuthentication": true
   }'
 ```
 
@@ -1299,15 +936,16 @@ curl -X POST http://localhost:8000/_sb/v1.0/mappings \
   -H "Authorization: Bearer sbadmin" \
   -H "Content-Type: application/json" \
   -d '{
-    "endpointIdentifier": "my-api",
-    "originIdentifier": "my-backend"
+    "EndpointIdentifier": "my-api",
+    "EndpointGUID": "<endpoint-guid>",
+    "OriginIdentifier": "my-backend",
+    "OriginGUID": "<origin-guid>"
   }'
 ```
 
 #### 5. Test the Proxy
 
 ```bash
-curl http://localhost:8000/health
 curl http://localhost:8000/api/users/123
 ```
 
@@ -1315,22 +953,15 @@ curl http://localhost:8000/api/users/123
 
 ## SDK Access
 
-For programmatic access within .NET applications, use `SwitchboardDaemon.Client`:
+For programmatic access within .NET applications, use `SwitchboardDaemon.Client` (which exposes the
+same models documented above):
 
 ```csharp
 using Switchboard.Core;
 
 SwitchboardDaemon daemon = new SwitchboardDaemon(settings);
 
-// Access user management
-var users = await daemon.Client.Users.GetAllAsync();
-var user = await daemon.Client.Users.CreateAsync(new UserMaster("newuser"));
-
-// Access credential management
-var credentials = await daemon.Client.Credentials.GetAllAsync();
-var credential = await daemon.Client.Credentials.CreateAsync(new Credential(user.GUID));
-
-// Access configuration
+// Configuration
 var origins = await daemon.Client.OriginServers.GetAllAsync();
 var endpoints = await daemon.Client.ApiEndpoints.GetAllAsync();
 var routes = await daemon.Client.EndpointRoutes.GetAllAsync();
@@ -1338,7 +969,10 @@ var mappings = await daemon.Client.EndpointOriginMappings.GetAllAsync();
 var rewrites = await daemon.Client.UrlRewrites.GetAllAsync();
 var headers = await daemon.Client.BlockedHeaders.GetAllAsync();
 
-// Access request history
+// Users and credentials
+var users = await daemon.Client.Users.GetAllAsync();
+var credentials = await daemon.Client.Credentials.GetAllAsync();
+
+// Request history
 var history = await daemon.Client.RequestHistory.GetRecentAsync(100);
-var stats = await daemon.Client.RequestHistory.CountAsync();
 ```
