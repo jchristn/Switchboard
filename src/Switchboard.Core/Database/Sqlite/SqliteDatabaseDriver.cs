@@ -1048,6 +1048,10 @@ namespace Switchboard.Core.Database.Sqlite
                 RequestHistory rh = new RequestHistory
                 {
                     RequestId = Guid.Parse(reader.GetString(reader.GetOrdinal("request_id"))),
+                    // request_id is the row's stable identity; there is no separate guid column, so
+                    // mirror it into GUID rather than leaving the model's random default. This keeps a
+                    // record's identity stable across reads and lets it be looked up by either value.
+                    GUID = Guid.Parse(reader.GetString(reader.GetOrdinal("request_id"))),
                     TimestampUtc = DateTime.Parse(
                         reader.GetString(reader.GetOrdinal("timestamp_utc")),
                         System.Globalization.CultureInfo.InvariantCulture,
