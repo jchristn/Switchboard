@@ -59,7 +59,9 @@ namespace SampleApplication
             _Port = port;
 
             WebserverSettings settings = new WebserverSettings();
-            settings.Hostname = "localhost";
+            // Bind the IPv4 loopback explicitly. Using "localhost" makes the proxy resolve the origin
+            // to IPv6 (::1) first and fall back to IPv4, adding a large per-request connect delay.
+            settings.Hostname = "127.0.0.1";
             settings.Port = _Port;
 
             _Server = new Webserver(settings, DefaultRoute);

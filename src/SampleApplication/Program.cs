@@ -165,7 +165,10 @@ namespace SampleApplication
             OriginServer origin = new OriginServer();
             origin.Identifier = identifier;
             origin.Name = name;
-            origin.Hostname = "localhost";
+            // Use the IPv4 loopback rather than "localhost". "localhost" resolves to IPv6 (::1) first,
+            // and because the origins listen on IPv4 only, every proxied request would otherwise wait
+            // out a failed IPv6 connect before falling back to IPv4 (~2s per request).
+            origin.Hostname = "127.0.0.1";
             origin.Port = port;
             origin.Ssl = false;
             origin.HealthCheckUrl = "/";
