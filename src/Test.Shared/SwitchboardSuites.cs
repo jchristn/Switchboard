@@ -32,6 +32,8 @@ namespace Test.Shared
                 suites.AddRange(HealthSuites.All);
                 suites.AddRange(ProxyRoutingSuites.All);
                 suites.AddRange(LoadBalancingSuites.All);
+                suites.AddRange(TelemetryUnitSuites.All);
+                suites.AddRange(TelemetrySuites.All);
                 return suites;
             }
         }
@@ -46,6 +48,7 @@ namespace Test.Shared
             {
                 return UnitSuites.All
                     .Concat(RoutingUnitSuites.All)
+                    .Concat(TelemetryUnitSuites.All)
                     .Concat(SettingsImportSuites.All)
                     .Concat(ConfigurationReloadSuites.All)
                     .Concat(ClientCrudSuites.All)

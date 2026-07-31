@@ -163,6 +163,23 @@
             }
         }
 
+        /// <summary>
+        /// Telemetry settings.
+        /// Enable to export metrics, traces, and logs via OpenTelemetry.
+        /// </summary>
+        public TelemetrySettings Telemetry
+        {
+            get
+            {
+                return _Telemetry;
+            }
+            set
+            {
+                if (value == null) value = new TelemetrySettings();
+                _Telemetry = value;
+            }
+        }
+
         #endregion
 
         #region Private-Members
@@ -175,6 +192,7 @@
         private DatabaseSettings _Database = new DatabaseSettings();
         private ManagementSettings _Management = new ManagementSettings();
         private RequestHistorySettings _RequestHistory = new RequestHistorySettings();
+        private TelemetrySettings _Telemetry = new TelemetrySettings();
         private List<string> _BlockedHeaders = new List<string>
         {
             "alt-svc",

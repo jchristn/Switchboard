@@ -36,6 +36,8 @@ services:
     depends_on:
       sqlserver:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     healthcheck:
       test: curl --fail -I http://localhost:8000/ || exit 1
       interval: 10s
@@ -55,6 +57,93 @@ services:
       interval: 10s
       timeout: 5s
       retries: 2
+    restart: unless-stopped
+
+  #
+  # OpenTelemetry Collector
+  # Receives OTLP (metrics + traces + logs) from Switchboard, tails its log
+  # files, and fans out to Prometheus (scrape), Tempo (traces), and Loki (logs).
+  #
+
+  otel-collector:
+    container_name: 'otel-collector'
+    image: 'otel/opentelemetry-collector-contrib:0.109.0'
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./telemetry/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - ./logs/:/app/logs:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    depends_on:
+      - tempo
+      - loki
+    restart: unless-stopped
+
+  #
+  # Prometheus
+  # Scrapes the OpenTelemetry Collector's Prometheus exporter surface.
+  #
+
+  prometheus:
+    container_name: 'prometheus'
+    image: 'prom/prometheus:v2.54.1'
+    command: ["--config.file=/etc/prometheus/prometheus.yaml"]
+    volumes:
+      - ./telemetry/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  #
+  # Tempo
+  # Single-binary distributed tracing backend (OTLP ingest).
+  #
+
+  tempo:
+    container_name: 'tempo'
+    image: 'grafana/tempo:2.6.1'
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./telemetry/tempo.yaml:/etc/tempo.yaml:ro
+    restart: unless-stopped
+
+  #
+  # Loki
+  # Single-binary log aggregation backend (native OTLP ingest).
+  #
+
+  loki:
+    container_name: 'loki'
+    image: 'grafana/loki:3.2.1'
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    volumes:
+      - ./telemetry/loki-config.yaml:/etc/loki/local-config.yaml:ro
+    restart: unless-stopped
+
+  #
+  # Grafana
+  # Provisioned with Prometheus, Tempo, and Loki datasources plus a starter
+  # Switchboard dashboard. Anonymous admin access for turnkey local use.
+  #
+
+  grafana:
+    container_name: 'grafana'
+    image: 'grafana/grafana:11.2.2'
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+    volumes:
+      - ./telemetry/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./telemetry/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
     restart: unless-stopped
 
 volumes:

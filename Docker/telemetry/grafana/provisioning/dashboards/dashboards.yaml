@@ -1,0 +1,16 @@
+apiVersion: 1
+
+providers:
+
+  - name: Switchboard
+    orgId: 1
+    # Empty folder => the dashboard lands in the top-level Dashboards list so it is
+    # immediately visible without opening a folder.
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

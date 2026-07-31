@@ -25,6 +25,7 @@ namespace Test.Shared.Harness
         private bool _Disposed;
         private volatile int _ForcedStatusCode;
         private volatile int _ArtificialDelayMs;
+        private volatile IReadOnlyDictionary<string, string>? _LastRequestHeaders;
 
         /// <summary>
         /// Initialize a new origin host.
@@ -72,6 +73,29 @@ namespace Test.Shared.Harness
         }
 
         /// <summary>
+        /// Case-insensitive snapshot of the headers received on the most recent non-health request, or
+        /// null if no such request has been received. Used to assert propagated headers (e.g. traceparent).
+        /// Thread-safe.
+        /// </summary>
+        public IReadOnlyDictionary<string, string>? LastRequestHeaders
+        {
+            get { return _LastRequestHeaders; }
+        }
+
+        /// <summary>
+        /// Return the value of the named header from the most recent non-health request, or null if the
+        /// header (or the request) is absent. Case-insensitive.
+        /// </summary>
+        /// <param name="name">Header name.</param>
+        /// <returns>The header value, or null.</returns>
+        public string? LastRequestHeader(string name)
+        {
+            IReadOnlyDictionary<string, string>? headers = _LastRequestHeaders;
+            if (headers == null || name == null) return null;
+            return headers.TryGetValue(name, out string? value) ? value : null;
+        }
+
+        /// <summary>
         /// Start listening.
         /// </summary>
         public void Start()
@@ -101,7 +125,22 @@ namespace Test.Shared.Harness
                 return;
             }
 
+            CaptureRequestHeaders(ctx);
             await HandleAdvancedRequest(ctx).ConfigureAwait(false);
+        }
+
+        private void CaptureRequestHeaders(HttpContextBase ctx)
+        {
+            Dictionary<string, string> snapshot = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (ctx.Request.Headers != null)
+            {
+                foreach (string? key in ctx.Request.Headers.AllKeys)
+                {
+                    if (!String.IsNullOrEmpty(key))
+                        snapshot[key] = ctx.Request.Headers.Get(key) ?? String.Empty;
+                }
+            }
+            _LastRequestHeaders = snapshot;
         }
 
         private static bool IsHealthCheck(HttpContextBase ctx)

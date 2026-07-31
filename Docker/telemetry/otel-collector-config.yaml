@@ -1,0 +1,64 @@
+receivers:
+
+  # OTLP from Switchboard (metrics + traces + logs) over gRPC and HTTP.
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Tail Switchboard's rolling log files from the shared /app/logs volume.
+  filelog:
+    include:
+      - /app/logs/*.log*
+    include_file_path: true
+    start_at: beginning
+
+processors:
+
+  batch: {}
+
+  # Promote the log file path to a resource attribute so Loki can group by source.
+  resource:
+    attributes:
+      - key: service.name
+        value: switchboard
+        action: insert
+
+exporters:
+
+  # Prometheus scrape surface. Prometheus scrapes otel-collector:8889.
+  # add_metric_suffixes:false keeps the instrument names exactly as Switchboard emits them
+  # (e.g. switchboard_requests_total, switchboard_request_duration_seconds) rather than appending
+  # a second _total/unit suffix, so the provisioned dashboard queries and the documented names match.
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    add_metric_suffixes: false
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  # Traces to Tempo over OTLP gRPC.
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+  # Logs to Loki via its native OTLP ingest endpoint (Loki 3.x).
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/tempo]
+    logs:
+      receivers: [filelog]
+      processors: [resource, batch]
+      exporters: [otlphttp/loki]

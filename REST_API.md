@@ -550,13 +550,36 @@ Query parameters are optional: `end` defaults to now, `start` to 24 hours before
 GET /_sb/v1.0/settings
 ```
 
-Returns the full server configuration with secrets (`Database.Password`, `Management.AdminToken`)
-masked as `"********"`. The top-level configuration objects are **PascalCase** (`Logging`,
-`Endpoints`, `Origins`, `BlockedHeaders`, `Webserver`, `OpenApi`, `Database`, `Management`,
-`RequestHistory`), plus two **camelCase** metadata arrays:
+Returns the full server configuration with secrets (`Database.Password`, `Management.AdminToken`,
+`Telemetry.Otlp.Headers`) masked as `"********"`. The top-level configuration objects are **PascalCase**
+(`Logging`, `Endpoints`, `Origins`, `BlockedHeaders`, `Webserver`, `OpenApi`, `Database`, `Management`,
+`RequestHistory`, `Telemetry`), plus two **camelCase** metadata arrays:
 
 - `restartRequiredSettings` — dotted paths that only take effect after a restart
 - `runtimeEditableSettings` — dotted paths that apply immediately
+
+The `Telemetry` block configures OpenTelemetry export (see the [Observability](README.md#observability)
+section of the README). All of its
+fields require a restart except `Telemetry.Traces.PropagateToOrigin`, which applies immediately:
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `Telemetry.Enable` | boolean | false | Master switch for all telemetry export |
+| `Telemetry.ServiceName` | string | `"switchboard"` | `service.name` resource attribute |
+| `Telemetry.Metrics.Enable` | boolean | true | Export metrics over OTLP |
+| `Telemetry.Metrics.ExportIntervalMs` | integer | 60000 | Metric export interval, ms (1000–300000) |
+| `Telemetry.Traces.Enable` | boolean | true | Export one span per proxied request over OTLP |
+| `Telemetry.Traces.SamplingRatio` | number | 1.0 | Fraction of traces to record (0.0–1.0) |
+| `Telemetry.Traces.PropagateToOrigin` | boolean | true | Inject W3C `traceparent`/`tracestate` onto forwarded requests |
+| `Telemetry.Logs.Enable` | boolean | true | Include logs in the pipeline (collected by the OTel Collector) |
+| `Telemetry.Logs.MinimumSeverity` | integer | 1 | Minimum log severity to export (0–7) |
+| `Telemetry.Otlp.Endpoint` | string | `"http://localhost:4317"` | Collector OTLP endpoint |
+| `Telemetry.Otlp.Protocol` | string | `"grpc"` | `"grpc"` or `"httpprotobuf"` |
+| `Telemetry.Otlp.TimeoutMs` | integer | 10000 | OTLP export timeout, ms (1000–120000) |
+| `Telemetry.Otlp.Headers` | string | null | Comma-separated `key=value` export headers (secret; masked) |
+
+Switchboard exposes no metrics port of its own — metrics reach Prometheus through the OpenTelemetry
+Collector's scrape surface.
 
 #### Update Settings
 

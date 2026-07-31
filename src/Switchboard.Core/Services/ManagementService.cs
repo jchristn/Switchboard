@@ -84,7 +84,19 @@ namespace Switchboard.Core.Services
             "Database.TrustServerCertificate",
             "Management.Enable",
             "Management.BasePath",
-            "OpenApi.Enable"
+            "OpenApi.Enable",
+            "Telemetry.Enable",
+            "Telemetry.ServiceName",
+            "Telemetry.Metrics.Enable",
+            "Telemetry.Metrics.ExportIntervalMs",
+            "Telemetry.Traces.Enable",
+            "Telemetry.Traces.SamplingRatio",
+            "Telemetry.Logs.Enable",
+            "Telemetry.Logs.MinimumSeverity",
+            "Telemetry.Otlp.Endpoint",
+            "Telemetry.Otlp.Protocol",
+            "Telemetry.Otlp.TimeoutMs",
+            "Telemetry.Otlp.Headers"
         };
 
         /// <summary>
@@ -102,7 +114,8 @@ namespace Switchboard.Core.Services
             "RequestHistory.CaptureResponseHeaders",
             "BlockedHeaders",
             "Management.AdminToken",
-            "Management.RequireAuthentication"
+            "Management.RequireAuthentication",
+            "Telemetry.Traces.PropagateToOrigin"
         };
 
         private Action _RestartAction = () => Environment.Exit(0);
@@ -1675,6 +1688,9 @@ namespace Switchboard.Core.Services
             if (view.Management != null && !String.IsNullOrEmpty(view.Management.AdminToken))
                 view.Management.AdminToken = MaskValue;
 
+            if (view.Telemetry != null && view.Telemetry.Otlp != null && !String.IsNullOrEmpty(view.Telemetry.Otlp.Headers))
+                view.Telemetry.Otlp.Headers = MaskValue;
+
             view.RestartRequiredSettings = _RestartRequiredSettings;
             view.RuntimeEditableSettings = _RuntimeEditableSettings;
             return view;
@@ -1734,6 +1750,13 @@ namespace Switchboard.Core.Services
             // ---- Webserver / OpenApi (restart required) ----
             live.Webserver = incoming.Webserver;
             live.OpenApi = incoming.OpenApi;
+
+            // ---- Telemetry (provider-affecting fields restart required; PropagateToOrigin hot-swaps as
+            // it is read per request. Replacing by reference on the shared root object surfaces the new
+            // PropagateToOrigin immediately. Keep OTLP Headers when masked) ----
+            if (String.Equals(incoming.Telemetry.Otlp.Headers, MaskValue, StringComparison.Ordinal))
+                incoming.Telemetry.Otlp.Headers = live.Telemetry.Otlp.Headers;
+            live.Telemetry = incoming.Telemetry;
         }
 
         private void PersistSettings()
