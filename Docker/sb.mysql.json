@@ -63,5 +63,28 @@
     "Ssl": {
       "Enable": false
     }
+  },
+  "Telemetry": {
+    "Enable": true,
+    "ServiceName": "switchboard",
+    "Metrics": {
+      "Enable": true,
+      "ExportIntervalMs": 15000
+    },
+    "Traces": {
+      "Enable": true,
+      "SamplingRatio": 1.0,
+      "PropagateToOrigin": true
+    },
+    "Logs": {
+      "Enable": true,
+      "MinimumSeverity": 1
+    },
+    "Otlp": {
+      "Endpoint": "http://otel-collector:4317",
+      "Protocol": "grpc",
+      "TimeoutMs": 10000,
+      "Headers": null
+    }
   }
 }
