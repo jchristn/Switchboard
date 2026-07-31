@@ -485,7 +485,7 @@ dotnet Switchboard.Server.dll
  (_-< V  V / |  _/ _| ' \| '_ \/ _ \/ _` | '_/ _` |
  /__/\_/\_/|_|\__\__|_||_|_.__/\___/\__,_|_| \__,_|
 
-Switchboard Server v4.1.x
+Switchboard Server v5.0.x
 
 Loading from settings file ./sb.json
 [INFO] Webserver started on http://localhost:8000
@@ -879,7 +879,7 @@ Once enabled, access your API documentation at:
 
 ## Management API & Dashboard
 
-Switchboard 4.0 introduces a comprehensive management system with a RESTful API and web-based dashboard for runtime configuration and monitoring.
+Switchboard includes a comprehensive management system with a RESTful API and web-based dashboard for runtime configuration and monitoring.
 
 ### Enabling the Management API
 

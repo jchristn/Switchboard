@@ -5,7 +5,7 @@
 		<Version>5.0.0</Version>
 		<Description>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Description>
 		<Copyright>(c)2026 Joel Christner</Copyright>
-		<PackageReleaseNotes>v5.0.0: Intelligent routing and load balancing — least-connections, power-of-two-choices, weighted, and latency-aware modes; passive health checks with outlier ejection; automatic retries/failover; sticky sessions; slow start; and per-endpoint weighted canary with header routing</PackageReleaseNotes>
+		<PackageReleaseNotes>v5.0.0: Intelligent routing and load balancing — least-connections, power-of-two-choices, weighted, and latency-aware modes; passive health checks with outlier ejection; automatic retries/failover; sticky sessions; slow start; and per-endpoint weighted canary with header routing. Observability via OpenTelemetry — metrics and traces exported over OTLP, with a turnkey Prometheus/Tempo/Loki/Grafana Docker stack</PackageReleaseNotes>
 
 		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
