@@ -8,10 +8,14 @@ import { setActiveLocale } from '../../i18n';
 export function LanguageSelector({ compact = false }) {
   const { t, i18n } = useTranslation();
   return (
-    <label className={`language-selector${compact ? ' is-compact' : ''}`}>
+    <label
+      className={`language-selector${compact ? ' is-compact' : ''}`}
+      title={t('topbar.languageTip')}
+    >
       <span className="sr-only">{t('topbar.language')}</span>
       <select
         aria-label={t('topbar.language')}
+        title={t('topbar.languageTip')}
         value={i18n.language?.split('-')[0] || 'en'}
         onChange={(e) => setActiveLocale(e.target.value)}
       >

@@ -27,10 +27,10 @@ const EMPTY_FORM = {
   active: true,
 };
 
-function DetailItem({ label, children, full = false, mono = false }) {
+function DetailItem({ label, children, full = false, mono = false, title }) {
   return (
     <div className={`rv-detail-item ${full ? 'rv-detail-item--full' : ''}`.trim()}>
-      <span className="rv-detail-label">{label}</span>
+      <span className="rv-detail-label" title={title}>{label}</span>
       <span className={`rv-detail-value ${mono ? 'rv-detail-value--mono' : ''}`.trim()}>
         {children}
       </span>
@@ -43,6 +43,7 @@ DetailItem.propTypes = {
   children: PropTypes.node,
   full: PropTypes.bool,
   mono: PropTypes.bool,
+  title: PropTypes.string,
 };
 
 function fullName(row) {
@@ -255,10 +256,11 @@ export default function UsersView() {
       >
         <form id="user-form" onSubmit={submit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="u-username">{t('users.username')}</label>
+            <label className="form-label" htmlFor="u-username" title={t('users.usernameTip')}>{t('users.username')}</label>
             <input
               id="u-username"
               className="form-input"
+              title={t('users.usernameTip')}
               value={form.username}
               onChange={(e) => setField('username', e.target.value)}
               required
@@ -266,44 +268,47 @@ export default function UsersView() {
             />
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="u-email">{t('users.email')}</label>
+            <label className="form-label" htmlFor="u-email" title={t('users.emailTip')}>{t('users.email')}</label>
             <input
               id="u-email"
               type="email"
               className="form-input"
+              title={t('users.emailTip')}
               value={form.email}
               onChange={(e) => setField('email', e.target.value)}
             />
           </div>
           <div className="rv-form-grid">
             <div className="form-group">
-              <label className="form-label" htmlFor="u-first">{t('users.firstName')}</label>
+              <label className="form-label" htmlFor="u-first" title={t('users.firstNameTip')}>{t('users.firstName')}</label>
               <input
                 id="u-first"
                 className="form-input"
+                title={t('users.firstNameTip')}
                 value={form.firstName}
                 onChange={(e) => setField('firstName', e.target.value)}
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="u-last">{t('users.lastName')}</label>
+              <label className="form-label" htmlFor="u-last" title={t('users.lastNameTip')}>{t('users.lastName')}</label>
               <input
                 id="u-last"
                 className="form-input"
+                title={t('users.lastNameTip')}
                 value={form.lastName}
                 onChange={(e) => setField('lastName', e.target.value)}
               />
             </div>
           </div>
           <div className="form-group">
-            <label className="rv-check">
-              <input type="checkbox" checked={form.isAdmin} onChange={(e) => setField('isAdmin', e.target.checked)} />
+            <label className="rv-check" title={t('users.administratorTip')}>
+              <input type="checkbox" title={t('users.administratorTip')} checked={form.isAdmin} onChange={(e) => setField('isAdmin', e.target.checked)} />
               <span>{t('users.administrator')}</span>
             </label>
           </div>
           <div className="form-group">
-            <label className="rv-check">
-              <input type="checkbox" checked={form.active} onChange={(e) => setField('active', e.target.checked)} />
+            <label className="rv-check" title={t('users.activeTip')}>
+              <input type="checkbox" title={t('users.activeTip')} checked={form.active} onChange={(e) => setField('active', e.target.checked)} />
               <span>{t('users.active')}</span>
             </label>
           </div>
@@ -314,19 +319,19 @@ export default function UsersView() {
       <Modal open={!!viewRow} onClose={() => setViewRow(null)} size="medium" title={t('users.viewTitle')}>
         {viewRow && (
           <div className="rv-detail-grid">
-            <DetailItem label={t('users.guid')} full mono>
+            <DetailItem label={t('users.guid')} full mono title={t('users.guidTip')}>
               <CopyableId value={viewRow.guid} />
             </DetailItem>
-            <DetailItem label={t('users.username')} mono>{viewRow.username}</DetailItem>
-            <DetailItem label={t('users.email')}>{viewRow.email || '—'}</DetailItem>
-            <DetailItem label={t('users.firstName')}>{viewRow.firstName || '—'}</DetailItem>
-            <DetailItem label={t('users.lastName')}>{viewRow.lastName || '—'}</DetailItem>
-            <DetailItem label={t('users.role')}>
+            <DetailItem label={t('users.username')} mono title={t('users.usernameTip')}>{viewRow.username}</DetailItem>
+            <DetailItem label={t('users.email')} title={t('users.emailTip')}>{viewRow.email || '—'}</DetailItem>
+            <DetailItem label={t('users.firstName')} title={t('users.firstNameTip')}>{viewRow.firstName || '—'}</DetailItem>
+            <DetailItem label={t('users.lastName')} title={t('users.lastNameTip')}>{viewRow.lastName || '—'}</DetailItem>
+            <DetailItem label={t('users.role')} title={t('users.roleTip')}>
               <Badge tone={viewRow.isAdmin ? 'accent' : 'neutral'}>
                 {viewRow.isAdmin ? t('users.admin') : t('topbar.roleReadOnly')}
               </Badge>
             </DetailItem>
-            <DetailItem label={t('users.status')}>
+            <DetailItem label={t('users.status')} title={t('users.statusTip')}>
               <Badge tone={viewRow.active !== false ? 'success' : 'danger'}>
                 {viewRow.active !== false ? t('status.active') : t('status.inactive')}
               </Badge>

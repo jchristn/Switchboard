@@ -354,50 +354,54 @@ export default function SetupWizard() {
             <form id="sw-origin-form" className="sw-form" onSubmit={createOrigin}>
               <div className="sw-form-grid">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="sw-o-identifier">{t('origins.identifier')}</label>
+                  <label className="form-label" htmlFor="sw-o-identifier" title={t('origins.identifierTip')}>{t('origins.identifier')}</label>
                   <input
                     id="sw-o-identifier"
                     className="form-input"
                     value={originForm.identifier}
                     onChange={(e) => setOriginField('identifier', e.target.value)}
+                    title={t('origins.identifierTip')}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="sw-o-name">{t('origins.name')}</label>
+                  <label className="form-label" htmlFor="sw-o-name" title={t('origins.nameTip')}>{t('origins.name')}</label>
                   <input
                     id="sw-o-name"
                     className="form-input"
                     value={originForm.name}
                     onChange={(e) => setOriginField('name', e.target.value)}
+                    title={t('origins.nameTip')}
                   />
                 </div>
               </div>
               <div className="sw-form-grid">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="sw-o-hostname">{t('origins.hostname')}</label>
+                  <label className="form-label" htmlFor="sw-o-hostname" title={t('origins.hostnameTip')}>{t('origins.hostname')}</label>
                   <input
                     id="sw-o-hostname"
                     className="form-input"
                     value={originForm.hostname}
                     onChange={(e) => setOriginField('hostname', e.target.value)}
+                    title={t('origins.hostnameTip')}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="sw-o-port">{t('origins.port')}</label>
+                  <label className="form-label" htmlFor="sw-o-port" title={t('origins.portTip')}>{t('origins.port')}</label>
                   <input
                     id="sw-o-port"
                     type="number"
                     className="form-input"
                     value={originForm.port}
                     onChange={(e) => setOriginField('port', parseInt(e.target.value, 10) || 0)}
+                    title={t('origins.portTip')}
                     required
                   />
                 </div>
               </div>
               <div className="form-group">
-                <label className="sw-check">
+                <label className="sw-check" title={t('origins.useSslTip')}>
                   <input
                     type="checkbox"
                     checked={originForm.ssl}
@@ -406,6 +410,7 @@ export default function SetupWizard() {
                       // Default the port to the conventional value for the scheme.
                       setOriginForm((prev) => ({ ...prev, ssl, port: ssl ? 443 : 80 }));
                     }}
+                    title={t('origins.useSslTip')}
                   />
                   <span>{t('origins.useSsl')}</span>
                 </label>
@@ -457,32 +462,35 @@ export default function SetupWizard() {
               <form id="sw-endpoint-form" className="sw-form" onSubmit={createEndpoint}>
                 <div className="sw-form-grid">
                   <div className="form-group">
-                    <label className="form-label" htmlFor="sw-e-identifier">{t('endpoints.identifier')}</label>
+                    <label className="form-label" htmlFor="sw-e-identifier" title={t('endpoints.identifierTip')}>{t('endpoints.identifier')}</label>
                     <input
                       id="sw-e-identifier"
                       className="form-input"
                       value={endpointForm.identifier}
                       onChange={(e) => setEndpointField('identifier', e.target.value)}
+                      title={t('endpoints.identifierTip')}
                       required
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label" htmlFor="sw-e-name">{t('endpoints.name')}</label>
+                    <label className="form-label" htmlFor="sw-e-name" title={t('endpoints.nameTip')}>{t('endpoints.name')}</label>
                     <input
                       id="sw-e-name"
                       className="form-input"
                       value={endpointForm.name}
                       onChange={(e) => setEndpointField('name', e.target.value)}
+                      title={t('endpoints.nameTip')}
                     />
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="sw-e-lb">{t('endpoints.loadBalancing')}</label>
+                  <label className="form-label" htmlFor="sw-e-lb" title={t('endpoints.loadBalancingTip')}>{t('endpoints.loadBalancing')}</label>
                   <select
                     id="sw-e-lb"
                     className="form-input"
                     value={endpointForm.loadBalancingMode}
                     onChange={(e) => setEndpointField('loadBalancingMode', e.target.value)}
+                    title={t('endpoints.loadBalancingTip')}
                   >
                     <option value="RoundRobin">{t('endpoints.roundRobin')}</option>
                     <option value="Random">{t('endpoints.random')}</option>

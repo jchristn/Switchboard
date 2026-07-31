@@ -110,10 +110,11 @@ export default function BlockedHeadersView() {
 
       <form className="rv-inline-form" onSubmit={addHeader}>
         <div className="form-group">
-          <label className="form-label" htmlFor="bh-name">{t('blockedHeaders.headerName')}</label>
+          <label className="form-label" htmlFor="bh-name" title={t('blockedHeaders.headerNameTip')}>{t('blockedHeaders.headerName')}</label>
           <input
             id="bh-name"
             className="form-input"
+            title={t('blockedHeaders.headerNameTip')}
             value={headerName}
             onChange={(e) => setHeaderName(e.target.value)}
             placeholder={t('blockedHeaders.headerPlaceholder')}

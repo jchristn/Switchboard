@@ -35,7 +35,7 @@ function Login() {
 
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="serverUrl">
+            <label className="form-label" htmlFor="serverUrl" title={t('login.serverUrlTip')}>
               {t('login.serverUrl')}
             </label>
             <input
@@ -45,12 +45,13 @@ function Login() {
               placeholder="http://localhost:8000"
               value={serverUrl}
               onChange={(e) => setServerUrl(e.target.value)}
+              title={t('login.serverUrlTip')}
               required
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="token">
+            <label className="form-label" htmlFor="token" title={t('login.tokenTip')}>
               {t('login.token')}
             </label>
             <div className="input-with-icon">
@@ -60,6 +61,7 @@ function Login() {
                 className="form-input"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
+                title={t('login.tokenTip')}
                 required
               />
               <button

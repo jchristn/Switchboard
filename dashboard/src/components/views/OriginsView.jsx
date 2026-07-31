@@ -39,10 +39,10 @@ const EMPTY_FORM = {
   ejectionDurationMs: 30000,
 };
 
-function DetailItem({ label, children, full = false, mono = false }) {
+function DetailItem({ label, children, full = false, mono = false, title }) {
   return (
     <div className={`rv-detail-item ${full ? 'rv-detail-item--full' : ''}`.trim()}>
-      <span className="rv-detail-label">{label}</span>
+      <span className="rv-detail-label" title={title}>{label}</span>
       <span className={`rv-detail-value ${mono ? 'rv-detail-value--mono' : ''}`.trim()}>
         {children}
       </span>
@@ -55,6 +55,7 @@ DetailItem.propTypes = {
   children: PropTypes.node,
   full: PropTypes.bool,
   mono: PropTypes.bool,
+  title: PropTypes.string,
 };
 
 export default function OriginsView() {
@@ -320,10 +321,11 @@ export default function OriginsView() {
         <form id="origin-form" onSubmit={submit}>
           <div className="rv-form-grid">
             <div className="form-group">
-              <label className="form-label" htmlFor="o-identifier">{t('origins.identifier')}</label>
+              <label className="form-label" htmlFor="o-identifier" title={t('origins.identifierTip')}>{t('origins.identifier')}</label>
               <input
                 id="o-identifier"
                 className="form-input"
+                title={t('origins.identifierTip')}
                 value={form.identifier}
                 onChange={(e) => setField('identifier', e.target.value)}
                 required
@@ -331,28 +333,30 @@ export default function OriginsView() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="o-name">{t('origins.name')}</label>
-              <input id="o-name" className="form-input" value={form.name} onChange={(e) => setField('name', e.target.value)} />
+              <label className="form-label" htmlFor="o-name" title={t('origins.nameTip')}>{t('origins.name')}</label>
+              <input id="o-name" className="form-input" title={t('origins.nameTip')} value={form.name} onChange={(e) => setField('name', e.target.value)} />
             </div>
           </div>
 
           <div className="rv-form-grid">
             <div className="form-group">
-              <label className="form-label" htmlFor="o-hostname">{t('origins.hostname')}</label>
+              <label className="form-label" htmlFor="o-hostname" title={t('origins.hostnameTip')}>{t('origins.hostname')}</label>
               <input
                 id="o-hostname"
                 className="form-input"
+                title={t('origins.hostnameTip')}
                 value={form.hostname}
                 onChange={(e) => setField('hostname', e.target.value)}
                 required
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="o-port">{t('origins.port')}</label>
+              <label className="form-label" htmlFor="o-port" title={t('origins.portTip')}>{t('origins.port')}</label>
               <input
                 id="o-port"
                 type="number"
                 className="form-input"
+                title={t('origins.portTip')}
                 value={form.port}
                 onChange={(e) => setField('port', parseInt(e.target.value, 10) || 0)}
                 required
@@ -361,27 +365,29 @@ export default function OriginsView() {
           </div>
 
           <div className="form-group">
-            <label className="rv-check">
-              <input type="checkbox" checked={form.ssl} onChange={(e) => setField('ssl', e.target.checked)} />
+            <label className="rv-check" title={t('origins.useSslTip')}>
+              <input type="checkbox" title={t('origins.useSslTip')} checked={form.ssl} onChange={(e) => setField('ssl', e.target.checked)} />
               <span>{t('origins.useSsl')}</span>
             </label>
           </div>
 
           <div className="rv-form-grid">
             <div className="form-group">
-              <label className="form-label" htmlFor="o-hcurl">{t('origins.healthCheckUrl')}</label>
+              <label className="form-label" htmlFor="o-hcurl" title={t('origins.healthCheckUrlTip')}>{t('origins.healthCheckUrl')}</label>
               <input
                 id="o-hcurl"
                 className="form-input"
+                title={t('origins.healthCheckUrlTip')}
                 value={form.healthCheckUrl}
                 onChange={(e) => setField('healthCheckUrl', e.target.value)}
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="o-hcmethod">{t('origins.healthCheckMethod')}</label>
+              <label className="form-label" htmlFor="o-hcmethod" title={t('origins.healthCheckMethodTip')}>{t('origins.healthCheckMethod')}</label>
               <select
                 id="o-hcmethod"
                 className="form-input"
+                title={t('origins.healthCheckMethodTip')}
                 value={form.healthCheckMethod}
                 onChange={(e) => setField('healthCheckMethod', e.target.value)}
               >
@@ -394,21 +400,23 @@ export default function OriginsView() {
 
           <div className="rv-form-grid">
             <div className="form-group">
-              <label className="form-label" htmlFor="o-hcint">{t('origins.healthCheckInterval')}</label>
+              <label className="form-label" htmlFor="o-hcint" title={t('origins.healthCheckIntervalTip')}>{t('origins.healthCheckInterval')}</label>
               <input
                 id="o-hcint"
                 type="number"
                 className="form-input"
+                title={t('origins.healthCheckIntervalTip')}
                 value={form.healthCheckIntervalMs}
                 onChange={(e) => setField('healthCheckIntervalMs', parseInt(e.target.value, 10) || 0)}
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="o-maxpar">{t('origins.maxParallel')}</label>
+              <label className="form-label" htmlFor="o-maxpar" title={t('origins.maxParallelTip')}>{t('origins.maxParallel')}</label>
               <input
                 id="o-maxpar"
                 type="number"
                 className="form-input"
+                title={t('origins.maxParallelTip')}
                 value={form.maxParallelRequests}
                 onChange={(e) => setField('maxParallelRequests', parseInt(e.target.value, 10) || 0)}
               />
@@ -417,21 +425,23 @@ export default function OriginsView() {
 
           <div className="rv-form-grid">
             <div className="form-group">
-              <label className="form-label" htmlFor="o-unhealthy">{t('origins.unhealthyThreshold')}</label>
+              <label className="form-label" htmlFor="o-unhealthy" title={t('origins.unhealthyThresholdTip')}>{t('origins.unhealthyThreshold')}</label>
               <input
                 id="o-unhealthy"
                 type="number"
                 className="form-input"
+                title={t('origins.unhealthyThresholdTip')}
                 value={form.unhealthyThreshold}
                 onChange={(e) => setField('unhealthyThreshold', parseInt(e.target.value, 10) || 0)}
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="o-healthy">{t('origins.healthyThreshold')}</label>
+              <label className="form-label" htmlFor="o-healthy" title={t('origins.healthyThresholdTip')}>{t('origins.healthyThreshold')}</label>
               <input
                 id="o-healthy"
                 type="number"
                 className="form-input"
+                title={t('origins.healthyThresholdTip')}
                 value={form.healthyThreshold}
                 onChange={(e) => setField('healthyThreshold', parseInt(e.target.value, 10) || 0)}
               />
@@ -439,11 +449,12 @@ export default function OriginsView() {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="o-rate">{t('origins.rateLimit')}</label>
+            <label className="form-label" htmlFor="o-rate" title={t('origins.rateLimitTip')}>{t('origins.rateLimit')}</label>
             <input
               id="o-rate"
               type="number"
               className="form-input"
+              title={t('origins.rateLimitTip')}
               value={form.rateLimitRequestsThreshold}
               onChange={(e) => setField('rateLimitRequestsThreshold', parseInt(e.target.value, 10) || 0)}
             />
@@ -451,22 +462,24 @@ export default function OriginsView() {
 
           <div className="rv-form-grid">
             <div className="form-group">
-              <label className="form-label" htmlFor="o-slowstart">{t('origins.slowStart')}</label>
+              <label className="form-label" htmlFor="o-slowstart" title={t('origins.slowStartTip')}>{t('origins.slowStart')}</label>
               <input
                 id="o-slowstart"
                 type="number"
                 className="form-input"
+                title={t('origins.slowStartTip')}
                 value={form.slowStartMs}
                 onChange={(e) => setField('slowStartMs', parseInt(e.target.value, 10) || 0)}
               />
               <span className="form-hint">{t('origins.slowStartHint')}</span>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="o-maxfail">{t('origins.maxFailures')}</label>
+              <label className="form-label" htmlFor="o-maxfail" title={t('origins.maxFailuresTip')}>{t('origins.maxFailures')}</label>
               <input
                 id="o-maxfail"
                 type="number"
                 className="form-input"
+                title={t('origins.maxFailuresTip')}
                 value={form.maxFailures}
                 onChange={(e) => setField('maxFailures', parseInt(e.target.value, 10) || 0)}
               />
@@ -475,11 +488,12 @@ export default function OriginsView() {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="o-eject">{t('origins.ejectionDuration')}</label>
+            <label className="form-label" htmlFor="o-eject" title={t('origins.ejectionDurationTip')}>{t('origins.ejectionDuration')}</label>
             <input
               id="o-eject"
               type="number"
               className="form-input"
+              title={t('origins.ejectionDurationTip')}
               value={form.ejectionDurationMs}
               onChange={(e) => setField('ejectionDurationMs', parseInt(e.target.value, 10) || 0)}
             />
@@ -492,15 +506,15 @@ export default function OriginsView() {
       <Modal open={!!viewRow} onClose={() => setViewRow(null)} size="medium" title={t('origins.viewTitle')}>
         {viewRow && (
           <div className="rv-detail-grid">
-            <DetailItem label={t('origins.guid')} full mono>
+            <DetailItem label={t('origins.guid')} title={t('origins.guidTip')} full mono>
               <CopyableId value={viewRow.guid} />
             </DetailItem>
-            <DetailItem label={t('origins.identifier')} mono>{viewRow.identifier}</DetailItem>
-            <DetailItem label={t('origins.name')}>{viewRow.name || '—'}</DetailItem>
-            <DetailItem label={t('origins.hostname')} mono>{viewRow.hostname}</DetailItem>
-            <DetailItem label={t('origins.port')}>{viewRow.port}</DetailItem>
-            <DetailItem label={t('origins.ssl')}>{viewRow.ssl ? t('common.yes') : t('common.no')}</DetailItem>
-            <DetailItem label={t('origins.health')} full>
+            <DetailItem label={t('origins.identifier')} title={t('origins.identifierTip')} mono>{viewRow.identifier}</DetailItem>
+            <DetailItem label={t('origins.name')} title={t('origins.nameTip')}>{viewRow.name || '—'}</DetailItem>
+            <DetailItem label={t('origins.hostname')} title={t('origins.hostnameTip')} mono>{viewRow.hostname}</DetailItem>
+            <DetailItem label={t('origins.port')} title={t('origins.portTip')}>{viewRow.port}</DetailItem>
+            <DetailItem label={t('origins.ssl')} title={t('origins.useSslTip')}>{viewRow.ssl ? t('common.yes') : t('common.no')}</DetailItem>
+            <DetailItem label={t('origins.health')} title={t('origins.healthTip')} full>
               {(() => {
                 const h = health[viewRow.guid];
                 if (!h) {
@@ -518,16 +532,16 @@ export default function OriginsView() {
                 );
               })()}
             </DetailItem>
-            <DetailItem label={t('origins.healthCheckMethod')}>{viewRow.healthCheckMethod || '—'}</DetailItem>
-            <DetailItem label={t('origins.healthCheckUrl')} mono>{viewRow.healthCheckUrl || '—'}</DetailItem>
-            <DetailItem label={t('origins.healthCheckInterval')}>{viewRow.healthCheckIntervalMs ?? '—'}</DetailItem>
-            <DetailItem label={t('origins.maxParallel')}>{viewRow.maxParallelRequests ?? '—'}</DetailItem>
-            <DetailItem label={t('origins.rateLimit')}>{viewRow.rateLimitRequestsThreshold ?? '—'}</DetailItem>
-            <DetailItem label={t('origins.unhealthyThreshold')}>{viewRow.unhealthyThreshold ?? '—'}</DetailItem>
-            <DetailItem label={t('origins.healthyThreshold')}>{viewRow.healthyThreshold ?? '—'}</DetailItem>
-            <DetailItem label={t('origins.slowStart')}>{viewRow.slowStartMs ?? '—'}</DetailItem>
-            <DetailItem label={t('origins.maxFailures')}>{viewRow.maxFailures ?? '—'}</DetailItem>
-            <DetailItem label={t('origins.ejectionDuration')}>{viewRow.ejectionDurationMs ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.healthCheckMethod')} title={t('origins.healthCheckMethodTip')}>{viewRow.healthCheckMethod || '—'}</DetailItem>
+            <DetailItem label={t('origins.healthCheckUrl')} title={t('origins.healthCheckUrlTip')} mono>{viewRow.healthCheckUrl || '—'}</DetailItem>
+            <DetailItem label={t('origins.healthCheckInterval')} title={t('origins.healthCheckIntervalTip')}>{viewRow.healthCheckIntervalMs ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.maxParallel')} title={t('origins.maxParallelTip')}>{viewRow.maxParallelRequests ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.rateLimit')} title={t('origins.rateLimitTip')}>{viewRow.rateLimitRequestsThreshold ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.unhealthyThreshold')} title={t('origins.unhealthyThresholdTip')}>{viewRow.unhealthyThreshold ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.healthyThreshold')} title={t('origins.healthyThresholdTip')}>{viewRow.healthyThreshold ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.slowStart')} title={t('origins.slowStartTip')}>{viewRow.slowStartMs ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.maxFailures')} title={t('origins.maxFailuresTip')}>{viewRow.maxFailures ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.ejectionDuration')} title={t('origins.ejectionDurationTip')}>{viewRow.ejectionDurationMs ?? '—'}</DetailItem>
           </div>
         )}
       </Modal>

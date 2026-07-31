@@ -316,7 +316,7 @@ function OverviewView() {
       </div>
 
       {/* Request activity chart */}
-      <section className="ov-panel" aria-label={t('chart.title')}>
+      <section className="ov-panel" aria-label={t('chart.title')} title={t('overview.rangeTip')}>
         <ActivityChart
           data={timeseries}
           rangeId={rangeId}

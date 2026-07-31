@@ -202,6 +202,7 @@ export default function DataTable({
                           column: typeof col.label === 'string' ? col.label : col.key,
                         })}
                         placeholder={t('common.filter')}
+                        title={t('table.filterColumnTip')}
                         data-row-click-ignore=""
                       />
                     ) : null}

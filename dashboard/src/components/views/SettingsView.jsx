@@ -32,9 +32,9 @@ const SECTIONS = [
     titleKey: 'settings.sectionWebserver',
     defaultOpen: true,
     fields: [
-      { path: 'webserver.hostname', labelKey: 'settings.fieldWebserverHostname', type: 'text', placeholder: 'localhost' },
-      { path: 'webserver.port', labelKey: 'settings.fieldWebserverPort', type: 'number' },
-      { path: 'webserver.ssl.enable', restartPath: 'webserver.ssl', labelKey: 'settings.fieldSslEnable', type: 'toggle' },
+      { path: 'webserver.hostname', labelKey: 'settings.fieldWebserverHostname', tipKey: 'settings.fieldWebserverHostnameTip', type: 'text', placeholder: 'localhost' },
+      { path: 'webserver.port', labelKey: 'settings.fieldWebserverPort', tipKey: 'settings.fieldWebserverPortTip', type: 'number' },
+      { path: 'webserver.ssl.enable', restartPath: 'webserver.ssl', labelKey: 'settings.fieldSslEnable', tipKey: 'settings.fieldSslEnableTip', type: 'toggle' },
     ],
   },
   {
@@ -42,11 +42,11 @@ const SECTIONS = [
     titleKey: 'settings.sectionLogging',
     defaultOpen: true,
     fields: [
-      { path: 'logging.minimumSeverity', labelKey: 'settings.fieldMinimumSeverity', type: 'number', min: 0, max: 7 },
-      { path: 'logging.consoleLogging', labelKey: 'settings.fieldConsoleLogging', type: 'toggle' },
-      { path: 'logging.enableColors', labelKey: 'settings.fieldEnableColors', type: 'toggle' },
-      { path: 'logging.logDirectory', labelKey: 'settings.fieldLogDirectory', type: 'text', placeholder: './logs/' },
-      { path: 'logging.logFilename', labelKey: 'settings.fieldLogFilename', type: 'text', placeholder: 'switchboard.log' },
+      { path: 'logging.minimumSeverity', labelKey: 'settings.fieldMinimumSeverity', tipKey: 'settings.fieldMinimumSeverityTip', type: 'number', min: 0, max: 7 },
+      { path: 'logging.consoleLogging', labelKey: 'settings.fieldConsoleLogging', tipKey: 'settings.fieldConsoleLoggingTip', type: 'toggle' },
+      { path: 'logging.enableColors', labelKey: 'settings.fieldEnableColors', tipKey: 'settings.fieldEnableColorsTip', type: 'toggle' },
+      { path: 'logging.logDirectory', labelKey: 'settings.fieldLogDirectory', tipKey: 'settings.fieldLogDirectoryTip', type: 'text', placeholder: './logs/' },
+      { path: 'logging.logFilename', labelKey: 'settings.fieldLogFilename', tipKey: 'settings.fieldLogFilenameTip', type: 'text', placeholder: 'switchboard.log' },
     ],
   },
   {
@@ -56,6 +56,7 @@ const SECTIONS = [
       {
         path: 'database.type',
         labelKey: 'settings.fieldDbType',
+        tipKey: 'settings.fieldDbTypeTip',
         type: 'select',
         options: [
           { value: 'Sqlite', labelKey: 'settings.dbSqlite' },
@@ -64,47 +65,47 @@ const SECTIONS = [
           { value: 'SqlServer', labelKey: 'settings.dbSqlServer' },
         ],
       },
-      { path: 'database.filename', labelKey: 'settings.fieldDbFilename', type: 'text', placeholder: 'switchboard.db' },
-      { path: 'database.hostname', labelKey: 'settings.fieldDbHostname', type: 'text' },
-      { path: 'database.port', labelKey: 'settings.fieldDbPort', type: 'number' },
-      { path: 'database.databaseName', labelKey: 'settings.fieldDbName', type: 'text' },
-      { path: 'database.username', labelKey: 'settings.fieldDbUsername', type: 'text' },
-      { path: 'database.password', labelKey: 'settings.fieldDbPassword', type: 'password', secret: true },
+      { path: 'database.filename', labelKey: 'settings.fieldDbFilename', tipKey: 'settings.fieldDbFilenameTip', type: 'text', placeholder: 'switchboard.db' },
+      { path: 'database.hostname', labelKey: 'settings.fieldDbHostname', tipKey: 'settings.fieldDbHostnameTip', type: 'text' },
+      { path: 'database.port', labelKey: 'settings.fieldDbPort', tipKey: 'settings.fieldDbPortTip', type: 'number' },
+      { path: 'database.databaseName', labelKey: 'settings.fieldDbName', tipKey: 'settings.fieldDbNameTip', type: 'text' },
+      { path: 'database.username', labelKey: 'settings.fieldDbUsername', tipKey: 'settings.fieldDbUsernameTip', type: 'text' },
+      { path: 'database.password', labelKey: 'settings.fieldDbPassword', tipKey: 'settings.fieldDbPasswordTip', type: 'password', secret: true },
     ],
   },
   {
     key: 'management',
     titleKey: 'settings.sectionManagement',
     fields: [
-      { path: 'management.enable', labelKey: 'settings.fieldMgmtEnable', type: 'toggle' },
-      { path: 'management.basePath', labelKey: 'settings.fieldMgmtBasePath', type: 'text', placeholder: '/_sb/v1.0' },
-      { path: 'management.adminToken', labelKey: 'settings.fieldAdminToken', type: 'password', secret: true },
-      { path: 'management.requireAuthentication', labelKey: 'settings.fieldRequireAuth', type: 'toggle' },
+      { path: 'management.enable', labelKey: 'settings.fieldMgmtEnable', tipKey: 'settings.fieldMgmtEnableTip', type: 'toggle' },
+      { path: 'management.basePath', labelKey: 'settings.fieldMgmtBasePath', tipKey: 'settings.fieldMgmtBasePathTip', type: 'text', placeholder: '/_sb/v1.0' },
+      { path: 'management.adminToken', labelKey: 'settings.fieldAdminToken', tipKey: 'settings.fieldAdminTokenTip', type: 'password', secret: true },
+      { path: 'management.requireAuthentication', labelKey: 'settings.fieldRequireAuth', tipKey: 'settings.fieldRequireAuthTip', type: 'toggle' },
     ],
   },
   {
     key: 'requestHistory',
     titleKey: 'settings.sectionRequestHistory',
     fields: [
-      { path: 'requestHistory.enable', labelKey: 'settings.fieldHistEnable', type: 'toggle' },
-      { path: 'requestHistory.captureRequestBody', labelKey: 'settings.fieldCaptureRequestBody', type: 'toggle' },
-      { path: 'requestHistory.captureResponseBody', labelKey: 'settings.fieldCaptureResponseBody', type: 'toggle' },
-      { path: 'requestHistory.captureRequestHeaders', labelKey: 'settings.fieldCaptureRequestHeaders', type: 'toggle' },
-      { path: 'requestHistory.captureResponseHeaders', labelKey: 'settings.fieldCaptureResponseHeaders', type: 'toggle' },
-      { path: 'requestHistory.retentionDays', labelKey: 'settings.fieldRetentionDays', type: 'number', min: 0 },
-      { path: 'requestHistory.maxRecords', labelKey: 'settings.fieldMaxRecords', type: 'number', min: 0 },
-      { path: 'requestHistory.cleanupIntervalSeconds', labelKey: 'settings.fieldCleanupInterval', type: 'number', min: 0 },
+      { path: 'requestHistory.enable', labelKey: 'settings.fieldHistEnable', tipKey: 'settings.fieldHistEnableTip', type: 'toggle' },
+      { path: 'requestHistory.captureRequestBody', labelKey: 'settings.fieldCaptureRequestBody', tipKey: 'settings.fieldCaptureRequestBodyTip', type: 'toggle' },
+      { path: 'requestHistory.captureResponseBody', labelKey: 'settings.fieldCaptureResponseBody', tipKey: 'settings.fieldCaptureResponseBodyTip', type: 'toggle' },
+      { path: 'requestHistory.captureRequestHeaders', labelKey: 'settings.fieldCaptureRequestHeaders', tipKey: 'settings.fieldCaptureRequestHeadersTip', type: 'toggle' },
+      { path: 'requestHistory.captureResponseHeaders', labelKey: 'settings.fieldCaptureResponseHeaders', tipKey: 'settings.fieldCaptureResponseHeadersTip', type: 'toggle' },
+      { path: 'requestHistory.retentionDays', labelKey: 'settings.fieldRetentionDays', tipKey: 'settings.fieldRetentionDaysTip', type: 'number', min: 0 },
+      { path: 'requestHistory.maxRecords', labelKey: 'settings.fieldMaxRecords', tipKey: 'settings.fieldMaxRecordsTip', type: 'number', min: 0 },
+      { path: 'requestHistory.cleanupIntervalSeconds', labelKey: 'settings.fieldCleanupInterval', tipKey: 'settings.fieldCleanupIntervalTip', type: 'number', min: 0 },
     ],
   },
   {
     key: 'openApi',
     titleKey: 'settings.sectionOpenApi',
     fields: [
-      { path: 'openApi.enable', labelKey: 'settings.fieldOpenApiEnable', type: 'toggle' },
-      { path: 'openApi.enableSwaggerUi', labelKey: 'settings.fieldEnableSwaggerUi', type: 'toggle' },
-      { path: 'openApi.title', labelKey: 'settings.fieldOpenApiTitle', type: 'text' },
-      { path: 'openApi.version', labelKey: 'settings.fieldOpenApiVersion', type: 'text' },
-      { path: 'openApi.description', labelKey: 'settings.fieldOpenApiDescription', type: 'text' },
+      { path: 'openApi.enable', labelKey: 'settings.fieldOpenApiEnable', tipKey: 'settings.fieldOpenApiEnableTip', type: 'toggle' },
+      { path: 'openApi.enableSwaggerUi', labelKey: 'settings.fieldEnableSwaggerUi', tipKey: 'settings.fieldEnableSwaggerUiTip', type: 'toggle' },
+      { path: 'openApi.title', labelKey: 'settings.fieldOpenApiTitle', tipKey: 'settings.fieldOpenApiTitleTip', type: 'text' },
+      { path: 'openApi.version', labelKey: 'settings.fieldOpenApiVersion', tipKey: 'settings.fieldOpenApiVersionTip', type: 'text' },
+      { path: 'openApi.description', labelKey: 'settings.fieldOpenApiDescription', tipKey: 'settings.fieldOpenApiDescriptionTip', type: 'text' },
     ],
   },
 ];
@@ -411,6 +412,7 @@ function SettingsView() {
                   }
                 }}
                 aria-label={t('settings.headerName')}
+                title={t('settings.headerNameTip')}
               />
               <button type="button" className="btn btn-primary" onClick={addHeader} disabled={!newHeader.trim()}>
                 <Icons.Plus size={16} />
@@ -489,6 +491,7 @@ function SettingField({ field, value, restartRequired, readOnly, onChange, t }) 
   const id = useId();
   const { type } = field;
   const isSecret = !!field.secret;
+  const tip = field.tipKey ? t(field.tipKey) : undefined;
 
   // Secrets arrive masked; show an empty control with a "set" placeholder until the
   // user types a replacement. Restoring to empty means "keep stored value".
@@ -504,7 +507,7 @@ function SettingField({ field, value, restartRequired, readOnly, onChange, t }) 
 
   const labelRow = (
     <div className="settings-field__labelrow">
-      <label className="form-label" htmlFor={id}>
+      <label className="form-label" htmlFor={id} title={tip}>
         {t(field.labelKey)}
       </label>
       {annotation}
@@ -515,13 +518,14 @@ function SettingField({ field, value, restartRequired, readOnly, onChange, t }) 
     return (
       <div className="settings-field settings-field--toggle">
         <div className="settings-field__labelrow">
-          <label className="settings-toggle">
+          <label className="settings-toggle" title={tip}>
             <input
               id={id}
               type="checkbox"
               checked={!!value}
               onChange={(e) => onChange(e.target.checked)}
               disabled={readOnly}
+              title={tip}
             />
             <span className="settings-toggle__track" aria-hidden="true">
               <span className="settings-toggle__thumb" />
@@ -543,6 +547,7 @@ function SettingField({ field, value, restartRequired, readOnly, onChange, t }) 
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={readOnly}
+        title={tip}
       >
         {field.options.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -560,6 +565,7 @@ function SettingField({ field, value, restartRequired, readOnly, onChange, t }) 
         value={value ?? ''}
         min={field.min}
         max={field.max}
+        title={tip}
         onChange={(e) => {
           const v = e.target.value;
           if (v === '') return onChange(0);
@@ -577,6 +583,7 @@ function SettingField({ field, value, restartRequired, readOnly, onChange, t }) 
         className="form-input"
         autoComplete="new-password"
         value={secretUntouched ? '' : value ?? ''}
+        title={tip}
         placeholder={isSecret ? t('settings.secretSet') : undefined}
         onChange={(e) => onChange(e.target.value === '' ? SECRET_MASK : e.target.value)}
         disabled={readOnly}
@@ -592,6 +599,7 @@ function SettingField({ field, value, restartRequired, readOnly, onChange, t }) 
         placeholder={field.placeholder}
         onChange={(e) => onChange(e.target.value)}
         disabled={readOnly}
+        title={tip}
       />
     );
   }
@@ -608,6 +616,7 @@ SettingField.propTypes = {
   field: PropTypes.shape({
     path: PropTypes.string.isRequired,
     labelKey: PropTypes.string,
+    tipKey: PropTypes.string,
     type: PropTypes.string.isRequired,
     options: PropTypes.array,
     placeholder: PropTypes.string,

@@ -57,6 +57,7 @@ export default function TablePagination({
             value={pageSize}
             onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
             aria-label={t('table.pageSize')}
+            title={t('table.pageSizeTip')}
           >
             {pageSizeOptions.map((size) => (
               <option key={size} value={size}>

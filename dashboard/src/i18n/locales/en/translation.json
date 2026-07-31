@@ -37,7 +37,8 @@
     "toggleTheme": "Toggle theme",
     "language": "Language",
     "logout": "Log out",
-    "copyServer": "Copy server URL"
+    "copyServer": "Copy server URL",
+    "languageTip": "Change the language of the dashboard interface; your selection is saved on this device."
   },
   "common": {
     "add": "Add",
@@ -91,7 +92,9 @@
     "jump": "Go to page",
     "selectedCount": "{{count}} selected",
     "clearSelection": "Clear selection",
-    "filterColumn": "Filter {{column}}"
+    "filterColumn": "Filter {{column}}",
+    "filterColumnTip": "Type to filter the table rows by this column; matching is case-insensitive and partial.",
+    "pageSizeTip": "Number of rows shown per page; the list re-paginates and returns to page one when changed."
   },
   "confirm": {
     "deleteTitle": "Delete {{name}}?",
@@ -105,7 +108,9 @@
     "token": "Bearer token",
     "connect": "Connect",
     "connecting": "Connecting…",
-    "failed": "Could not connect. Check the URL and token."
+    "failed": "Could not connect. Check the URL and token.",
+    "serverUrlTip": "Base URL of the Switchboard server's management API, e.g. http://localhost:8000; the dashboard talks to /_sb/v1.0 under it.",
+    "tokenTip": "Bearer access key the server requires for management API calls; paste the admin token configured on your Switchboard instance. It is stored locally in your browser only."
   },
   "overview": {
     "title": "Overview",
@@ -133,7 +138,8 @@
     "attnUnhealthyOrigin": "Origin {{name}} is unhealthy",
     "attnNoHealthyOrigin": "Endpoint {{name}} has no healthy origin",
     "attnFailures": "{{count}} failed requests in the selected window",
-    "lastUpdated": "Updated {{time}}"
+    "lastUpdated": "Updated {{time}}",
+    "rangeTip": "Set the time window for the activity chart below; the buckets and totals rescale to the range you pick."
   },
   "chart": {
     "title": "Request Activity",
@@ -200,7 +206,27 @@
     "deleteConfirmTitle": "Delete request?",
     "deleteConfirmMessage": "This request record will be permanently removed. This action cannot be undone.",
     "loadError": "Could not load request history.",
-    "detailLoadError": "Could not load request details."
+    "detailLoadError": "Could not load request details.",
+    "durationTip": "Total time from receiving the request to sending the response, including time spent at the origin.",
+    "statusTip": "HTTP status code Switchboard returned to the client. 2xx/3xx indicate success or redirect; 4xx/5xx indicate a client or server error.",
+    "requestSizeTip": "Size in bytes of the request body received from the client; header bytes are not counted.",
+    "responseSizeTip": "Size in bytes of the response body sent back to the client; header bytes are not counted.",
+    "whenTip": "Timestamp (UTC) when Switchboard received the request, shown in your local time zone.",
+    "requestIdTip": "Unique ID Switchboard assigned to this request; use it to correlate this entry with server logs and traces.",
+    "endpointTip": "Identifier of the endpoint that matched and handled this request, or none if no endpoint matched.",
+    "originTip": "Identifier of the origin server the request was ultimately proxied to, or none if it was never forwarded.",
+    "clientIpTip": "Source IP address the request arrived from, as seen by Switchboard (may be a proxy or load balancer rather than the true client).",
+    "authenticatedTip": "Whether the caller passed authentication for this request. No may mean the route is public or that credentials were missing or rejected.",
+    "requestHeadersTip": "The full set of HTTP headers the client sent with the request, exactly as received by Switchboard.",
+    "requestBodyTip": "Payload the client sent with the request. Binary content is not shown inline, and large bodies may be truncated to the captured size.",
+    "responseHeadersTip": "The full set of HTTP headers Switchboard returned to the client with the response.",
+    "responseBodyTip": "Payload returned to the client. Binary content is not shown inline, and large bodies may be truncated to the captured size.",
+    "filterMethodTip": "Show only requests that used this HTTP method; leave as Any to include every method.",
+    "filterStatusTip": "Match requests by HTTP status code; enter a full or partial code such as 404 or 5 to catch all 5xx errors.",
+    "filterPathTip": "Show only requests whose path contains this text; matching is case-insensitive and partial.",
+    "filterFromTip": "Include only requests received at or after this date and time, shown in your local timezone.",
+    "filterToTip": "Include only requests received at or before this date and time, shown in your local timezone.",
+    "failedOnlyTip": "Show only failed requests (5xx or otherwise unsuccessful outcomes); combine with the time range to narrow the history."
   },
   "apiExplorer": {
     "title": "API Explorer",
@@ -241,7 +267,13 @@
     "duration": "Duration",
     "size": "Size",
     "specError": "Could not load the OpenAPI specification.",
-    "specErrorNote": "The API Explorer needs the server's OpenAPI document at /openapi.json. Ensure OpenAPI is enabled in the server settings and reachable, then retry."
+    "specErrorNote": "The API Explorer needs the server's OpenAPI document at /openapi.json. Ensure OpenAPI is enabled in the server settings and reachable, then retry.",
+    "operationsTip": "Choose the API operation to test; operations are grouped by category, with configured system endpoints listed at the bottom.",
+    "paramTip": "Value substituted into this path or query parameter before the request URL is built.",
+    "headerNameTip": "Name of a custom HTTP header to send with the request, such as Accept or X-Request-Id.",
+    "headerValueTip": "Value paired with the header name; a row with an empty name is ignored.",
+    "contentTypeTip": "Content-Type header sent with the request body; it must match how the body below is actually encoded.",
+    "requestBodyTip": "Raw payload sent in the request body; for application/json it must be valid JSON or execution is blocked."
   },
   "settings": {
     "title": "Settings",
@@ -307,7 +339,40 @@
     "fieldEnableSwaggerUi": "Enable Swagger UI",
     "fieldOpenApiTitle": "Title",
     "fieldOpenApiVersion": "Version",
-    "fieldOpenApiDescription": "Description"
+    "fieldOpenApiDescription": "Description",
+    "fieldWebserverHostnameTip": "IP address or hostname the HTTP listener binds to. Use 'localhost' to restrict access to this machine, or '0.0.0.0'/'*' to listen on every network interface. Takes effect only after a restart.",
+    "fieldWebserverPortTip": "TCP port the server listens on (1-65535, e.g. 8000). Must be free and match the port clients connect to. Takes effect only after a restart.",
+    "fieldSslEnableTip": "Serve traffic over HTTPS/TLS instead of plain HTTP. Requires a certificate configured on the server, and changes the URL scheme clients must use. Takes effect after a restart.",
+    "fieldMinimumSeverityTip": "Lowest severity that gets written to the console and log files; entries below it are dropped. Lower numbers are more verbose (0 = Debug is most detailed). Applies live.",
+    "fieldConsoleLoggingTip": "Write log output to the console/stdout in addition to log files. Disable to keep the console quiet when running as a background service. Applies live.",
+    "fieldEnableColorsTip": "Colorize console log output with ANSI color codes by severity. Turn off for terminals or log collectors that don't render color cleanly. Applies live.",
+    "fieldLogDirectoryTip": "Filesystem directory where log files are written (e.g. './logs/'), resolved relative to the server's working directory. The path must exist and be writable by the server process.",
+    "fieldLogFilenameTip": "Base filename for log files written in the log directory (e.g. 'switchboard.log'). A per-day date suffix is appended to the name.",
+    "fieldDbTypeTip": "Database engine used for persistence. Sqlite stores everything in a single local file (simplest); Mysql, Postgres and SqlServer connect to an external server and require the host, port and credentials below. Changing this requires a restart.",
+    "fieldDbFilenameTip": "Path to the SQLite database file (e.g. 'switchboard.db'), created if missing. Used only when Type is Sqlite; ignored for server-based databases.",
+    "fieldDbHostnameTip": "Hostname or IP of the external database server. Used for Mysql, Postgres and SqlServer; leave blank when using Sqlite.",
+    "fieldDbPortTip": "TCP port of the external database server (e.g. 3306 MySQL, 5432 Postgres, 1433 SQL Server). Used only for server-based databases.",
+    "fieldDbNameTip": "Name of the database or schema to use on the server. It must already exist and be accessible to the configured user. Not used for Sqlite.",
+    "fieldDbUsernameTip": "Username used to authenticate to the external database server. Not used for Sqlite.",
+    "fieldDbPasswordTip": "Password for the database user. Stored masked; leave the field untouched to keep the current value, or type a new one to replace it. Not used for Sqlite.",
+    "fieldMgmtEnableTip": "Enable the management/admin API that this dashboard uses to read and change configuration. Turning it off disables administrative endpoints and this dashboard's editing features.",
+    "fieldMgmtBasePathTip": "URL path prefix for all management API endpoints (e.g. '/_sb/v1.0'). This dashboard and any admin clients must use the same prefix; changing it alters every admin route.",
+    "fieldAdminTokenTip": "Bearer token required for privileged management calls. Stored masked; leave untouched to keep the current token or type a new one to rotate it. Anyone holding this token has full admin access.",
+    "fieldRequireAuthTip": "Require a valid token for management API requests. Turning this off leaves the admin API open to anyone who can reach it - only safe on a trusted network.",
+    "fieldHistEnableTip": "Record a history entry (method, status, timing) for each proxied request. Disable to stop persisting request records entirely. Applies live.",
+    "fieldCaptureRequestBodyTip": "Store the body of incoming requests in history. Increases storage use and may capture sensitive payloads; disable for high-volume or privacy-sensitive traffic. Applies live.",
+    "fieldCaptureResponseBodyTip": "Store the body of responses returned to clients in history. Can significantly increase database size for large responses. Applies live.",
+    "fieldCaptureRequestHeadersTip": "Store incoming request headers in history. Headers named in the Blocked Headers list are still redacted. Applies live.",
+    "fieldCaptureResponseHeadersTip": "Store response headers in history. Useful for debugging but adds to the data stored per request. Applies live.",
+    "fieldRetentionDaysTip": "Number of days to keep request-history records before the cleanup job deletes them. Set to 0 to disable age-based deletion (keep records indefinitely). Applies live.",
+    "fieldMaxRecordsTip": "Maximum number of history records to retain; the oldest are pruned once this count is exceeded. Set to 0 for no cap. Applies live.",
+    "fieldCleanupIntervalTip": "How often, in seconds, the background job runs to enforce retention (age and max-record limits). Lower values prune sooner but run more frequently. Applies live.",
+    "fieldOpenApiEnableTip": "Generate and serve an OpenAPI (Swagger) specification describing the API. Disable to hide the machine-readable API schema. Applies live.",
+    "fieldEnableSwaggerUiTip": "Serve the interactive Swagger UI page for exploring and testing the API in a browser. Requires OpenAPI to be enabled. Applies live.",
+    "fieldOpenApiTitleTip": "Title shown in the generated OpenAPI document and Swagger UI header. Descriptive metadata only; does not affect behavior.",
+    "fieldOpenApiVersionTip": "Version string reported in the OpenAPI document (e.g. '1.0.0'). Descriptive only; does not affect routing.",
+    "fieldOpenApiDescriptionTip": "Free-text description shown in the OpenAPI document and Swagger UI. Use it to explain the API's purpose to consumers.",
+    "headerNameTip": "Name of an HTTP header to redact from stored request and response history (e.g. 'Authorization'). Matching is case-insensitive. Press Enter or click Add to include it."
   },
   "wizard": {
     "title": "Setup Wizard",
@@ -406,7 +471,24 @@
     "maxFailures": "Ejection Threshold",
     "maxFailuresHint": "Consecutive failed requests before the origin is ejected. 0 disables.",
     "ejectionDuration": "Ejection Duration (ms)",
-    "ejectionDurationHint": "How long an ejected origin stays out of rotation."
+    "ejectionDurationHint": "How long an ejected origin stays out of rotation.",
+    "identifierTip": "Unique, immutable key used to reference this origin across the config and API; cannot be changed after creation.",
+    "nameTip": "Optional human-friendly display name shown in lists and detail views; has no effect on routing.",
+    "hostnameTip": "DNS name or IP of the backend server Switchboard forwards matched requests to; combined with the port to form the origin URL. Do not include the scheme or port.",
+    "portTip": "TCP port on the backend host that Switchboard connects to (1-65535), e.g. 80 for HTTP or 443 for HTTPS.",
+    "useSslTip": "When enabled, Switchboard connects to the backend over HTTPS/TLS instead of plain HTTP; match this to the port your backend serves.",
+    "healthCheckUrlTip": "Path Switchboard periodically requests to test backend liveness, e.g. \"/\" or \"/healthz\"; a 2xx response marks the origin reachable.",
+    "healthCheckMethodTip": "HTTP method used for the health probe: HEAD (no body, lightest), GET (fetches the body), or OPTIONS.",
+    "healthCheckIntervalTip": "Milliseconds between successive health probes; lower values detect outages faster but add more load on the backend.",
+    "maxParallelTip": "Maximum number of in-flight requests Switchboard will send to this origin at once; additional requests wait for a slot to free up.",
+    "unhealthyThresholdTip": "Number of consecutive failed health checks required before the origin is marked unhealthy and pulled from rotation.",
+    "healthyThresholdTip": "Number of consecutive successful health checks required before a recovered origin is marked healthy and returned to rotation.",
+    "rateLimitTip": "When the number of active plus pending requests to this origin exceeds this threshold, new requests receive HTTP 429 (rate limited) instead of being served; protects the backend from overload. Default 30.",
+    "slowStartTip": "Ramp-up window in milliseconds after an origin becomes healthy during which its effective weight (and traffic share) is gradually increased; 0 disables slow start.",
+    "maxFailuresTip": "Consecutive failed proxied requests (5xx responses or transport errors) that eject this origin from routing via passive health checking; 0 disables passive ejection.",
+    "ejectionDurationTip": "Milliseconds an origin stays ejected after tripping the failure limit before Switchboard sends it traffic again.",
+    "guidTip": "System-generated globally unique identifier for this origin record; derived from the identifier and used in health telemetry.",
+    "healthTip": "Live health status and recent probe history for this origin; green means it is passing health checks and receiving traffic."
   },
   "endpoints": {
     "title": "API Endpoints",
@@ -493,7 +575,29 @@
     "canaryValue": "Canary Value",
     "canaryHeaderPlaceholder": "Canary header (optional)",
     "canaryValuePlaceholder": "Canary value",
-    "mappingParamsHint": "Weight sets traffic share (0 drains). Priority tiers backups. Canary pins matching requests to this origin."
+    "mappingParamsHint": "Weight sets traffic share (0 drains). Priority tiers backups. Canary pins matching requests to this origin.",
+    "identifierTip": "Unique, immutable machine name for this endpoint, used in routes, mappings, and the API (e.g. \"my-api\"). Lowercase letters, numbers, and dashes; cannot be changed after creation.",
+    "nameTip": "Human-friendly display label shown in the dashboard. Purely cosmetic - it does not affect routing.",
+    "loadBalancingTip": "How requests are spread across this endpoint's origins. RoundRobin cycles evenly; Random picks at random; LeastConnections favors the origin with the fewest in-flight requests; PowerOfTwoChoices samples two origins and picks the less busy; Weighted distributes in proportion to each mapping's weight; LatencyBased prefers the fastest-responding origins.",
+    "timeoutMsTip": "Maximum time in milliseconds to wait for an origin to send a complete response before the request is aborted with a gateway timeout. Default 60000 (60s).",
+    "maxRequestBodySizeTip": "Largest allowed request body in bytes; larger uploads are rejected before they reach an origin. Default 536870912 (512 MB).",
+    "authContextHeaderTip": "Name of the header used to forward authenticated-caller context to origins. Only applies when \"Include auth context header\" is enabled.",
+    "maxRetriesTip": "How many other origins to try if an idempotent request fails to get a response before any bytes are sent to the client; 0 disables failover.",
+    "stickySessionHeaderTip": "Request header whose value pins a client to the same origin across requests (session affinity). When blank, the client IP is used. Only applies when sticky sessions are enabled.",
+    "blockHttp10Tip": "Reject requests using the legacy HTTP/1.0 protocol with a 505 instead of proxying them. Leave off unless you must force HTTP/1.1 or newer.",
+    "includeAuthContextHeaderTip": "Attach a header carrying the authenticated caller's identity/context to requests forwarded to origins, so backends can trust who the gateway authenticated.",
+    "useGlobalBlockedHeadersTip": "Apply the server-wide blocked-headers list so those headers are stripped from requests to origins. Turn off to let this endpoint pass headers the global policy would remove.",
+    "stickySessionEnabledTip": "Route repeat requests from the same client to the same origin (session affinity), keyed by the sticky-session header or client IP. Useful for backends that keep in-memory per-session state.",
+    "retryOn5xxTip": "Treat a 5xx response from an origin as a failure and retry on another origin (up to Max retries), instead of returning the error to the client.",
+    "searchTip": "Filter the endpoint list by identifier or name; matching runs as you type and resets to the first page.",
+    "httpMethodTip": "HTTP method this route matches (GET, POST, etc.). Requests using a different method won't match this route.",
+    "urlPatternTip": "Path pattern to match, with {curly} placeholders for variable segments (e.g. /api/resource/{id}). Requests whose path fits the pattern are routed to this endpoint.",
+    "requiresAuthTip": "When on, callers must present valid credentials to use this route; unauthenticated requests are rejected. When off, the route is publicly accessible.",
+    "selectOriginTip": "Choose a backend origin to attach to this endpoint. Only origins not already mapped here are listed; each shows its host:port.",
+    "weightTip": "Relative share of traffic this origin receives in weight-aware load-balancing modes - higher means more requests. Set to 0 to drain the origin (stop sending it new traffic).",
+    "priorityTip": "Priority tier for this origin; lower numbers are preferred. Only the lowest tier present serves traffic while healthy; higher-numbered tiers act as failover backups.",
+    "canaryHeaderTip": "Optional request header name that, when it matches the canary value, forces the request to this origin - used to steer test traffic to a canary backend.",
+    "canaryValueTip": "Value the canary header must equal to divert a request to this origin. Leave both canary fields blank for a normal (non-canary) mapping."
   },
   "users": {
     "title": "Users",
@@ -522,7 +626,16 @@
     "saveError": "Failed to save user",
     "deleteError": "Failed to delete user",
     "empty": "No users configured",
-    "emptyHint": "Add a user to grant management API access."
+    "emptyHint": "Add a user to grant management API access.",
+    "usernameTip": "Unique login name used to sign in. Must be unique and cannot be changed after the account is created.",
+    "emailTip": "Optional email address for the user; used for identification and contact. Leave blank if not needed.",
+    "firstNameTip": "User's given name; combined with the last name wherever the full name is displayed.",
+    "lastNameTip": "User's family name; combined with the first name wherever the full name is displayed.",
+    "administratorTip": "When on, this user has full administrator rights and can create, edit, and delete all configuration. When off, the user has read-only access.",
+    "activeTip": "When on, the account is enabled and can sign in. When off, the user is disabled and cannot authenticate.",
+    "guidTip": "System-generated unique identifier (GUID) for this user record.",
+    "roleTip": "The user's access level: Administrator has full control; Read-only can view configuration but cannot change it.",
+    "statusTip": "Whether the account is currently enabled (Active) or disabled (Inactive)."
   },
   "credentials": {
     "title": "Credentials",
@@ -557,7 +670,15 @@
     "deleteError": "Failed to delete credential",
     "regenerateError": "Failed to regenerate token",
     "empty": "No credentials configured",
-    "emptyHint": "Add a credential to issue a bearer token."
+    "emptyHint": "Add a credential to issue a bearer token.",
+    "userTip": "The user account this bearer token belongs to. Requests authenticated with this token act as this user and inherit their permissions.",
+    "nameTip": "Optional friendly label to help you recognize this token, such as the app or service that uses it.",
+    "activeTip": "When on, the token is enabled and accepted for authentication. When off, requests presenting it are rejected.",
+    "readOnlyAccessTip": "When on, this bearer token can read configuration but cannot create, update, or delete anything.",
+    "guidTip": "System-generated unique identifier (GUID) for this credential record.",
+    "tokenTip": "The secret bearer token sent in the Authorization header to authenticate API requests. Keep it confidential; it is shown in full only once.",
+    "statusTip": "Whether this credential is currently enabled (Active) or disabled (Inactive).",
+    "readOnlyTip": "Whether this token is restricted to read-only access and cannot modify configuration."
   },
   "blockedHeaders": {
     "title": "Blocked Headers",
@@ -575,7 +696,8 @@
     "addError": "Failed to add header",
     "deleteError": "Failed to remove header",
     "empty": "No blocked headers",
-    "emptyHint": "Add a header name to strip it from proxied traffic."
+    "emptyHint": "Add a header name to strip it from proxied traffic.",
+    "headerNameTip": "Name of an HTTP header to strip from requests before they are forwarded upstream (for example, Authorization or Cookie). Matching is case-insensitive."
   },
   "rewrites": {
     "title": "URL Rewrites",
@@ -600,7 +722,13 @@
     "saveError": "Failed to save rewrite",
     "deleteError": "Failed to delete rewrite",
     "empty": "No URL rewrites configured",
-    "emptyHint": "Add a rewrite to transform request URLs."
+    "emptyHint": "Add a rewrite to transform request URLs.",
+    "endpointTip": "The endpoint this rule applies to. Only requests routed to this endpoint are considered for rewriting.",
+    "methodTip": "Restrict the rule to a single HTTP method, or choose Any method to match requests regardless of the verb.",
+    "sourcePatternTip": "Incoming URL pattern to match (supports {params}); matched requests are rewritten to the target before forwarding.",
+    "targetPatternTip": "The URL the request is rewritten to before it is forwarded upstream; reuse {params} captured from the source pattern.",
+    "sortOrderTip": "Evaluation order when several rules could match the same request; lower numbers are applied first.",
+    "idTip": "System-generated unique identifier for this rewrite rule."
   },
   "health": {
     "titleFor": "Health: {{name}}",

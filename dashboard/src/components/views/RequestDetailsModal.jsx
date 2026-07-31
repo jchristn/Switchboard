@@ -53,10 +53,10 @@ function looksBinary(value) {
 }
 
 // A single stat tile for the hero row.
-function StatTile({ label, value, tone = 'neutral' }) {
+function StatTile({ label, value, tone = 'neutral', tip }) {
   return (
-    <div className={`rd-stat rd-stat--${tone}`}>
-      <span className="rd-stat__label">{label}</span>
+    <div className={`rd-stat rd-stat--${tone}`} title={tip}>
+      <span className="rd-stat__label" title={tip}>{label}</span>
       <span className="rd-stat__value">{value}</span>
     </div>
   );
@@ -66,10 +66,11 @@ StatTile.propTypes = {
   label: PropTypes.node,
   value: PropTypes.node,
   tone: PropTypes.string,
+  tip: PropTypes.string,
 };
 
 // One header/body block with a copy affordance and optional truncated/binary pill.
-function ContentBlock({ title, value, declaredSize, t }) {
+function ContentBlock({ title, titleTip, value, declaredSize, t }) {
   const binary = looksBinary(typeof value === 'string' ? value : '');
   const { text, isJson } = binary ? { text: '', isJson: false } : prettify(value);
   const truncated =
@@ -87,7 +88,7 @@ function ContentBlock({ title, value, declaredSize, t }) {
   );
 
   return (
-    <Collapsible title={title} right={right} defaultOpen>
+    <Collapsible title={<span title={titleTip}>{title}</span>} right={right} defaultOpen>
       {binary ? (
         <div className="rd-block__empty">{t('history.binary')}</div>
       ) : text ? (
@@ -101,6 +102,7 @@ function ContentBlock({ title, value, declaredSize, t }) {
 
 ContentBlock.propTypes = {
   title: PropTypes.node,
+  titleTip: PropTypes.string,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
   declaredSize: PropTypes.number,
   t: PropTypes.func.isRequired,
@@ -157,11 +159,11 @@ export default function RequestDetailsModal({ open, onClose, record, onViewJson 
 
         {/* Stat tiles */}
         <div className="rd-stats">
-          <StatTile label={t('history.duration')} value={fmt.duration(record.durationMs)} />
-          <StatTile label={t('history.status')} value={record.statusCode ?? '—'} tone={statusTone} />
-          <StatTile label={t('history.requestSize')} value={fmt.bytes(record.requestBodySize || 0)} />
-          <StatTile label={t('history.responseSize')} value={fmt.bytes(record.responseBodySize || 0)} />
-          <StatTile label={t('history.when')} value={fmt.dateTime(record.timestampUtc)} />
+          <StatTile label={t('history.duration')} tip={t('history.durationTip')} value={fmt.duration(record.durationMs)} />
+          <StatTile label={t('history.status')} tip={t('history.statusTip')} value={record.statusCode ?? '—'} tone={statusTone} />
+          <StatTile label={t('history.requestSize')} tip={t('history.requestSizeTip')} value={fmt.bytes(record.requestBodySize || 0)} />
+          <StatTile label={t('history.responseSize')} tip={t('history.responseSizeTip')} value={fmt.bytes(record.responseBodySize || 0)} />
+          <StatTile label={t('history.when')} tip={t('history.whenTip')} value={fmt.dateTime(record.timestampUtc)} />
         </div>
 
         {/* Identifiers */}
@@ -169,11 +171,11 @@ export default function RequestDetailsModal({ open, onClose, record, onViewJson 
           <h3 className="rd-section__title">{t('history.identifiers')}</h3>
           <div className="rd-idgrid">
             <div className="rd-idgrid__row">
-              <span className="rd-idgrid__label">{t('history.requestId')}</span>
+              <span className="rd-idgrid__label" title={t('history.requestIdTip')}>{t('history.requestId')}</span>
               <CopyableId value={record.requestId} />
             </div>
             <div className="rd-idgrid__row">
-              <span className="rd-idgrid__label">{t('history.endpoint')}</span>
+              <span className="rd-idgrid__label" title={t('history.endpointTip')}>{t('history.endpoint')}</span>
               {record.endpointIdentifier ? (
                 <CopyableId value={record.endpointIdentifier} />
               ) : (
@@ -181,7 +183,7 @@ export default function RequestDetailsModal({ open, onClose, record, onViewJson 
               )}
             </div>
             <div className="rd-idgrid__row">
-              <span className="rd-idgrid__label">{t('history.origin')}</span>
+              <span className="rd-idgrid__label" title={t('history.originTip')}>{t('history.origin')}</span>
               {record.originIdentifier ? (
                 <CopyableId value={record.originIdentifier} />
               ) : (
@@ -189,7 +191,7 @@ export default function RequestDetailsModal({ open, onClose, record, onViewJson 
               )}
             </div>
             <div className="rd-idgrid__row">
-              <span className="rd-idgrid__label">{t('history.clientIp')}</span>
+              <span className="rd-idgrid__label" title={t('history.clientIpTip')}>{t('history.clientIp')}</span>
               {record.clientIp ? (
                 <CopyableId value={record.clientIp} />
               ) : (
@@ -197,7 +199,7 @@ export default function RequestDetailsModal({ open, onClose, record, onViewJson 
               )}
             </div>
             <div className="rd-idgrid__row">
-              <span className="rd-idgrid__label">{t('history.authenticated')}</span>
+              <span className="rd-idgrid__label" title={t('history.authenticatedTip')}>{t('history.authenticated')}</span>
               <span className="rd-idgrid__muted">
                 {record.wasAuthenticated ? t('common.yes') : t('common.no')}
               </span>
@@ -211,11 +213,13 @@ export default function RequestDetailsModal({ open, onClose, record, onViewJson 
             <h3 className="rd-panel__title">{t('history.request')}</h3>
             <ContentBlock
               title={t('history.requestHeaders')}
+              titleTip={t('history.requestHeadersTip')}
               value={record.requestHeaders}
               t={t}
             />
             <ContentBlock
               title={t('history.requestBody')}
+              titleTip={t('history.requestBodyTip')}
               value={record.requestBody}
               declaredSize={record.requestBodySize}
               t={t}
@@ -226,11 +230,13 @@ export default function RequestDetailsModal({ open, onClose, record, onViewJson 
             <h3 className="rd-panel__title">{t('history.response')}</h3>
             <ContentBlock
               title={t('history.responseHeaders')}
+              titleTip={t('history.responseHeadersTip')}
               value={record.responseHeaders}
               t={t}
             />
             <ContentBlock
               title={t('history.responseBody')}
+              titleTip={t('history.responseBodyTip')}
               value={record.responseBody}
               declaredSize={record.responseBodySize}
               t={t}

@@ -484,6 +484,7 @@ function EndpointsView() {
               setPageNumber(1);
             }}
             aria-label={t('common.search')}
+            title={t('endpoints.searchTip')}
           />
         </div>
       </TablePagination>
@@ -674,7 +675,7 @@ function EndpointFormFields({ form, setForm, disableIdentifier = false, readOnly
     <>
       <div className="form-row">
         <div className="form-group">
-          <label className="form-label">{t('endpoints.identifier')}</label>
+          <label className="form-label" title={t('endpoints.identifierTip')}>{t('endpoints.identifier')}</label>
           <input
             type="text"
             className="form-input"
@@ -683,10 +684,11 @@ function EndpointFormFields({ form, setForm, disableIdentifier = false, readOnly
             disabled={disableIdentifier}
             required
             placeholder="my-api"
+            title={t('endpoints.identifierTip')}
           />
         </div>
         <div className="form-group">
-          <label className="form-label">{t('endpoints.name')}</label>
+          <label className="form-label" title={t('endpoints.nameTip')}>{t('endpoints.name')}</label>
           <input
             type="text"
             className="form-input"
@@ -694,18 +696,20 @@ function EndpointFormFields({ form, setForm, disableIdentifier = false, readOnly
             onChange={(e) => set({ name: e.target.value })}
             disabled={readOnly}
             placeholder="My API"
+            title={t('endpoints.nameTip')}
           />
         </div>
       </div>
 
       <div className="form-row">
         <div className="form-group">
-          <label className="form-label">{t('endpoints.loadBalancing')}</label>
+          <label className="form-label" title={t('endpoints.loadBalancingTip')}>{t('endpoints.loadBalancing')}</label>
           <select
             className="form-input"
             value={form.loadBalancingMode}
             onChange={(e) => set({ loadBalancingMode: e.target.value })}
             disabled={readOnly}
+            title={t('endpoints.loadBalancingTip')}
           >
             {LB_MODES.map((mode) => (
               <option key={mode} value={mode}>
@@ -715,30 +719,32 @@ function EndpointFormFields({ form, setForm, disableIdentifier = false, readOnly
           </select>
         </div>
         <div className="form-group">
-          <label className="form-label">{t('endpoints.timeoutMs')}</label>
+          <label className="form-label" title={t('endpoints.timeoutMsTip')}>{t('endpoints.timeoutMs')}</label>
           <input
             type="number"
             className="form-input"
             value={form.timeoutMs}
             onChange={(e) => set({ timeoutMs: parseInt(e.target.value, 10) || 0 })}
             disabled={readOnly}
+            title={t('endpoints.timeoutMsTip')}
           />
         </div>
       </div>
 
       <div className="form-row">
         <div className="form-group">
-          <label className="form-label">{t('endpoints.maxRequestBodySize')}</label>
+          <label className="form-label" title={t('endpoints.maxRequestBodySizeTip')}>{t('endpoints.maxRequestBodySize')}</label>
           <input
             type="number"
             className="form-input"
             value={form.maxRequestBodySize}
             onChange={(e) => set({ maxRequestBodySize: parseInt(e.target.value, 10) || 0 })}
             disabled={readOnly}
+            title={t('endpoints.maxRequestBodySizeTip')}
           />
         </div>
         <div className="form-group">
-          <label className="form-label">{t('endpoints.authContextHeader')}</label>
+          <label className="form-label" title={t('endpoints.authContextHeaderTip')}>{t('endpoints.authContextHeader')}</label>
           <input
             type="text"
             className="form-input"
@@ -746,24 +752,26 @@ function EndpointFormFields({ form, setForm, disableIdentifier = false, readOnly
             onChange={(e) => set({ authContextHeader: e.target.value })}
             disabled={readOnly || !form.includeAuthContextHeader}
             placeholder="X-Auth-Context"
+            title={t('endpoints.authContextHeaderTip')}
           />
         </div>
       </div>
 
       <div className="form-row">
         <div className="form-group">
-          <label className="form-label">{t('endpoints.maxRetries')}</label>
+          <label className="form-label" title={t('endpoints.maxRetriesTip')}>{t('endpoints.maxRetries')}</label>
           <input
             type="number"
             className="form-input"
             value={form.maxRetries}
             onChange={(e) => set({ maxRetries: parseInt(e.target.value, 10) || 0 })}
             disabled={readOnly}
+            title={t('endpoints.maxRetriesTip')}
           />
           <span className="form-hint">{t('endpoints.maxRetriesHint')}</span>
         </div>
         <div className="form-group">
-          <label className="form-label">{t('endpoints.stickySessionHeader')}</label>
+          <label className="form-label" title={t('endpoints.stickySessionHeaderTip')}>{t('endpoints.stickySessionHeader')}</label>
           <input
             type="text"
             className="form-input"
@@ -771,54 +779,60 @@ function EndpointFormFields({ form, setForm, disableIdentifier = false, readOnly
             onChange={(e) => set({ stickySessionHeader: e.target.value })}
             disabled={readOnly || !form.stickySessionEnabled}
             placeholder={t('endpoints.stickySessionHeaderPlaceholder')}
+            title={t('endpoints.stickySessionHeaderTip')}
           />
           <span className="form-hint">{t('endpoints.stickySessionHeaderHint')}</span>
         </div>
       </div>
 
       <div className="form-checks">
-        <label className="form-checkbox">
+        <label className="form-checkbox" title={t('endpoints.blockHttp10Tip')}>
           <input
             type="checkbox"
             checked={form.blockHttp10}
             onChange={(e) => set({ blockHttp10: e.target.checked })}
             disabled={readOnly}
+            title={t('endpoints.blockHttp10Tip')}
           />
           {t('endpoints.blockHttp10')}
         </label>
-        <label className="form-checkbox">
+        <label className="form-checkbox" title={t('endpoints.includeAuthContextHeaderTip')}>
           <input
             type="checkbox"
             checked={form.includeAuthContextHeader}
             onChange={(e) => set({ includeAuthContextHeader: e.target.checked })}
             disabled={readOnly}
+            title={t('endpoints.includeAuthContextHeaderTip')}
           />
           {t('endpoints.includeAuthContextHeader')}
         </label>
-        <label className="form-checkbox">
+        <label className="form-checkbox" title={t('endpoints.useGlobalBlockedHeadersTip')}>
           <input
             type="checkbox"
             checked={form.useGlobalBlockedHeaders}
             onChange={(e) => set({ useGlobalBlockedHeaders: e.target.checked })}
             disabled={readOnly}
+            title={t('endpoints.useGlobalBlockedHeadersTip')}
           />
           {t('endpoints.useGlobalBlockedHeaders')}
         </label>
-        <label className="form-checkbox">
+        <label className="form-checkbox" title={t('endpoints.stickySessionEnabledTip')}>
           <input
             type="checkbox"
             checked={form.stickySessionEnabled}
             onChange={(e) => set({ stickySessionEnabled: e.target.checked })}
             disabled={readOnly}
+            title={t('endpoints.stickySessionEnabledTip')}
           />
           {t('endpoints.stickySessionEnabled')}
         </label>
-        <label className="form-checkbox">
+        <label className="form-checkbox" title={t('endpoints.retryOn5xxTip')}>
           <input
             type="checkbox"
             checked={form.retryOn5xx}
             onChange={(e) => set({ retryOn5xx: e.target.checked })}
             disabled={readOnly}
+            title={t('endpoints.retryOn5xxTip')}
           />
           {t('endpoints.retryOn5xx')}
         </label>
@@ -860,6 +874,7 @@ function RoutesTab({
             className="form-input"
             value={editingRoute.httpMethod}
             onChange={(e) => setEditingRoute({ ...editingRoute, httpMethod: e.target.value })}
+            title={t('endpoints.httpMethodTip')}
           >
             {HTTP_METHODS.map((m) => (
               <option key={m} value={m}>
@@ -882,6 +897,7 @@ function RoutesTab({
             className="form-input"
             value={editingRoute.urlPattern}
             onChange={(e) => setEditingRoute({ ...editingRoute, urlPattern: e.target.value })}
+            title={t('endpoints.urlPatternTip')}
           />
         ) : (
           <code className="ep-code">{row.urlPattern}</code>
@@ -893,11 +909,12 @@ function RoutesTab({
       width: 140,
       render: (row) =>
         editingRoute && editingRoute.id === row.id ? (
-          <label className="form-checkbox">
+          <label className="form-checkbox" title={t('endpoints.requiresAuthTip')}>
             <input
               type="checkbox"
               checked={editingRoute.requiresAuthentication}
               onChange={(e) => setEditingRoute({ ...editingRoute, requiresAuthentication: e.target.checked })}
+              title={t('endpoints.requiresAuthTip')}
             />
           </label>
         ) : (
@@ -949,6 +966,7 @@ function RoutesTab({
             value={newRoute.httpMethod}
             onChange={(e) => setNewRoute({ ...newRoute, httpMethod: e.target.value })}
             aria-label={t('endpoints.httpMethod')}
+            title={t('endpoints.httpMethodTip')}
           >
             {HTTP_METHODS.map((m) => (
               <option key={m} value={m}>
@@ -963,12 +981,14 @@ function RoutesTab({
             value={newRoute.urlPattern}
             onChange={(e) => setNewRoute({ ...newRoute, urlPattern: e.target.value })}
             aria-label={t('endpoints.urlPattern')}
+            title={t('endpoints.urlPatternTip')}
           />
-          <label className="form-checkbox">
+          <label className="form-checkbox" title={t('endpoints.requiresAuthTip')}>
             <input
               type="checkbox"
               checked={newRoute.requiresAuthentication}
               onChange={(e) => setNewRoute({ ...newRoute, requiresAuthentication: e.target.checked })}
+              title={t('endpoints.requiresAuthTip')}
             />
             {t('endpoints.requiresAuth')}
           </label>
@@ -1113,6 +1133,7 @@ function OriginsTab({
               onChange={(e) => setAttachValue(e.target.value)}
               disabled={unmappedOrigins.length === 0}
               aria-label={t('endpoints.selectOrigin')}
+              title={t('endpoints.selectOriginTip')}
             >
               <option value="">
                 {unmappedOrigins.length === 0 ? t('endpoints.allOriginsMapped') : t('endpoints.selectOrigin')}
@@ -1129,7 +1150,7 @@ function OriginsTab({
               value={attachWeight}
               onChange={(e) => setAttachWeight(parseInt(e.target.value, 10) || 0)}
               aria-label={t('endpoints.weight')}
-              title={t('endpoints.weight')}
+              title={t('endpoints.weightTip')}
             />
             <input
               type="number"
@@ -1137,7 +1158,7 @@ function OriginsTab({
               value={attachPriority}
               onChange={(e) => setAttachPriority(parseInt(e.target.value, 10) || 0)}
               aria-label={t('endpoints.priority')}
-              title={t('endpoints.priority')}
+              title={t('endpoints.priorityTip')}
             />
             <input
               type="text"
@@ -1146,6 +1167,7 @@ function OriginsTab({
               onChange={(e) => setAttachCanaryHeader(e.target.value)}
               aria-label={t('endpoints.canaryHeader')}
               placeholder={t('endpoints.canaryHeaderPlaceholder')}
+              title={t('endpoints.canaryHeaderTip')}
             />
             <input
               type="text"
@@ -1154,6 +1176,7 @@ function OriginsTab({
               onChange={(e) => setAttachCanaryValue(e.target.value)}
               aria-label={t('endpoints.canaryValue')}
               placeholder={t('endpoints.canaryValuePlaceholder')}
+              title={t('endpoints.canaryValueTip')}
             />
             <button type="button" className="btn btn-primary" onClick={submitAttach} disabled={!attachValue}>
               <Icons.Plus size={16} />

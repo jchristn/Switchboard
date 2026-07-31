@@ -28,10 +28,10 @@ const EMPTY_FORM = {
   sortOrder: 0,
 };
 
-function DetailItem({ label, children, full = false, mono = false }) {
+function DetailItem({ label, children, full = false, mono = false, title }) {
   return (
     <div className={`rv-detail-item ${full ? 'rv-detail-item--full' : ''}`.trim()}>
-      <span className="rv-detail-label">{label}</span>
+      <span className="rv-detail-label" title={title}>{label}</span>
       <span className={`rv-detail-value ${mono ? 'rv-detail-value--mono' : ''}`.trim()}>
         {children}
       </span>
@@ -44,6 +44,7 @@ DetailItem.propTypes = {
   children: PropTypes.node,
   full: PropTypes.bool,
   mono: PropTypes.bool,
+  title: PropTypes.string,
 };
 
 export default function RewritesView() {
@@ -232,10 +233,11 @@ export default function RewritesView() {
         <form id="rewrite-form" onSubmit={submit}>
           <div className="rv-form-grid">
             <div className="form-group">
-              <label className="form-label" htmlFor="rw-endpoint">{t('rewrites.endpoint')}</label>
+              <label className="form-label" htmlFor="rw-endpoint" title={t('rewrites.endpointTip')}>{t('rewrites.endpoint')}</label>
               <select
                 id="rw-endpoint"
                 className="form-input"
+                title={t('rewrites.endpointTip')}
                 value={form.endpointIdentifier}
                 onChange={(e) => setField('endpointIdentifier', e.target.value)}
                 required
@@ -249,10 +251,11 @@ export default function RewritesView() {
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="rw-method">{t('rewrites.method')}</label>
+              <label className="form-label" htmlFor="rw-method" title={t('rewrites.methodTip')}>{t('rewrites.method')}</label>
               <select
                 id="rw-method"
                 className="form-input"
+                title={t('rewrites.methodTip')}
                 value={form.httpMethod}
                 onChange={(e) => setField('httpMethod', e.target.value)}
               >
@@ -266,10 +269,11 @@ export default function RewritesView() {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="rw-source">{t('rewrites.sourcePattern')}</label>
+            <label className="form-label" htmlFor="rw-source" title={t('rewrites.sourcePatternTip')}>{t('rewrites.sourcePattern')}</label>
             <input
               id="rw-source"
               className="form-input"
+              title={t('rewrites.sourcePatternTip')}
               value={form.sourcePattern}
               onChange={(e) => setField('sourcePattern', e.target.value)}
               required
@@ -277,10 +281,11 @@ export default function RewritesView() {
             />
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="rw-target">{t('rewrites.targetPattern')}</label>
+            <label className="form-label" htmlFor="rw-target" title={t('rewrites.targetPatternTip')}>{t('rewrites.targetPattern')}</label>
             <input
               id="rw-target"
               className="form-input"
+              title={t('rewrites.targetPatternTip')}
               value={form.targetPattern}
               onChange={(e) => setField('targetPattern', e.target.value)}
               required
@@ -288,11 +293,12 @@ export default function RewritesView() {
             />
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="rw-sort">{t('rewrites.sortOrder')}</label>
+            <label className="form-label" htmlFor="rw-sort" title={t('rewrites.sortOrderTip')}>{t('rewrites.sortOrder')}</label>
             <input
               id="rw-sort"
               type="number"
               className="form-input"
+              title={t('rewrites.sortOrderTip')}
               value={form.sortOrder}
               onChange={(e) => setField('sortOrder', parseInt(e.target.value, 10) || 0)}
             />
@@ -304,16 +310,16 @@ export default function RewritesView() {
       <Modal open={!!viewRow} onClose={() => setViewRow(null)} size="medium" title={t('rewrites.viewTitle')}>
         {viewRow && (
           <div className="rv-detail-grid">
-            <DetailItem label={t('rewrites.id')} full mono>
+            <DetailItem label={t('rewrites.id')} full mono title={t('rewrites.idTip')}>
               <CopyableId value={viewRow.id} />
             </DetailItem>
-            <DetailItem label={t('rewrites.endpoint')} mono>{viewRow.endpointIdentifier || '—'}</DetailItem>
-            <DetailItem label={t('rewrites.method')}>
+            <DetailItem label={t('rewrites.endpoint')} mono title={t('rewrites.endpointTip')}>{viewRow.endpointIdentifier || '—'}</DetailItem>
+            <DetailItem label={t('rewrites.method')} title={t('rewrites.methodTip')}>
               {viewRow.httpMethod ? <MethodBadge method={viewRow.httpMethod} /> : t('rewrites.anyMethod')}
             </DetailItem>
-            <DetailItem label={t('rewrites.sourcePattern')} full mono>{viewRow.sourcePattern}</DetailItem>
-            <DetailItem label={t('rewrites.targetPattern')} full mono>{viewRow.targetPattern}</DetailItem>
-            <DetailItem label={t('rewrites.sortOrder')}>{viewRow.sortOrder ?? 0}</DetailItem>
+            <DetailItem label={t('rewrites.sourcePattern')} full mono title={t('rewrites.sourcePatternTip')}>{viewRow.sourcePattern}</DetailItem>
+            <DetailItem label={t('rewrites.targetPattern')} full mono title={t('rewrites.targetPatternTip')}>{viewRow.targetPattern}</DetailItem>
+            <DetailItem label={t('rewrites.sortOrder')} title={t('rewrites.sortOrderTip')}>{viewRow.sortOrder ?? 0}</DetailItem>
           </div>
         )}
       </Modal>

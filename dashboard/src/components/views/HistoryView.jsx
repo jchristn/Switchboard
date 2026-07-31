@@ -383,9 +383,10 @@ function HistoryView() {
 
       <FilterBar>
           <FilterGrid>
-            <Field label={t('history.filterMethod')}>
+            <Field label={<span title={t('history.filterMethodTip')}>{t('history.filterMethod')}</span>}>
               <select
                 className="sb-input"
+                title={t('history.filterMethodTip')}
                 value={filters.method}
                 onChange={(e) => updateFilter({ method: e.target.value })}
               >
@@ -397,44 +398,49 @@ function HistoryView() {
                 ))}
               </select>
             </Field>
-            <Field label={t('history.filterStatus')}>
+            <Field label={<span title={t('history.filterStatusTip')}>{t('history.filterStatus')}</span>}>
               <input
                 type="text"
                 className="sb-input"
+                title={t('history.filterStatusTip')}
                 inputMode="numeric"
                 placeholder={t('history.statusAny')}
                 value={filters.status}
                 onChange={(e) => updateFilter({ status: e.target.value })}
               />
             </Field>
-            <Field label={t('history.filterPath')}>
+            <Field label={<span title={t('history.filterPathTip')}>{t('history.filterPath')}</span>}>
               <input
                 type="text"
                 className="sb-input"
+                title={t('history.filterPathTip')}
                 value={filters.path}
                 onChange={(e) => updateFilter({ path: e.target.value })}
               />
             </Field>
-            <Field label={t('history.filterFrom')}>
+            <Field label={<span title={t('history.filterFromTip')}>{t('history.filterFrom')}</span>}>
               <input
                 type="datetime-local"
                 className="sb-input"
+                title={t('history.filterFromTip')}
                 value={filters.from}
                 onChange={(e) => updateFilter({ from: e.target.value })}
               />
             </Field>
-            <Field label={t('history.filterTo')}>
+            <Field label={<span title={t('history.filterToTip')}>{t('history.filterTo')}</span>}>
               <input
                 type="datetime-local"
                 className="sb-input"
+                title={t('history.filterToTip')}
                 value={filters.to}
                 onChange={(e) => updateFilter({ to: e.target.value })}
               />
             </Field>
             <Field label="">
-              <label className="history-toggle">
+              <label className="history-toggle" title={t('history.failedOnlyTip')}>
                 <input
                   type="checkbox"
+                  title={t('history.failedOnlyTip')}
                   checked={filters.failedOnly}
                   onChange={(e) => updateFilter({ failedOnly: e.target.checked })}
                 />

@@ -545,12 +545,17 @@ function ApiExplorerView() {
       <div className="api-explorer__layout">
         {/* Full-width operation dropdown: categories are optgroups, operations are options */}
         <div className="api-explorer__selectbar">
-          <label className="api-explorer__select-label" htmlFor="ax-operation">
+          <label
+            className="api-explorer__select-label"
+            htmlFor="ax-operation"
+            title={t('apiExplorer.operationsTip')}
+          >
             {t('apiExplorer.operations')}
           </label>
           <select
             id="ax-operation"
             className="sb-input api-explorer__select"
+            title={t('apiExplorer.operationsTip')}
             value={selectedKey || ''}
             onChange={(e) => {
               const op = operationsByKey.get(e.target.value);
@@ -622,7 +627,11 @@ function ApiExplorerView() {
                   <h3 className="api-explorer__section-title">{t('apiExplorer.parameters')}</h3>
                   <div className="api-explorer__params">
                     {[...pathParams, ...queryParams].map((p) => (
-                      <label key={`${p.in}:${p.name}`} className="api-explorer__field">
+                      <label
+                        key={`${p.in}:${p.name}`}
+                        className="api-explorer__field"
+                        title={t('apiExplorer.paramTip')}
+                      >
                         <span className="api-explorer__field-label">
                           <span className="api-explorer__param-name">{p.name}</span>
                           {p.required && (
@@ -637,6 +646,7 @@ function ApiExplorerView() {
                         <input
                           type="text"
                           className="sb-input api-explorer__mono-input"
+                          title={t('apiExplorer.paramTip')}
                           value={getParam(p)}
                           placeholder={p.schema?.example != null ? String(p.schema.example) : ''}
                           onChange={(e) => setParam(p, e.target.value)}
@@ -659,6 +669,7 @@ function ApiExplorerView() {
                       <input
                         type="text"
                         className="sb-input"
+                        title={t('apiExplorer.headerNameTip')}
                         placeholder={t('apiExplorer.headerName')}
                         value={row.key}
                         onChange={(e) => updateHeader(row.id, { key: e.target.value })}
@@ -666,6 +677,7 @@ function ApiExplorerView() {
                       <input
                         type="text"
                         className="sb-input"
+                        title={t('apiExplorer.headerValueTip')}
                         placeholder={t('apiExplorer.headerValue')}
                         value={row.value}
                         onChange={(e) => updateHeader(row.id, { value: e.target.value })}
@@ -685,10 +697,14 @@ function ApiExplorerView() {
                     <span>{t('apiExplorer.addHeader')}</span>
                   </button>
                 </div>
-                <label className="api-explorer__field api-explorer__content-type">
+                <label
+                  className="api-explorer__field api-explorer__content-type"
+                  title={t('apiExplorer.contentTypeTip')}
+                >
                   <span className="api-explorer__field-label">{t('apiExplorer.contentType')}</span>
                   <select
                     className="sb-input"
+                    title={t('apiExplorer.contentTypeTip')}
                     value={contentType}
                     onChange={(e) => setContentType(e.target.value)}
                   >
@@ -707,6 +723,7 @@ function ApiExplorerView() {
                   <h3 className="api-explorer__section-title">{t('apiExplorer.requestBody')}</h3>
                   <textarea
                     className="api-explorer__body-editor"
+                    title={t('apiExplorer.requestBodyTip')}
                     value={bodyText}
                     spellCheck={false}
                     rows={8}

@@ -33,10 +33,10 @@ function maskToken(token) {
   return `••••${str.slice(-4)}`;
 }
 
-function DetailItem({ label, children, full = false, mono = false }) {
+function DetailItem({ label, children, full = false, mono = false, title }) {
   return (
     <div className={`rv-detail-item ${full ? 'rv-detail-item--full' : ''}`.trim()}>
-      <span className="rv-detail-label">{label}</span>
+      <span className="rv-detail-label" title={title}>{label}</span>
       <span className={`rv-detail-value ${mono ? 'rv-detail-value--mono' : ''}`.trim()}>
         {children}
       </span>
@@ -49,6 +49,7 @@ DetailItem.propTypes = {
   children: PropTypes.node,
   full: PropTypes.bool,
   mono: PropTypes.bool,
+  title: PropTypes.string,
 };
 
 export default function CredentialsView() {
@@ -282,10 +283,11 @@ export default function CredentialsView() {
       >
         <form id="credential-form" onSubmit={submit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="c-user">{t('credentials.user')}</label>
+            <label className="form-label" htmlFor="c-user" title={t('credentials.userTip')}>{t('credentials.user')}</label>
             <select
               id="c-user"
               className="form-input"
+              title={t('credentials.userTip')}
               value={form.userGuid}
               onChange={(e) => setField('userGuid', e.target.value)}
               required
@@ -300,24 +302,26 @@ export default function CredentialsView() {
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="c-name">{t('credentials.name')}</label>
+            <label className="form-label" htmlFor="c-name" title={t('credentials.nameTip')}>{t('credentials.name')}</label>
             <input
               id="c-name"
               className="form-input"
+              title={t('credentials.nameTip')}
               value={form.name}
               onChange={(e) => setField('name', e.target.value)}
             />
           </div>
           <div className="form-group">
-            <label className="rv-check">
-              <input type="checkbox" checked={form.active} onChange={(e) => setField('active', e.target.checked)} />
+            <label className="rv-check" title={t('credentials.activeTip')}>
+              <input type="checkbox" title={t('credentials.activeTip')} checked={form.active} onChange={(e) => setField('active', e.target.checked)} />
               <span>{t('credentials.active')}</span>
             </label>
           </div>
           <div className="form-group">
-            <label className="rv-check">
+            <label className="rv-check" title={t('credentials.readOnlyAccessTip')}>
               <input
                 type="checkbox"
+                title={t('credentials.readOnlyAccessTip')}
                 checked={form.isReadOnly}
                 onChange={(e) => setField('isReadOnly', e.target.checked)}
               />
@@ -331,23 +335,23 @@ export default function CredentialsView() {
       <Modal open={!!viewRow} onClose={() => setViewRow(null)} size="medium" title={t('credentials.viewTitle')}>
         {viewRow && (
           <div className="rv-detail-grid">
-            <DetailItem label={t('credentials.guid')} full mono>
+            <DetailItem label={t('credentials.guid')} full mono title={t('credentials.guidTip')}>
               <CopyableId value={viewRow.guid} />
             </DetailItem>
-            <DetailItem label={t('credentials.name')}>{viewRow.name || t('credentials.unnamed')}</DetailItem>
-            <DetailItem label={t('credentials.user')}>{userName(viewRow.userGuid)}</DetailItem>
-            <DetailItem label={t('credentials.token')} full mono>
+            <DetailItem label={t('credentials.name')} title={t('credentials.nameTip')}>{viewRow.name || t('credentials.unnamed')}</DetailItem>
+            <DetailItem label={t('credentials.user')} title={t('credentials.userTip')}>{userName(viewRow.userGuid)}</DetailItem>
+            <DetailItem label={t('credentials.token')} full mono title={t('credentials.tokenTip')}>
               <span className="rv-token-box">
-                <input className="form-input" readOnly value={viewRow.bearerToken || ''} onFocus={(e) => e.target.select()} />
+                <input className="form-input" title={t('credentials.tokenTip')} readOnly value={viewRow.bearerToken || ''} onFocus={(e) => e.target.select()} />
                 <CopyButton value={viewRow.bearerToken || ''} />
               </span>
             </DetailItem>
-            <DetailItem label={t('credentials.status')}>
+            <DetailItem label={t('credentials.status')} title={t('credentials.statusTip')}>
               <Badge tone={viewRow.active !== false ? 'success' : 'danger'}>
                 {viewRow.active !== false ? t('status.active') : t('status.inactive')}
               </Badge>
             </DetailItem>
-            <DetailItem label={t('credentials.readOnly')}>
+            <DetailItem label={t('credentials.readOnly')} title={t('credentials.readOnlyTip')}>
               {viewRow.isReadOnly ? t('common.yes') : t('common.no')}
             </DetailItem>
           </div>
@@ -398,7 +402,7 @@ export default function CredentialsView() {
       >
         <p className="rv-token-note">{t('credentials.tokenOnce')}</p>
         <div className="rv-token-box">
-          <input className="form-input" readOnly value={newToken || ''} onFocus={(e) => e.target.select()} />
+          <input className="form-input" title={t('credentials.tokenTip')} readOnly value={newToken || ''} onFocus={(e) => e.target.select()} />
           <CopyButton value={newToken || ''} />
         </div>
       </Modal>
