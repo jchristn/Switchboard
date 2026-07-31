@@ -66,6 +66,9 @@ v5.0.0
   verifies it is still the one registered for its key before probing, guaranteeing each origin records a
   single sample per interval even if a monitor were ever superseded or leaked. Strengthened the
   shared-target test to assert the sample rate (once per interval, not once per subscriber)
+- Added contextual hover tooltips to every form control across the dashboard — every label, dropdown,
+  checkbox, and text/number input (and read-only detail values) in every view and modal now explains what
+  the field does, its effect, and valid values, rather than just repeating the label
 
 ## Previous Versions
 

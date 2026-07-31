@@ -109,6 +109,7 @@ Highlights in this release:
 - **Live origin health monitoring** – Per-origin uptime, a rolling check-history histogram, and last-error surfaced through `GET /origins/health` and the dashboard.
 - **Live configuration** – Origins, endpoints, routes, and rewrites created through the dashboard or management API now take effect on the running proxy automatically, no restart required.
 - **Reworked management dashboard** – Grouped navigation, an operator overview with KPI cards and a request-activity chart, a request-history inspector, a form-based settings editor that flags restart-required changes, an OpenAPI-driven API Explorer, and a first-run setup wizard.
+- **Contextual help everywhere** – Every form control in the dashboard has a hover tooltip explaining what the field does, its effect, and valid values.
 - **Expanded internationalization** – The dashboard ships in nine languages: English, Spanish, German, French, Portuguese, Mandarin, Cantonese, Japanese, and Farsi (right-to-left).
 - **New management API endpoints** – `GET /history/timeseries`, `GET`/`PUT /settings`, `POST /config/validate`, and `POST /system/restart`.
 - **Writable default admin** – The out-of-box admin credential can create, update, and delete resources; permission failures return `403` (not `401`), so a read-only user is no longer logged out when attempting a write.
