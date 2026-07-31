@@ -254,7 +254,7 @@ Configuration files follow this structure:
       "Hostname": "localhost",
       "Port": 8001,
       "Ssl": false,
-      "HealthCheckIntervalMs": 5000,
+      "HealthCheckIntervalMs": 10000,
       "HealthCheckMethod": "GET",
       "HealthCheckUrl": "/",
       "UnhealthyThreshold": 2,

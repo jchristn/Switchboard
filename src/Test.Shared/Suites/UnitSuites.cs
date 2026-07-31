@@ -238,7 +238,7 @@ namespace Test.Shared
                         OriginServer o = new OriginServer();
                         Check.Equal("localhost", o.Hostname, "Hostname default");
                         Check.Equal(8000, o.Port, "Port default");
-                        Check.Equal(5000, o.HealthCheckIntervalMs, "HealthCheckIntervalMs default");
+                        Check.Equal(10000, o.HealthCheckIntervalMs, "HealthCheckIntervalMs default");
                         Check.Equal(2, o.UnhealthyThreshold, "UnhealthyThreshold default");
                         Check.Equal(2, o.HealthyThreshold, "HealthyThreshold default");
                         Check.Equal(10, o.MaxParallelRequests, "MaxParallelRequests default");

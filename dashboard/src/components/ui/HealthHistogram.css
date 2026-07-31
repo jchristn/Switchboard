@@ -2,14 +2,16 @@
    success / warning / danger design tokens so it reads correctly in light and dark themes. */
 .sb-hh {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 2px;
+  width: 100%;
   overflow: hidden;
 }
 
 .sb-hh-bar {
   border-radius: 1px;
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 2px;
 }
 
 .sb-hh-bar--ok {
@@ -22,6 +24,11 @@
 
 .sb-hh-bar--mixed {
   background: var(--color-warning);
+}
+
+/* An unfilled slot: history shorter than the fixed window. Muted so it reads as "no sample yet". */
+.sb-hh-bar--empty {
+  background: color-mix(in srgb, var(--color-text-subtle) 22%, transparent);
 }
 
 .sb-hh-empty {

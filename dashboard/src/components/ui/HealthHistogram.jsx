@@ -13,38 +13,34 @@ export function formatDuration(ms) {
 }
 
 const BAR_GAP = 2;
-const MIN_BAR = 3;
 
 // A compact bar histogram of recent health checks. One bar per check attempt — green for success,
-// red for failure — rendered as a FIFO window: oldest on the left, newest on the right. Only the most
-// recent attempts that fit in the given width are shown; older ones fall off the left edge.
-export function HealthHistogram({ history, width = 120, height = 24 }) {
+// red for failure — rendered as a fixed-size FIFO window of `slots` cells: oldest on the left, newest
+// on the right. The window always renders exactly `slots` cells so every origin shows the same number
+// of bars; when there are fewer samples than slots, the oldest cells render empty. Bars flex to fill
+// the container (or the optional `width`).
+export function HealthHistogram({ history, slots = 10, width, height = 24 }) {
   const { t } = useTranslation();
-  if (!history || history.length === 0) {
-    return <span className="sb-hh-empty">{t('health.noData')}</span>;
-  }
 
-  const sorted = [...history].sort((a, b) => new Date(a.timestampUtc) - new Date(b.timestampUtc));
-  const maxBars = Math.max(1, Math.floor((width + BAR_GAP) / (MIN_BAR + BAR_GAP)));
-  const shown = sorted.slice(-maxBars);
-  const barWidth = Math.max(
-    MIN_BAR,
-    Math.floor((width - BAR_GAP * (shown.length - 1)) / shown.length)
-  );
+  const sorted = history ? [...history].sort((a, b) => new Date(a.timestampUtc) - new Date(b.timestampUtc)) : [];
+  const recent = sorted.slice(-slots);
+  const emptyCount = Math.max(0, slots - recent.length);
+
+  const cells = [];
+  for (let i = 0; i < emptyCount; i += 1) cells.push(null);
+  for (let i = 0; i < recent.length; i += 1) cells.push(recent[i]);
+
+  const style = { height: `${height}px`, gap: `${BAR_GAP}px` };
+  if (width) style.width = `${width}px`;
 
   return (
-    <div className="sb-hh" style={{ height: `${height}px`, maxWidth: `${width}px` }}>
-      {shown.map((r, i) => {
-        const tone = r.success ? 'ok' : 'fail';
-        const title = `${new Date(r.timestampUtc).toLocaleTimeString()} — ${r.success ? 'ok' : 'fail'}`;
-        return (
-          <div
-            key={`${r.timestampUtc}-${i}`}
-            className={`sb-hh-bar sb-hh-bar--${tone}`}
-            title={title}
-            style={{ width: `${barWidth}px`, height: `${height}px` }}
-          />
-        );
+    <div className="sb-hh" style={style} role="img" aria-label={t('health.healthHistory')}>
+      {cells.map((r, i) => {
+        const tone = r == null ? 'empty' : r.success ? 'ok' : 'fail';
+        const title = r == null
+          ? t('health.noData')
+          : `${new Date(r.timestampUtc).toLocaleTimeString()} — ${r.success ? 'ok' : 'fail'}`;
+        return <span key={i} className={`sb-hh-bar sb-hh-bar--${tone}`} title={title} />;
       })}
     </div>
   );
@@ -54,6 +50,7 @@ HealthHistogram.propTypes = {
   history: PropTypes.arrayOf(
     PropTypes.shape({ timestampUtc: PropTypes.string, success: PropTypes.bool })
   ),
+  slots: PropTypes.number,
   width: PropTypes.number,
   height: PropTypes.number,
 };
@@ -123,7 +120,7 @@ export function HealthDetailModal({ open, onClose, health }) {
         <div className="sb-health-section">
           <div className="sb-health-section__label">{t('health.healthHistory')}</div>
           <div className="sb-health-histogram-box">
-            <HealthHistogram history={history} width={760} height={36} />
+            <HealthHistogram history={history} slots={40} height={36} />
           </div>
         </div>
 

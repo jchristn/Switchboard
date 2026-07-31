@@ -3371,7 +3371,7 @@
         <member name="P:Switchboard.Core.Models.OriginServerConfig.HealthCheckIntervalMs">
             <summary>
             Interval at which health is checked against this origin.
-            Default is 5 seconds (5000). Minimum is 1 second (1000).
+            Default is 10 seconds (10000). Minimum is 1 second (1000).
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.OriginServerConfig.HealthCheckMethod">
@@ -4338,7 +4338,7 @@
         <member name="P:Switchboard.Core.OriginServer.HealthCheckIntervalMs">
             <summary>
             Interval at which health is checked against this origin.
-            Default is 5 seconds (5000).  Minimum is 1 second (1000).
+            Default is 10 seconds (10000).  Minimum is 1 second (1000).
             </summary>
         </member>
         <member name="P:Switchboard.Core.OriginServer.UnhealthyThreshold">

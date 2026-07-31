@@ -29,7 +29,7 @@ const EMPTY_FORM = {
   ssl: false,
   healthCheckUrl: '/',
   healthCheckMethod: 'HEAD',
-  healthCheckIntervalMs: 5000,
+  healthCheckIntervalMs: 10000,
   unhealthyThreshold: 2,
   healthyThreshold: 1,
   maxParallelRequests: 10,
@@ -139,7 +139,7 @@ export default function OriginsView() {
       ssl: row.ssl || false,
       healthCheckUrl: row.healthCheckUrl || '/',
       healthCheckMethod: row.healthCheckMethod || 'HEAD',
-      healthCheckIntervalMs: row.healthCheckIntervalMs ?? 5000,
+      healthCheckIntervalMs: row.healthCheckIntervalMs ?? 10000,
       unhealthyThreshold: row.unhealthyThreshold ?? 2,
       healthyThreshold: row.healthyThreshold ?? 1,
       maxParallelRequests: row.maxParallelRequests ?? 10,
@@ -229,9 +229,7 @@ export default function OriginsView() {
             }}
           >
             <HealthBadge healthy={!!h.isHealthy} />
-            {h.history && h.history.length > 0 && (
-              <HealthHistogram history={h.history} width={80} height={18} />
-            )}
+            <HealthHistogram history={h.history || []} slots={10} width={90} height={18} />
           </span>
         );
       },
@@ -472,9 +470,7 @@ export default function OriginsView() {
                 return (
                   <span className="sb-health-cell" onClick={() => setHealthDetail(h)} role="button" tabIndex={0}>
                     <HealthBadge healthy={!!h.isHealthy} />
-                    {h.history && h.history.length > 0 && (
-                      <HealthHistogram history={h.history} width={120} height={18} />
-                    )}
+                    <HealthHistogram history={h.history || []} slots={10} width={140} height={18} />
                   </span>
                 );
               })()}

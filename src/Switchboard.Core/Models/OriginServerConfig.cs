@@ -74,7 +74,7 @@ namespace Switchboard.Core.Models
 
         /// <summary>
         /// Interval at which health is checked against this origin.
-        /// Default is 5 seconds (5000). Minimum is 1 second (1000).
+        /// Default is 10 seconds (10000). Minimum is 1 second (1000).
         /// </summary>
         public int HealthCheckIntervalMs
         {
@@ -265,7 +265,7 @@ namespace Switchboard.Core.Models
         private string _Identifier = Guid.NewGuid().ToString();
         private string _Hostname = "localhost";
         private int _Port = 8000;
-        private int _HealthCheckIntervalMs = 5000;
+        private int _HealthCheckIntervalMs = 10000;
         private string _HealthCheckMethod = "HEAD";
         private string _HealthCheckUrl = "/";
         private int _UnhealthyThreshold = 2;

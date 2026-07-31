@@ -234,10 +234,12 @@
 
             using (HttpClient client = new HttpClient())
             {
-                client.Timeout = TimeSpan.FromSeconds(5);
+                client.Timeout = TimeSpan.FromSeconds(1);
 
                 while (!token.IsCancellationRequested)
                 {
+                    long iterationStartMs = Environment.TickCount64;
+
                     OriginServer[] subscribers;
                     lock (monitor.OriginsLock) subscribers = monitor.Origins.ToArray();
 
@@ -285,9 +287,15 @@
                     int interval = Int32.MaxValue;
                     foreach (OriginServer origin in subscribers)
                         if (origin.HealthCheckIntervalMs < interval) interval = origin.HealthCheckIntervalMs;
-                    if (interval == Int32.MaxValue) interval = 5000;
+                    if (interval == Int32.MaxValue) interval = 10000;
 
-                    try { await Task.Delay(interval, token); } catch (OperationCanceledException) { break; }
+                    // Delay by the interval minus the time this iteration already took, so every origin is
+                    // checked on the same fixed cadence regardless of how long the probe took (a slow or
+                    // timing-out target no longer accrues samples more slowly than a fast, healthy one).
+                    int elapsedMs = (int)Math.Min(Int32.MaxValue, Environment.TickCount64 - iterationStartMs);
+                    int delayMs = Math.Max(0, interval - elapsedMs);
+
+                    try { await Task.Delay(delayMs, token); } catch (OperationCanceledException) { break; }
                 }
             }
 

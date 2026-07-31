@@ -618,7 +618,7 @@ Validates the current configuration, or a proposed one supplied in the request b
 | `Hostname` | string | Yes | `"localhost"` | Server hostname |
 | `Port` | integer | Yes | 8000 | TCP port (0-65535) |
 | `Ssl` | boolean | No | false | Enable HTTPS |
-| `HealthCheckIntervalMs` | integer | No | 5000 | Health check interval (min: 1000) |
+| `HealthCheckIntervalMs` | integer | No | 10000 | Health check interval in ms (min: 1000) |
 | `HealthCheckMethod` | string | No | `"HEAD"` | HTTP method for health checks |
 | `HealthCheckUrl` | string | No | `"/"` | URL path for health checks |
 | `UnhealthyThreshold` | integer | No | 2 | Failed checks before marking unhealthy |

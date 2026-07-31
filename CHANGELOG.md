@@ -25,6 +25,14 @@
   port + URL) are probed by a single shared monitor and the one result is applied to all of them, so
   multiple origins pointing at the same backend report consistent health instead of each running its own
   independent check
+- Health checks now run on a fixed cadence: the interval is measured from the start of each check, so a
+  slow or timing-out target no longer accrues samples more slowly than a fast, healthy one (previously the
+  probe time was added on top of the interval, so healthy origins showed more bars than unhealthy ones over
+  the same period)
+- The default health-check interval is now 10 seconds (was 5), and the per-check timeout is 1 second (was 5)
+- The dashboard Health column now renders a fixed 10-slot histogram — every origin shows the same number of
+  bars, filling from newest (right) to oldest (left) with muted cells for not-yet-collected samples — so
+  origins added at different times are visually consistent
 
 ## Current Version
 
