@@ -108,6 +108,34 @@ const SECTIONS = [
       { path: 'openApi.description', labelKey: 'settings.fieldOpenApiDescription', tipKey: 'settings.fieldOpenApiDescriptionTip', type: 'text' },
     ],
   },
+  {
+    key: 'telemetry',
+    titleKey: 'settings.sectionTelemetry',
+    fields: [
+      { path: 'telemetry.enable', labelKey: 'settings.fieldTelemetryEnable', tipKey: 'settings.fieldTelemetryEnableTip', type: 'toggle' },
+      { path: 'telemetry.serviceName', labelKey: 'settings.fieldTelemetryServiceName', tipKey: 'settings.fieldTelemetryServiceNameTip', type: 'text', placeholder: 'switchboard' },
+      { path: 'telemetry.metrics.enable', labelKey: 'settings.fieldTelemetryMetricsEnable', tipKey: 'settings.fieldTelemetryMetricsEnableTip', type: 'toggle' },
+      { path: 'telemetry.metrics.exportIntervalMs', labelKey: 'settings.fieldTelemetryExportInterval', tipKey: 'settings.fieldTelemetryExportIntervalTip', type: 'number', min: 1000, max: 300000 },
+      { path: 'telemetry.traces.enable', labelKey: 'settings.fieldTelemetryTracesEnable', tipKey: 'settings.fieldTelemetryTracesEnableTip', type: 'toggle' },
+      { path: 'telemetry.traces.samplingRatio', labelKey: 'settings.fieldTelemetrySamplingRatio', tipKey: 'settings.fieldTelemetrySamplingRatioTip', type: 'number', min: 0, max: 1 },
+      { path: 'telemetry.traces.propagateToOrigin', labelKey: 'settings.fieldTelemetryPropagate', tipKey: 'settings.fieldTelemetryPropagateTip', type: 'toggle' },
+      { path: 'telemetry.logs.enable', labelKey: 'settings.fieldTelemetryLogsEnable', tipKey: 'settings.fieldTelemetryLogsEnableTip', type: 'toggle' },
+      { path: 'telemetry.logs.minimumSeverity', labelKey: 'settings.fieldTelemetryLogSeverity', tipKey: 'settings.fieldTelemetryLogSeverityTip', type: 'number', min: 0, max: 7 },
+      {
+        path: 'telemetry.otlp.protocol',
+        labelKey: 'settings.fieldTelemetryOtlpProtocol',
+        tipKey: 'settings.fieldTelemetryOtlpProtocolTip',
+        type: 'select',
+        options: [
+          { value: 'grpc', labelKey: 'settings.telemetryProtocolGrpc' },
+          { value: 'httpprotobuf', labelKey: 'settings.telemetryProtocolHttp' },
+        ],
+      },
+      { path: 'telemetry.otlp.endpoint', labelKey: 'settings.fieldTelemetryOtlpEndpoint', tipKey: 'settings.fieldTelemetryOtlpEndpointTip', type: 'text', placeholder: 'http://localhost:4317' },
+      { path: 'telemetry.otlp.timeoutMs', labelKey: 'settings.fieldTelemetryOtlpTimeout', tipKey: 'settings.fieldTelemetryOtlpTimeoutTip', type: 'number', min: 1000, max: 120000 },
+      { path: 'telemetry.otlp.headers', labelKey: 'settings.fieldTelemetryOtlpHeaders', tipKey: 'settings.fieldTelemetryOtlpHeadersTip', type: 'password', secret: true },
+    ],
+  },
 ];
 
 // Every scalar field across all sections, plus the blocked-headers list, flattened

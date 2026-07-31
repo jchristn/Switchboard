@@ -105,6 +105,7 @@ Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers 
 
 Highlights in this release:
 
+- **Observability with OpenTelemetry** – Metrics and traces export over OTLP: request rate/latency/body sizes, per-origin load/health/ejections, load-balancer selections, and retries/failovers, plus one span per proxied request with `traceparent` propagated downstream. `docker compose up` brings up a turnkey Prometheus + Tempo + Loki + Grafana stack (Grafana on `:3001`, pre-provisioned dashboard). See **[TELEMETRY.md](TELEMETRY.md)**.
 - **Intelligent routing and load balancing** – Four new load-balancing modes (least-connections, power-of-two-choices, weighted, and latency-based) plus passive health checks with outlier ejection, automatic retries/failover, sticky sessions, slow start, and per-endpoint weighted canary with header routing. See **[LOAD_BALANCING.md](LOAD_BALANCING.md)** for the full picture.
 - **Live origin health monitoring** – Per-origin uptime, a rolling check-history histogram, and last-error surfaced through `GET /origins/health` and the dashboard.
 - **Live configuration** – Origins, endpoints, routes, and rewrites created through the dashboard or management API now take effect on the running proxy automatically, no restart required.
@@ -120,6 +121,7 @@ Highlights in this release:
 ## Key Features
 
 - ✅ **Intelligent Load Balancing** – Round-robin, random, least-connections, power-of-two-choices, weighted, and latency-based (EWMA), with priority tiers, sticky sessions, slow start, passive ejection, retries/failover, and weighted canary ([details](LOAD_BALANCING.md))
+- ✅ **Observability** – OpenTelemetry metrics + traces over OTLP, with a bundled Prometheus/Tempo/Loki/Grafana stack ([details](TELEMETRY.md))
 - ✅ **Automatic Health Checks** – Continuous monitoring with configurable thresholds
 - ✅ **Rate Limiting** – Per-origin concurrent request limits and throttling
 - ✅ **Custom Authentication** – Callback-based auth/authz with context forwarding

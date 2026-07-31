@@ -29,20 +29,39 @@ and Loki, viewable in a provisioned Grafana — turnkey via `docker compose up`.
 
 ```mermaid
 flowchart LR
-  SB[Switchboard\nMeter + ActivitySource + logs] -->|OTLP 4317\ntraces + logs + metrics| COL[OTel Collector]
-  SB -.->|scrape :9464/metrics| PROM[Prometheus]
-  COL -->|metrics| PROM
-  COL -->|traces| TEMPO[Tempo]
-  COL -->|logs| LOKI[Loki]
+  SB[Switchboard\nMeter + ActivitySource] -->|OTLP 4317\nmetrics + traces| COL[OTel Collector]
+  SB -.->|log files| COL
+  COL -->|prometheus :8889| PROM[Prometheus]
+  COL -->|OTLP| TEMPO[Tempo]
+  COL -->|OTLP| LOKI[Loki]
   PROM --> GRAF[Grafana]
   TEMPO --> GRAF
   LOKI --> GRAF
 ```
 
-Metrics reach Prometheus by **direct scrape** of Switchboard's `:9464/metrics` (Prometheus-native, works
-with no collector). Traces and logs flow **OTLP → Collector → Tempo/Loki**. Grafana is provisioned with all
-three datasources and starter dashboards. The Collector remains in the metrics path only as an optional
-fan-out and future flexibility; the scrape is authoritative for metrics.
+All three signals flow **OTLP → OTel Collector**, and the Collector fans out: metrics to a Prometheus
+scrape surface (the Collector's `prometheus` exporter, scraped by Prometheus), traces to Tempo, logs to
+Loki. Grafana is provisioned with all three datasources and starter dashboards.
+
+**Dependency note (important):** the OpenTelemetry .NET *Prometheus* exporters are only published as
+prerelease (`-rc`). `Switchboard.Core` is a GA-published NuGet package and this repo requires warning-free
+builds, so Switchboard depends **only on GA OTel packages** (`OpenTelemetry`,
+`OpenTelemetry.Exporter.OpenTelemetryProtocol`) and exports **everything over OTLP**. The Prometheus scrape
+endpoint is provided by the Collector, not by an in-process `HttpListener`. (A direct Switchboard
+`/metrics` can be added later if the Prometheus exporter reaches GA.)
+
+> **Implementation note (as-built).** The workstream detail below was drafted around an in-process
+> Prometheus `HttpListener` on `:9464`; that approach was superseded by the OTLP-only design above to keep
+> the build warning-free. Concretely, as shipped: (1) `TelemetryMetricsSettings` is `Enable` +
+> `ExportIntervalMs` (no `Prometheus*`/`ExportViaOtlp` fields); (2) `TelemetryService` builds only the
+> OTLP metric + trace providers — logs are collected by the Collector's `filelog` receiver, not an
+> in-process log provider; (3) `Switchboard.Core` depends only on `OpenTelemetry` and
+> `OpenTelemetry.Exporter.OpenTelemetryProtocol` (`1.17.0`); (4) the Observability view shows the OTLP
+> endpoint/protocol rather than a Switchboard scrape URL; (5) the integration tests assert via an
+> in-process `MeterListener`/`ActivityListener` instead of scraping `/metrics`; (6) the restart-required
+> management paths are `Telemetry.Metrics.Enable`/`ExportIntervalMs` (there is no `Prometheus*` path). The
+> **Using it** section at the end of this document reflects the final shape. Checklist wording below that
+> still says "`:9464`", "scrape", or "`HttpListener`" is historical.
 
 ---
 
@@ -317,10 +336,53 @@ telemetry unit suite.
 
 ## Open risks
 
-- **`SyslogLogging` log hook** for app-side OTLP logs is unconfirmed; the Collector `filelog` fallback
-  de-risks the "logs" scope regardless.
-- **OTel net10.0 support** — verify package TFMs before pinning.
-- **Prometheus exporter port** runs a second `HttpListener` inside the container (9464); ensure it binds only
-  where intended and is documented as unauthenticated (secure by network/bind).
-- **Metric double-counting** if both Prometheus scrape and OTLP metrics export are on — default
-  `Metrics.ExportViaOtlp=false`.
+- **App-side OTLP logs** are out of scope for the backend; logs reach Loki through the Collector's
+  `filelog` receiver tailing the Switchboard log files. This keeps the logging path untouched and the
+  build free of the experimental OTel Logs Bridge API.
+- **OTel net10.0 support** — the GA `OpenTelemetry` / `OpenTelemetry.Exporter.OpenTelemetryProtocol`
+  packages (pinned at `1.17.0`) target `netstandard2.0`/`net8.0` and are consumed cleanly on `net10.0`.
+
+---
+
+## Using it
+
+Telemetry is off by default in a standalone build and **on** in the bundled Docker stack.
+
+**Turnkey (Docker):**
+
+```bash
+cd Docker
+docker compose up -d
+```
+
+This starts Switchboard alongside the OpenTelemetry Collector, Prometheus, Tempo, Loki, and Grafana.
+Drive some traffic through the proxy, then open the UIs:
+
+| Service | URL | Notes |
+|---|---|---|
+| Grafana | http://localhost:3001 | Anonymous admin; the **Switchboard Overview** dashboard is pre-provisioned |
+| Prometheus | http://localhost:9090 | The `otel-collector` target should read **UP** |
+| Switchboard dashboard | http://localhost:3000 | The **Observability** view shows live telemetry status |
+
+The dashboard's **Observability** view (under *Operate*) reports the enabled signals, OTLP endpoint,
+sampling ratio, and links out to Grafana and Prometheus. Configuration lives under
+**Settings → Telemetry & Observability**.
+
+**Enabling telemetry in a standalone deployment** — set the `Telemetry` block in `sb.json` (or via the
+management API / dashboard) and point OTLP at your collector:
+
+```json
+"Telemetry": {
+  "Enable": true,
+  "ServiceName": "switchboard",
+  "Metrics": { "Enable": true, "ExportIntervalMs": 15000 },
+  "Traces": { "Enable": true, "SamplingRatio": 1.0, "PropagateToOrigin": true },
+  "Logs": { "Enable": true, "MinimumSeverity": 1 },
+  "Otlp": { "Endpoint": "http://otel-collector:4317", "Protocol": "grpc", "TimeoutMs": 10000, "Headers": null }
+}
+```
+
+Most fields require a restart to rewire the exporters; `Traces.PropagateToOrigin` applies live. The OTLP
+`Headers` value is treated as a secret and masked by the management API. Metrics reach Prometheus through
+the Collector's scrape surface (`otel-collector:8889`), so Switchboard exposes **no** unauthenticated
+metrics port of its own.

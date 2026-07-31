@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.ComponentModel.Design;
+    using System.Diagnostics;
     using System.Globalization;
     using System.IO;
     using System.Linq;
@@ -15,6 +16,7 @@
     using RestWrapper;
     using SerializationHelper;
     using Switchboard.Core;
+    using Switchboard.Core.Telemetry;
     using SyslogLogging;
     using Timestamps;
     using UrlMatcher;
@@ -219,6 +221,11 @@
             AuthContext authContext = null;
             RequestCaptureContext captureContext = null;
 
+            // Bounded labels for the request-level metrics recorded in the finally block. The endpoint
+            // identifier stays "none" until a matching endpoint is found.
+            string telemetryEndpoint = "none";
+            string telemetryMethod = ctx.Request.Method.ToString();
+
             // Start request capture if enabled
             if (RequestHistoryService != null)
             {
@@ -250,6 +257,7 @@
                 if (match == null)
                 {
                     _Logging.Warn(_Header + "no API endpoint found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
+                    SwitchboardTelemetry.RecordRejection(400);
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.BadRequest, null, "No matching API endpoint found"), true));
@@ -261,6 +269,8 @@
                     }
                     return;
                 }
+
+                telemetryEndpoint = match.Endpoint.Identifier;
 
                 if (captureContext != null)
                 {
@@ -274,6 +284,7 @@
                 if (match.Endpoint.BlockHttp10 && ctx.Request.ProtocolVersion.Equals("HTTP/1.0"))
                 {
                     _Logging.Debug(_Header + "denying HTTP/1.0 request due to API endpoint configuration");
+                    SwitchboardTelemetry.RecordRejection(505);
                     ctx.Response.StatusCode = 505;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.UnsupportedHttpVersion), true));
@@ -291,6 +302,7 @@
                     if (_Callbacks == null || _Callbacks.AuthenticateAndAuthorize == null)
                     {
                         _Logging.Warn(_Header + "API endpoint " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery + " requires auth but no auth callback set");
+                        SwitchboardTelemetry.RecordRejection(401);
                         ctx.Response.StatusCode = 401;
                         ctx.Response.ContentType = Constants.JsonContentType;
                         await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.AuthenticationFailed), true));
@@ -313,6 +325,7 @@
                             "(" + authContext.Authentication.Result + "/" + authContext.Authorization.Result + ")" +
                             ": " + authContext.FailureMessage);
 
+                        SwitchboardTelemetry.RecordRejection(401);
                         ctx.Response.StatusCode = 401;
                         ctx.Response.ContentType = Constants.JsonContentType;
                         await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.AuthenticationFailed, null, authContext.FailureMessage), true));
@@ -335,6 +348,7 @@
                 if (match.Endpoint.MaxRequestBodySize > 0 && ctx.Request.ContentLength > match.Endpoint.MaxRequestBodySize)
                 {
                     _Logging.Warn(_Header + "request too large from " + ctx.Request.Source.IpAddress + ": " + ctx.Request.ContentLength + " bytes");
+                    SwitchboardTelemetry.RecordRejection(413);
                     ctx.Response.StatusCode = 413;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.TooLarge, null, "Your request was too large"), true));
@@ -360,6 +374,9 @@
                     if (origin == null) break;
                     triedOrigins.Add(origin.Identifier);
 
+                    SwitchboardTelemetry.RecordSelection(match.Endpoint.Identifier, origin.Identifier);
+                    if (attempt > 0) SwitchboardTelemetry.RecordRetry(match.Endpoint.Identifier);
+
                     if (captureContext != null)
                     {
                         captureContext.OriginIdentifier = origin.Identifier;
@@ -380,6 +397,7 @@
                     if (totalRequests > origin.RateLimitRequestsThreshold)
                     {
                         _Logging.Warn(_Header + "too many active requests for origin " + origin.Identifier + ", sending 429 response to request from " + ctx.Request.Source.IpAddress);
+                        SwitchboardTelemetry.RecordRejection(429);
                         ctx.Response.StatusCode = 429;
                         ctx.Response.ContentType = Constants.JsonContentType;
                         await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.SlowDown)));
@@ -417,12 +435,14 @@
                         return;
                     }
 
+                    if (!lastAttempt) SwitchboardTelemetry.RecordFailover(match.Endpoint.Identifier);
                     _Logging.Warn(_Header + "attempt " + (attempt + 1) + " to origin " + origin.Identifier + " failed for endpoint " + match.Endpoint.Identifier + (lastAttempt ? "; no further origins to try" : "; retrying against another origin"));
                 }
 
                 if (outcome != ProxyOutcome.Completed)
                 {
                     _Logging.Warn(_Header + "no successful response for API endpoint " + match.Endpoint.Identifier + " after " + triedOrigins.Count + " origin attempt(s)");
+                    SwitchboardTelemetry.RecordRejection(502);
                     ctx.Response.StatusCode = 502;
                     ctx.Response.ContentType = Constants.JsonContentType;
                     await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.BadGateway, null, "No origin servers are available to service your request"), true));
@@ -444,6 +464,7 @@
             catch (Exception e)
             {
                 _Logging.Warn(_Header + "exception:" + Environment.NewLine + e.ToString());
+                SwitchboardTelemetry.RecordRejection(500);
                 ctx.Response.StatusCode = 500;
                 await ctx.Response.Send();
 
@@ -455,6 +476,10 @@
             }
             finally
             {
+                // Record the request-level metrics from the final response, regardless of outcome.
+                SwitchboardTelemetry.RecordRequest(telemetryEndpoint, telemetryMethod, ctx.Response.StatusCode);
+                SwitchboardTelemetry.RecordBodySizes(telemetryEndpoint, ctx.Request.ContentLength, ctx.Response.ContentLength);
+
                 // End request capture
                 if (captureContext != null && RequestHistoryService != null)
                 {
@@ -783,9 +808,10 @@
         // Record a proxied-request outcome onto the origin for passive health checking and latency-aware
         // load balancing. A null response or a 5xx status is a failure; enough consecutive failures ejects
         // the origin from routing for its ejection window. Successful latencies feed the EWMA.
-        private void RecordProxyOutcome(OriginServer origin, int statusCode, bool hadResponse, double latencyMs)
+        private void RecordProxyOutcome(OriginServer origin, string endpointId, int statusCode, bool hadResponse, double latencyMs)
         {
             bool failure = !hadResponse || statusCode >= 500;
+            bool ejectedNow = false;
             DateTime now = DateTime.UtcNow;
 
             lock (origin.Lock)
@@ -812,10 +838,46 @@
                     {
                         origin.EjectedUntilUtc = now.AddMilliseconds(origin.EjectionDurationMs);
                         origin.ConsecutiveProxyFailures = 0;
+                        ejectedNow = true;
                         _Logging.Warn(_Header + "origin " + origin.Identifier + " ejected from routing for " + origin.EjectionDurationMs + "ms after " + origin.MaxFailures + " consecutive failures");
                     }
                 }
             }
+
+            // Emit telemetry outside the origin lock. When there was no response (null), the origin request
+            // still counts, tagged with code 0.
+            SwitchboardTelemetry.RecordOriginRequest(origin.Identifier, statusCode);
+            SwitchboardTelemetry.RecordDuration(endpointId, origin.Identifier, latencyMs / 1000.0);
+            if (ejectedNow) SwitchboardTelemetry.RecordEjection(origin.Identifier);
+        }
+
+        // Start the per-proxy span, continuing the client's trace when an inbound W3C traceparent is present.
+        // Returns null when no tracing provider is listening, in which case the caller records nothing.
+        private static Activity StartProxyActivity(HttpContextBase ctx, string endpointId, string originId, string method)
+        {
+            ActivityContext parentContext = default;
+            string traceparent = ctx?.Request?.Headers?.Get("traceparent");
+            if (!String.IsNullOrEmpty(traceparent))
+            {
+                string tracestate = ctx.Request.Headers.Get("tracestate");
+                if (ActivityContext.TryParse(traceparent, tracestate, out ActivityContext parsed))
+                    parentContext = parsed;
+            }
+
+            Activity activity = SwitchboardTelemetry.ActivitySource.StartActivity(
+                "proxy " + endpointId,
+                ActivityKind.Server,
+                parentContext);
+
+            if (activity != null)
+            {
+                activity.SetTag("switchboard.endpoint", endpointId);
+                activity.SetTag("switchboard.origin", originId);
+                activity.SetTag("http.request.method", method);
+                activity.SetTag("http.route", endpointId);
+            }
+
+            return activity;
         }
 
         private System.Net.Http.HttpMethod ConvertHttpMethod(WatsonWebserver.Core.HttpMethod method)
@@ -859,6 +921,7 @@
             RestResponse resp = null;
             bool responseStarted = false;
 
+            using (Activity activity = StartProxyActivity(ctx, endpoint.Endpoint.Identifier, origin.Identifier, ctx.Request.Method.ToString()))
             using (Timestamp ts = new Timestamp())
             {
                 try
@@ -893,6 +956,18 @@
 
                         req.Headers.Add(Constants.ForwardedForHeader, ctx.Request.Source.IpAddress);
                         req.Headers.Add(Constants.RequestIdHeader, requestGuid.ToString());
+
+                        // Propagate the active trace context downstream so the origin can continue the trace.
+                        if (_Settings.Telemetry.Traces.PropagateToOrigin)
+                        {
+                            Activity current = Activity.Current;
+                            if (current != null && current.Id != null)
+                            {
+                                req.Headers.Add("traceparent", current.Id);
+                                if (!String.IsNullOrEmpty(current.TraceStateString))
+                                    req.Headers.Add("tracestate", current.TraceStateString);
+                            }
+                        }
 
                         if (authResult != null && endpoint.Endpoint.IncludeAuthContextHeader)
                             req.Headers.Add(Constants.AuthContextHeader, authResult.ToBase64String());
@@ -1258,9 +1333,17 @@
                         + (resp != null ? resp.StatusCode : "0") + " "
                         + "(" + ts.TotalMs + "ms)");
 
+                    // Annotate the span with the outcome.
+                    if (activity != null)
+                    {
+                        int spanCode = resp != null ? resp.StatusCode : 0;
+                        activity.SetTag("http.response.status_code", spanCode);
+                        if (resp == null || spanCode >= 500) activity.SetStatus(ActivityStatusCode.Error);
+                    }
+
                     // Feed the outcome into passive health checking and latency-aware balancing before the
                     // response is disposed. A null response or a 5xx status counts as a failure.
-                    RecordProxyOutcome(origin, resp != null ? resp.StatusCode : 0, resp != null, (double)ts.TotalMs);
+                    RecordProxyOutcome(origin, endpoint.Endpoint.Identifier, resp != null ? resp.StatusCode : 0, resp != null, (double)ts.TotalMs);
 
                     if (resp != null) resp.Dispose();
 

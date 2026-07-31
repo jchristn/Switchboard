@@ -9,6 +9,7 @@ export const NAV_GROUPS = [
     items: [
       { to: '/dashboard', end: true, labelKey: 'nav.overview', icon: 'Gauge', titleKey: 'overview.title', subtitleKey: 'overview.subtitle' },
       { to: '/dashboard/history', labelKey: 'nav.history', icon: 'History', titleKey: 'history.title', subtitleKey: 'history.subtitle' },
+      { to: '/dashboard/observability', labelKey: 'nav.observability', icon: 'Eye', titleKey: 'observability.title', subtitleKey: 'observability.subtitle' },
     ],
   },
   {

@@ -106,6 +106,7 @@
         private SwitchboardCallbacks _Callbacks = new SwitchboardCallbacks();
         private Serializer _Serializer = new Serializer();
         private LoggingModule _Logging = null;
+        private TelemetryService _TelemetryService = null;
         private HealthCheckService _HealthCheckService = null;
         private GatewayService _GatewayService = null;
         private OpenApiService _OpenApiService = null;
@@ -164,6 +165,9 @@
 
                     _GatewayService?.Dispose();
                     _GatewayService = null;
+
+                    _TelemetryService?.Dispose();
+                    _TelemetryService = null;
 
                     _Webserver?.Dispose();
                     _Webserver = null;
@@ -363,6 +367,18 @@
             #endregion
 
             #region Services
+
+            // Construct telemetry first so the shared meter/activity source have a listening provider
+            // before the hot path (health checks, gateway) begins recording measurements.
+            if (_Settings.Telemetry.Enable)
+            {
+                _TelemetryService = new TelemetryService(
+                    _Settings.Telemetry,
+                    _Settings,
+                    _Logging);
+
+                _Logging.Info(_Header + "telemetry enabled");
+            }
 
             _HealthCheckService = new HealthCheckService(
                 _Settings,

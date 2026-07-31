@@ -14,6 +14,7 @@
     using RestWrapper;
     using SerializationHelper;
     using Switchboard.Core.Models;
+    using Switchboard.Core.Telemetry;
     using SyslogLogging;
     using Timestamps;
     using UrlMatcher;
@@ -388,6 +389,8 @@
                     _Logging.Info(_Header + "origin " + origin.Identifier + " is now healthy");
                 }
             }
+
+            SwitchboardTelemetry.RecordHealthCheck(origin.Identifier, true);
         }
 
         // Record a failed health check against the origin and flip it unhealthy once the unhealthy
@@ -425,6 +428,8 @@
                     _Logging.Warn(_Header + "origin " + origin.Identifier + " is now unhealthy: " + (errorMessage ?? "check failed"));
                 }
             }
+
+            SwitchboardTelemetry.RecordHealthCheck(origin.Identifier, false);
         }
 
         // Append a check result to the rolling FIFO history. Prunes records older than the 24-hour

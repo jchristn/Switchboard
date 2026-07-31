@@ -5292,6 +5292,39 @@
             <param name="serverUrl">Server URL (e.g., "http://localhost:8000").</param>
             <returns>OpenAPI JSON string.</returns>
         </member>
+        <member name="T:Switchboard.Core.Services.TelemetryService">
+            <summary>
+            Owns the OpenTelemetry metric and trace providers for the process. Constructed only when
+            <see cref="P:Switchboard.Core.Settings.TelemetrySettings.Enable"/> is true; wires the shared
+            <see cref="F:Switchboard.Core.Telemetry.SwitchboardTelemetry.Meter"/> and <see cref="F:Switchboard.Core.Telemetry.SwitchboardTelemetry.ActivitySource"/> to an
+            OTLP exporter so metrics and traces flow to the configured collector.
+            </summary>
+            <remarks>
+            Logs are collected out-of-process by the OpenTelemetry Collector's filelog receiver tailing the
+            Switchboard log files, so no in-process log provider is created here. Thread safety: this type is
+            constructed once during daemon startup and disposed once during shutdown.
+            </remarks>
+        </member>
+        <member name="M:Switchboard.Core.Services.TelemetryService.#ctor(Switchboard.Core.Settings.TelemetrySettings,Switchboard.Core.SwitchboardSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate and build the enabled telemetry providers.
+            </summary>
+            <param name="settings">Telemetry settings; may not be null.</param>
+            <param name="rootSettings">Root settings whose origins/endpoints back the observable gauges; may not be null.</param>
+            <param name="logging">Logging module; may not be null.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown when a required argument is null.</exception>
+        </member>
+        <member name="M:Switchboard.Core.Services.TelemetryService.Dispose">
+            <summary>
+            Dispose.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.TelemetryService.Dispose(System.Boolean)">
+            <summary>
+            Dispose.
+            </summary>
+            <param name="disposing">Disposing.</param>
+        </member>
         <member name="T:Switchboard.Core.Settings.DatabaseSettings">
             <summary>
             Database configuration settings.
@@ -5643,6 +5676,44 @@
             Instantiate.
             </summary>
         </member>
+        <member name="T:Switchboard.Core.Settings.OtlpExporterSettings">
+            <summary>
+            Settings for the OpenTelemetry OTLP exporter shared by metrics, traces, and logs.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OtlpExporterSettings.Endpoint">
+            <summary>
+            OTLP endpoint URL of the collector or backend that receives telemetry.
+            Default is <c>http://localhost:4317</c>.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OtlpExporterSettings.Protocol">
+            <summary>
+            OTLP wire protocol, either <c>grpc</c> or <c>httpprotobuf</c>.
+            Default is <c>grpc</c>.
+            Any unrecognized value falls back to <c>grpc</c>.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OtlpExporterSettings.TimeoutMs">
+            <summary>
+            Export timeout in milliseconds.
+            Default is 10000 (10 seconds).
+            Minimum is 1000 (1 second), maximum is 120000 (2 minutes).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.OtlpExporterSettings.Headers">
+            <summary>
+            Optional comma-separated list of <c>key=value</c> headers sent with each OTLP export request,
+            typically used to authenticate to a hosted telemetry backend.
+            May carry a secret; treated as sensitive by the management API.
+            Default is null.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.OtlpExporterSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.Settings.RequestHistorySettings">
             <summary>
             Settings for request history capture.
@@ -5771,6 +5842,134 @@
             <param name="minPort">Minimum port number.</param>
             <param name="maxPort">Maximum port number.</param>
         </member>
+        <member name="T:Switchboard.Core.Settings.TelemetryLogsSettings">
+            <summary>
+            Settings that control OpenTelemetry log export.
+            When an app-side log bridge is available, Switchboard log events at or above
+            <see cref="P:Switchboard.Core.Settings.TelemetryLogsSettings.MinimumSeverity"/> are exported over OTLP; otherwise logs are collected from the log
+            files by the OpenTelemetry Collector's filelog receiver.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetryLogsSettings.Enable">
+            <summary>
+            Enable or disable log export.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetryLogsSettings.MinimumSeverity">
+            <summary>
+            Minimum severity to export, mirroring the syslog severity scale
+            (0=Emergency ... 7=Debug in syslog terms; Switchboard uses 0=Debug..4=Alert for its own floor).
+            Default is 1.
+            Minimum is 0, maximum is 7.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.TelemetryLogsSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.TelemetryMetricsSettings">
+            <summary>
+            Settings that control OpenTelemetry metric collection and export.
+            Metrics are exported over OTLP to the configured collector; the collector is responsible for
+            exposing the Prometheus scrape surface.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetryMetricsSettings.Enable">
+            <summary>
+            Enable or disable metric collection and export.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetryMetricsSettings.ExportIntervalMs">
+            <summary>
+            Interval, in milliseconds, at which collected metrics are exported over OTLP.
+            Default is 60000 (60 seconds).
+            Minimum is 1000 (1 second), maximum is 300000 (5 minutes).
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.TelemetryMetricsSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.TelemetrySettings">
+            <summary>
+            Root settings block for OpenTelemetry observability (metrics, traces, and logs).
+            When <see cref="P:Switchboard.Core.Settings.TelemetrySettings.Enable"/> is false, no telemetry providers are constructed and instrumentation is inert.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetrySettings.Enable">
+            <summary>
+            Enable or disable telemetry. When false, no metric, trace, or log providers are created.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetrySettings.ServiceName">
+            <summary>
+            Logical service name reported as the <c>service.name</c> resource attribute.
+            Default is <c>switchboard</c>.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetrySettings.Metrics">
+            <summary>
+            Metric collection and export settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetrySettings.Traces">
+            <summary>
+            Distributed tracing settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetrySettings.Logs">
+            <summary>
+            Log export settings.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetrySettings.Otlp">
+            <summary>
+            OTLP exporter settings shared by all three signals.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.TelemetrySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:Switchboard.Core.Settings.TelemetryTracesSettings">
+            <summary>
+            Settings that control OpenTelemetry distributed tracing.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetryTracesSettings.Enable">
+            <summary>
+            Enable or disable trace collection and export.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetryTracesSettings.SamplingRatio">
+            <summary>
+            Ratio of traces to sample, from 0.0 (none) to 1.0 (all).
+            Default is 1.0.
+            Minimum is 0.0, maximum is 1.0.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Settings.TelemetryTracesSettings.PropagateToOrigin">
+            <summary>
+            When true, Switchboard explicitly injects the active trace context onto the outbound request to
+            the origin server as W3C <c>traceparent</c>/<c>tracestate</c> headers so the origin can continue
+            the trace. Note that the .NET runtime also propagates trace context automatically whenever a
+            trace is active, so context may still reach the origin when a span is being recorded even if this
+            is false; this flag governs Switchboard's own explicit injection (which also carries tracestate).
+            Default is true.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Settings.TelemetryTracesSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
         <member name="T:Switchboard.Core.SwitchboardCallbacks">
             <summary>
             Switchboard callbacks.
@@ -5890,10 +6089,124 @@
             Enable to capture and store request/response history.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.SwitchboardSettings.Telemetry">
+            <summary>
+            Telemetry settings.
+            Enable to export metrics, traces, and logs via OpenTelemetry.
+            </summary>
+        </member>
         <member name="M:Switchboard.Core.SwitchboardSettings.#ctor">
             <summary>
             Instantiate.
             </summary>
+        </member>
+        <member name="T:Switchboard.Core.Telemetry.SwitchboardTelemetry">
+            <summary>
+            Process-wide OpenTelemetry instrument registry for Switchboard. Holds the shared
+            <see cref="T:System.Diagnostics.Metrics.Meter"/> and <see cref="T:System.Diagnostics.ActivitySource"/>
+            plus every metric instrument. Instruments are created once and are inert no-ops until a provider
+            (built by <c>TelemetryService</c>) begins listening, so the hot path can record unconditionally.
+            </summary>
+            <remarks>
+            Thread safety: instrument recording is thread-safe. Observable gauges snapshot the settings reference
+            set by <see cref="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.SetSettings(Switchboard.Core.SwitchboardSettings)"/> at collection time; per-origin
+            double state (EWMA latency) is read under the origin lock.
+            </remarks>
+        </member>
+        <member name="F:Switchboard.Core.Telemetry.SwitchboardTelemetry.SourceName">
+            <summary>
+            The name shared by the meter and activity source ("Switchboard").
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Telemetry.SwitchboardTelemetry.ActivitySource">
+            <summary>
+            The shared activity source used to create request/proxy spans.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Telemetry.SwitchboardTelemetry.Meter">
+            <summary>
+            The shared meter that owns all Switchboard metric instruments.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.SetSettings(Switchboard.Core.SwitchboardSettings)">
+            <summary>
+            Register the live settings whose origins/endpoints the observable gauges snapshot at collection time.
+            </summary>
+            <param name="settings">The active settings; may not be null.</param>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.ClearSettings">
+            <summary>
+            Clear the settings reference so observable gauges report nothing. Called when telemetry is disposed.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.RecordRequest(System.String,System.String,System.Int32)">
+            <summary>
+            Record a completed gateway request.
+            </summary>
+            <param name="endpoint">Endpoint identifier, or a bounded placeholder such as "none".</param>
+            <param name="method">HTTP method.</param>
+            <param name="statusCode">Final response status code.</param>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.RecordRejection(System.Int32)">
+            <summary>
+            Record a gateway rejection (e.g., 400/401/413/429/502/505).
+            </summary>
+            <param name="statusCode">The rejection status code, used as the bounded "reason" label.</param>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.RecordOriginRequest(System.String,System.Int32)">
+            <summary>
+            Record a proxied request to an origin.
+            </summary>
+            <param name="origin">Origin identifier.</param>
+            <param name="statusCode">Response status code from the origin (0 if none).</param>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.RecordDuration(System.String,System.String,System.Double)">
+            <summary>
+            Record proxied-request latency.
+            </summary>
+            <param name="endpoint">Endpoint identifier.</param>
+            <param name="origin">Origin identifier.</param>
+            <param name="seconds">Latency in seconds.</param>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.RecordBodySizes(System.String,System.Int64,System.Int64)">
+            <summary>
+            Record request and response body sizes for an endpoint.
+            </summary>
+            <param name="endpoint">Endpoint identifier.</param>
+            <param name="requestBytes">Request body size in bytes (negative values ignored).</param>
+            <param name="responseBytes">Response body size in bytes (negative values ignored).</param>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.RecordHealthCheck(System.String,System.Boolean)">
+            <summary>
+            Record a health-check probe result.
+            </summary>
+            <param name="origin">Origin identifier.</param>
+            <param name="success">True if the probe succeeded.</param>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.RecordEjection(System.String)">
+            <summary>
+            Record a passive-health ejection of an origin.
+            </summary>
+            <param name="origin">Origin identifier.</param>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.RecordSelection(System.String,System.String)">
+            <summary>
+            Record a load-balancer origin selection.
+            </summary>
+            <param name="endpoint">Endpoint identifier.</param>
+            <param name="origin">Origin identifier.</param>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.RecordRetry(System.String)">
+            <summary>
+            Record an additional proxy attempt beyond the first for an endpoint.
+            </summary>
+            <param name="endpoint">Endpoint identifier.</param>
+        </member>
+        <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.RecordFailover(System.String)">
+            <summary>
+            Record a failover to another origin after a failed attempt.
+            </summary>
+            <param name="endpoint">Endpoint identifier.</param>
         </member>
         <member name="T:Switchboard.Core.UrlTools">
             <summary>

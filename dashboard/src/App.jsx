@@ -12,6 +12,7 @@ import CredentialsView from './components/views/CredentialsView';
 import RewritesView from './components/views/RewritesView';
 import BlockedHeadersView from './components/views/BlockedHeadersView';
 import ApiExplorerView from './components/views/ApiExplorerView';
+import ObservabilityView from './components/views/ObservabilityView';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, isRestoring } = useAuth();
@@ -43,6 +44,7 @@ function App() {
         <Route path="endpoints" element={<EndpointsView />} />
         <Route path="rewrites" element={<RewritesView />} />
         <Route path="history" element={<HistoryView />} />
+        <Route path="observability" element={<ObservabilityView />} />
         <Route path="users" element={<UsersView />} />
         <Route path="credentials" element={<CredentialsView />} />
         <Route path="blocked-headers" element={<BlockedHeadersView />} />

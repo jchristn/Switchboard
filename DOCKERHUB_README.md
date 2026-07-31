@@ -23,7 +23,10 @@ binary, or as these containers.
 ## What's inside
 
 - Reverse proxy with parameterized URL matching (`/users/{id}`) and per-method route groups
-- Round-robin and random load balancing over health-checked origin servers
+- Round-robin, random, least-connections, power-of-two-choices, weighted, and latency-based load
+  balancing over health-checked origin servers, with retries/failover, sticky sessions, and weighted canary
+- OpenTelemetry metrics and traces (OTLP); Compose bundles a turnkey Prometheus + Tempo + Loki + Grafana
+  observability stack (Grafana on `:3001`)
 - Per-origin rate limiting and parallel-request caps
 - URL rewriting before forwarding (handy for API versioning)
 - Pluggable authentication/authorization via a callback, with an auth-context header forwarded to
@@ -51,9 +54,11 @@ Or run the server and dashboard together with Compose (from the repository's `Do
 docker compose up -d
 ```
 
-That starts the proxy on `http://localhost:8000` and the dashboard on `http://localhost:3000`.
-Open the dashboard, connect with your server URL and an admin bearer token (`sbadmin` on a fresh
-install), and the setup wizard will walk you through your first origin server and API endpoint.
+That starts the proxy on `http://localhost:8000` and the dashboard on `http://localhost:3000`, along
+with the observability stack — Grafana on `http://localhost:3001` (a Switchboard overview dashboard is
+pre-provisioned) and Prometheus on `http://localhost:9090`. Open the dashboard, connect with your server
+URL and an admin bearer token (`sbadmin` on a fresh install), and the setup wizard will walk you through
+your first origin server and API endpoint.
 
 ## Configuration
 
