@@ -29,8 +29,12 @@ processors:
 exporters:
 
   # Prometheus scrape surface. Prometheus scrapes otel-collector:8889.
+  # add_metric_suffixes:false keeps the instrument names exactly as Switchboard emits them
+  # (e.g. switchboard_requests_total, switchboard_request_duration_seconds) rather than appending
+  # a second _total/unit suffix, so the provisioned dashboard queries and the documented names match.
   prometheus:
     endpoint: 0.0.0.0:8889
+    add_metric_suffixes: false
     resource_to_telemetry_conversion:
       enabled: true
 
