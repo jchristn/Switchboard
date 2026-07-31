@@ -15,9 +15,16 @@
   OpenAPI/Swagger document; added positive and negative integration tests for both endpoints
 - Fixed a bug where editing an existing origin's hostname, port, SSL, or health-check URL/method did not
   take effect: the background health check now re-reads the target on every iteration, so in-place
-  configuration changes are picked up without a restart. When the target changes, the origin's health
-  telemetry is reset so uptime and history reflect the new target (previously an edited origin kept probing
-  its old address and stayed unhealthy, while a newly created origin worked)
+  configuration changes are picked up without a restart (previously an edited origin kept probing its old
+  address and stayed unhealthy, while a newly created origin worked)
+- The health check history is now a fixed-size FIFO window (the most recent 200 samples), preserved across
+  edits and health transitions, and the dashboard histogram renders one bar per check attempt (green for
+  success, red for failure), oldest to newest, so recovering to healthy no longer collapses the graph to a
+  single bar
+- Health checks are now deduplicated: origins that resolve to the same target (method + scheme + host +
+  port + URL) are probed by a single shared monitor and the one result is applied to all of them, so
+  multiple origins pointing at the same backend report consistent health instead of each running its own
+  independent check
 
 ## Current Version
 

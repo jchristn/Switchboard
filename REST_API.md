@@ -282,9 +282,10 @@ DELETE /_sb/v1.0/origins/{guid}
 GET /_sb/v1.0/origins/health
 ```
 
-Returns the live health status of every origin server, including uptime, a rolling 24-hour window of
-individual check results, and the most recent error. Health is tracked in memory by the background
-health checker and is not persisted.
+Returns the live health status of every origin server, including uptime, a rolling window of individual
+check results, and the most recent error. Health is tracked in memory by the background health checker
+and is not persisted. Origins that resolve to the same target (method + scheme + host + port + URL) are
+probed by a single shared check and report consistent health.
 
 **Response:** Array of [OriginServerHealthStatus](#originserverhealthstatus)
 

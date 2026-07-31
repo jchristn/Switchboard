@@ -4569,10 +4569,11 @@
         </member>
         <member name="M:Switchboard.Core.Services.HealthCheckService.SyncOrigins">
             <summary>
-            Reconcile the running health-check tasks against the current set of origin servers in
-            settings. Starts tasks for newly added origins and cancels tasks for origins that have
-            been removed. Existing origins are left running so their health state is preserved.
-            Thread-safe.
+            Reconcile the running health monitors against the current set of origin servers in settings.
+            Origins are grouped by their health-check target so each unique target is probed once and the
+            result is applied to every origin sharing it. Starts monitors for newly seen targets, stops
+            monitors whose targets are gone, and re-subscribes origins whose target changed. Existing
+            monitors keep running so their health state is preserved. Thread-safe.
             </summary>
         </member>
         <member name="M:Switchboard.Core.Services.HealthCheckService.Dispose(System.Boolean)">

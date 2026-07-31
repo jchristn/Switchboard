@@ -52,8 +52,11 @@
         private bool _IsDisposed = false;
 
         private CancellationTokenSource _TokenSource = new CancellationTokenSource();
-        private readonly object _TasksLock = new object();
-        private Dictionary<string, CancellationTokenSource> _OriginTokens = new Dictionary<string, CancellationTokenSource>();
+        private readonly object _MonitorsLock = new object();
+        // One monitor per unique health-check target (method + scheme + host + port + URL). Every origin
+        // that resolves to the same target subscribes to that single monitor, so the target is probed
+        // once and the result is applied to all subscribing origins. Keyed by the target signature.
+        private readonly Dictionary<string, OriginMonitor> _Monitors = new Dictionary<string, OriginMonitor>();
 
         #endregion
 
@@ -74,10 +77,7 @@
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
             _Serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
 
-            foreach (OriginServer origin in _Settings.Origins)
-            {
-                StartOriginTask(origin);
-            }
+            Reconcile();
         }
 
         #endregion
@@ -85,49 +85,15 @@
         #region Public-Methods
 
         /// <summary>
-        /// Reconcile the running health-check tasks against the current set of origin servers in
-        /// settings. Starts tasks for newly added origins and cancels tasks for origins that have
-        /// been removed. Existing origins are left running so their health state is preserved.
-        /// Thread-safe.
+        /// Reconcile the running health monitors against the current set of origin servers in settings.
+        /// Origins are grouped by their health-check target so each unique target is probed once and the
+        /// result is applied to every origin sharing it. Starts monitors for newly seen targets, stops
+        /// monitors whose targets are gone, and re-subscribes origins whose target changed. Existing
+        /// monitors keep running so their health state is preserved. Thread-safe.
         /// </summary>
         public void SyncOrigins()
         {
-            if (_IsDisposed) return;
-
-            lock (_TasksLock)
-            {
-                HashSet<string> current = new HashSet<string>();
-                if (_Settings.Origins != null)
-                {
-                    foreach (OriginServer origin in _Settings.Origins)
-                        current.Add(origin.Identifier);
-                }
-
-                // Cancel and remove tasks for origins that no longer exist.
-                foreach (string identifier in new List<string>(_OriginTokens.Keys))
-                {
-                    if (!current.Contains(identifier))
-                    {
-                        try { _OriginTokens[identifier].Cancel(); } catch { }
-                        _OriginTokens[identifier].Dispose();
-                        _OriginTokens.Remove(identifier);
-                        _Logging?.Debug(_Header + "stopped health checks for removed origin " + identifier);
-                    }
-                }
-
-                // Start tasks for origins that are new.
-                if (_Settings.Origins != null)
-                {
-                    foreach (OriginServer origin in _Settings.Origins)
-                    {
-                        if (!_OriginTokens.ContainsKey(origin.Identifier))
-                        {
-                            StartOriginTask(origin);
-                            _Logging?.Debug(_Header + "started health checks for new origin " + origin.Identifier);
-                        }
-                    }
-                }
-            }
+            Reconcile();
         }
 
         /// <summary>
@@ -142,13 +108,14 @@
                 {
                     try { _TokenSource.Cancel(); } catch { }
 
-                    lock (_TasksLock)
+                    lock (_MonitorsLock)
                     {
-                        foreach (CancellationTokenSource cts in _OriginTokens.Values)
+                        foreach (OriginMonitor monitor in _Monitors.Values)
                         {
-                            try { cts.Dispose(); } catch { }
+                            try { monitor.Cts.Cancel(); } catch { }
+                            try { monitor.Cts.Dispose(); } catch { }
                         }
-                        _OriginTokens.Clear();
+                        _Monitors.Clear();
                     }
 
                     _TokenSource.Dispose();
@@ -175,21 +142,95 @@
 
         #region Private-Methods
 
-        private void StartOriginTask(OriginServer origin)
+        // Group origins by health-check target and reconcile the running monitors: start monitors for
+        // new targets, stop monitors whose target no longer has any origin, and update the subscriber
+        // list of existing monitors. When an origin joins an existing monitor it inherits that monitor's
+        // current health snapshot so all origins sharing a target stay consistent. Thread-safe.
+        private void Reconcile()
         {
-            CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(_TokenSource.Token);
-            _OriginTokens[origin.Identifier] = cts;
-            _ = Task.Run(() => HealthCheckTask(origin, cts.Token), cts.Token);
+            if (_IsDisposed) return;
+
+            lock (_MonitorsLock)
+            {
+                Dictionary<string, List<OriginServer>> desired = new Dictionary<string, List<OriginServer>>();
+                if (_Settings?.Origins != null)
+                {
+                    foreach (OriginServer origin in _Settings.Origins)
+                    {
+                        if (origin == null || String.IsNullOrEmpty(origin.Hostname)) continue;
+
+                        string key = MonitorKey(origin);
+                        if (!desired.TryGetValue(key, out List<OriginServer> list))
+                        {
+                            list = new List<OriginServer>();
+                            desired[key] = list;
+                        }
+                        list.Add(origin);
+                    }
+                }
+
+                // Stop monitors whose target no longer has any origin.
+                foreach (string key in new List<string>(_Monitors.Keys))
+                {
+                    if (!desired.ContainsKey(key))
+                    {
+                        OriginMonitor stale = _Monitors[key];
+                        try { stale.Cts.Cancel(); } catch { }
+                        try { stale.Cts.Dispose(); } catch { }
+                        _Monitors.Remove(key);
+                        _Logging?.Debug(_Header + "stopped health monitor for " + key);
+                    }
+                }
+
+                // Start new monitors and update the subscriber list of existing ones.
+                foreach (KeyValuePair<string, List<OriginServer>> kvp in desired)
+                {
+                    if (_Monitors.TryGetValue(kvp.Key, out OriginMonitor existing))
+                    {
+                        lock (existing.OriginsLock)
+                        {
+                            OriginServer reference = existing.Origins.Count > 0 ? existing.Origins[0] : null;
+
+                            // An origin newly joining an existing target inherits the current health snapshot
+                            // so its badge and history line up with its peers immediately rather than starting
+                            // from an empty window.
+                            if (reference != null)
+                            {
+                                foreach (OriginServer origin in kvp.Value)
+                                {
+                                    if (!existing.Origins.Contains(origin)) CopyHealthState(reference, origin);
+                                }
+                            }
+
+                            existing.Origins = new List<OriginServer>(kvp.Value);
+                        }
+                    }
+                    else
+                    {
+                        OriginMonitor monitor = new OriginMonitor
+                        {
+                            Origins = new List<OriginServer>(kvp.Value),
+                            Cts = CancellationTokenSource.CreateLinkedTokenSource(_TokenSource.Token)
+                        };
+                        _Monitors[kvp.Key] = monitor;
+
+                        string keyCopy = kvp.Key;
+                        OriginMonitor monitorCopy = monitor;
+                        CancellationToken token = monitor.Cts.Token;
+                        _ = Task.Run(() => MonitorLoop(keyCopy, monitorCopy, token), token);
+                        _Logging?.Debug(_Header + "started health monitor for " + keyCopy + " (" + kvp.Value.Count + " origin(s))");
+                    }
+                }
+            }
         }
 
-        private async Task HealthCheckTask(OriginServer origin, CancellationToken token = default)
+        // Probe a single health-check target on an interval and apply the result to every origin that
+        // currently subscribes to it. The subscriber list is re-read each iteration so reconciliation
+        // (origins added, removed, or edited onto/off this target) takes effect without restarting the
+        // monitor. The probe interval is the smallest interval among the current subscribers.
+        private async Task MonitorLoop(string key, OriginMonitor monitor, CancellationToken token)
         {
-            _Logging.Debug(
-                _Header +
-                "starting healthcheck task for origin " +
-                origin.Identifier + " " + origin.Name + " " + origin.Hostname + ":" + origin.Port);
-
-            string healthCheckUrl = (origin.Ssl ? "https://" : "http://") + origin.Hostname + ":" + origin.Port + origin.HealthCheckUrl;
+            _Logging.Debug(_Header + "starting health monitor for " + key);
 
             using (HttpClient client = new HttpClient())
             {
@@ -197,76 +238,101 @@
 
                 while (!token.IsCancellationRequested)
                 {
-                    // Recompute the target each iteration so in-place edits to the origin's hostname, port,
-                    // SSL, health-check URL, or method (applied by the configuration reload without restarting
-                    // this task) are picked up live. The rolling check history is preserved across edits and
-                    // health transitions so it keeps both healthy and unhealthy samples as a FIFO window.
-                    healthCheckUrl = (origin.Ssl ? "https://" : "http://") + origin.Hostname + ":" + origin.Port + origin.HealthCheckUrl;
+                    OriginServer[] subscribers;
+                    lock (monitor.OriginsLock) subscribers = monitor.Origins.ToArray();
+
+                    if (subscribers.Length == 0)
+                    {
+                        try { await Task.Delay(1000, token); } catch (OperationCanceledException) { break; }
+                        continue;
+                    }
+
+                    OriginServer probe = subscribers[0];
+                    string url = (probe.Ssl ? "https://" : "http://") + probe.Hostname + ":" + probe.Port + probe.HealthCheckUrl;
+
+                    bool success = false;
+                    bool cancelled = false;
+                    string error = null;
 
                     try
                     {
-                        HttpRequestMessage request = new HttpRequestMessage(HttpMethodConverter(origin.HealthCheckMethod), healthCheckUrl);
+                        HttpRequestMessage request = new HttpRequestMessage(HttpMethodConverter(probe.HealthCheckMethod), url);
                         HttpResponseMessage response = await client.SendAsync(request, token);
+                        success = response.IsSuccessStatusCode;
+                        if (!success) error = "HTTP " + (int)response.StatusCode;
+                    }
+                    catch (HttpRequestException hre) { error = hre.Message; }
+                    catch (HttpIOException ioe) { error = ioe.Message; }
+                    catch (SocketException se) { error = se.Message; }
+                    catch (TaskCanceledException) { if (token.IsCancellationRequested) cancelled = true; else error = "Timeout"; }
+                    catch (OperationCanceledException) { if (token.IsCancellationRequested) cancelled = true; else error = "Timeout"; }
+                    catch (Exception e) { error = e.Message; }
 
-                        if (response.IsSuccessStatusCode)
-                        {
-                            RecordSuccess(origin);
-                            _Logging.Debug(_Header + "health check succeeded for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl);
-                        }
-                        else
-                        {
-                            RecordFailure(origin, "HTTP " + (int)response.StatusCode);
-                            _Logging.Debug(_Header + "health check failed for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + " with status " + (int)response.StatusCode);
-                        }
-                    }
-                    catch (HttpRequestException hre)
+                    if (cancelled) break;
+
+                    // Fan the single probe result out to every origin subscribing to this target.
+                    foreach (OriginServer origin in subscribers)
                     {
-                        RecordFailure(origin, hre.Message);
-                        _Logging.Debug(_Header + "health check failed for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + ": " + hre.Message);
-                    }
-                    catch (HttpIOException ioe)
-                    {
-                        RecordFailure(origin, ioe.Message);
-                        _Logging.Debug(_Header + "health check failed for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + ": " + ioe.Message);
-                    }
-                    catch (SocketException se)
-                    {
-                        RecordFailure(origin, se.Message);
-                        _Logging.Debug(_Header + "health check failed for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + ": " + se.Message);
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        // Expected when cancellation is requested or a timeout occurs. Only a timeout is a failure.
-                        if (!token.IsCancellationRequested)
-                        {
-                            RecordFailure(origin, "Timeout");
-                            _Logging.Debug(_Header + "health check timeout for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl);
-                        }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Expected when cancellation is requested or a timeout occurs. Only a timeout is a failure.
-                        if (!token.IsCancellationRequested)
-                        {
-                            RecordFailure(origin, "Timeout");
-                            _Logging.Debug(_Header + "health check timeout for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        RecordFailure(origin, e.Message);
-                        _Logging.Debug(_Header + "health check exception for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + Environment.NewLine + e.ToString());
+                        if (success) RecordSuccess(origin);
+                        else RecordFailure(origin, error);
                     }
 
-                    // Wait before next health check
-                    if (!token.IsCancellationRequested)
-                    {
-                        await Task.Delay(origin.HealthCheckIntervalMs, token);
-                    }
+                    if (success)
+                        _Logging.Debug(_Header + "health check succeeded for " + url + " (" + subscribers.Length + " origin(s))");
+                    else
+                        _Logging.Debug(_Header + "health check failed for " + url + " (" + subscribers.Length + " origin(s)): " + error);
+
+                    int interval = Int32.MaxValue;
+                    foreach (OriginServer origin in subscribers)
+                        if (origin.HealthCheckIntervalMs < interval) interval = origin.HealthCheckIntervalMs;
+                    if (interval == Int32.MaxValue) interval = 5000;
+
+                    try { await Task.Delay(interval, token); } catch (OperationCanceledException) { break; }
                 }
             }
 
-            _Logging.Debug(_Header + "stopping healthcheck task for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl);
+            _Logging.Debug(_Header + "stopping health monitor for " + key);
+        }
+
+        // Build the target signature for an origin's health check: method, scheme, host, port, and URL.
+        // Origins that produce the same signature are probed by a single shared monitor.
+        private static string MonitorKey(OriginServer origin)
+        {
+            string scheme = origin.Ssl ? "https" : "http";
+            string host = (origin.Hostname ?? String.Empty).Trim().ToLowerInvariant();
+            string path = origin.HealthCheckUrl ?? "/";
+            return origin.HealthCheckMethod + "|" + scheme + "://" + host + ":" + origin.Port + path;
+        }
+
+        // Copy the runtime health snapshot (state, counters, timestamps, and rolling history) from one
+        // origin to another so an origin joining an existing target is immediately consistent with its peers.
+        private static void CopyHealthState(OriginServer from, OriginServer to)
+        {
+            if (ReferenceEquals(from, to)) return;
+
+            lock (from.Lock)
+            {
+                List<HealthCheckRecord> historyCopy = new List<HealthCheckRecord>(from.CheckHistory.Count);
+                foreach (HealthCheckRecord record in from.CheckHistory)
+                    historyCopy.Add(new HealthCheckRecord(record.TimestampUtc, record.Success));
+
+                lock (to.Lock)
+                {
+                    to.Healthy = from.Healthy;
+                    to.HealthCheckSuccess = from.HealthCheckSuccess;
+                    to.HealthCheckFailure = from.HealthCheckFailure;
+                    to.LastError = from.LastError;
+                    to.FirstCheckUtc = from.FirstCheckUtc;
+                    to.LastCheckUtc = from.LastCheckUtc;
+                    to.LastHealthyUtc = from.LastHealthyUtc;
+                    to.LastUnhealthyUtc = from.LastUnhealthyUtc;
+                    to.LastStateChangeUtc = from.LastStateChangeUtc;
+                    to.TotalUptimeMs = from.TotalUptimeMs;
+                    to.TotalDowntimeMs = from.TotalDowntimeMs;
+                    to.CheckHistory.Clear();
+                    to.CheckHistory.AddRange(historyCopy);
+                }
+            }
         }
 
         // Record a successful health check against the origin and flip it healthy once the healthy
@@ -381,6 +447,15 @@
                 default:
                     throw new ArgumentException($"Unsupported HTTP method: {method}");
             }
+        }
+
+        // A single shared health-check monitor: the probe loop's cancellation source and the mutable set
+        // of origins that subscribe to this monitor's target (guarded by OriginsLock).
+        private sealed class OriginMonitor
+        {
+            internal CancellationTokenSource Cts;
+            internal List<OriginServer> Origins = new List<OriginServer>();
+            internal readonly object OriginsLock = new object();
         }
 
         #endregion

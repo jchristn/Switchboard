@@ -398,6 +398,43 @@ namespace Test.Shared
                         Check.Equal(401, s, "single health unauthorized status");
                     }),
 
+                    Case("OriginHealthDeduplicatesSharedTarget", "Origins sharing a health-check target are probed once and report consistent health", async (h, ct) =>
+                    {
+                        // Point two origins at the same live backend (same host:port:method:url) so they
+                        // resolve to a single shared health monitor.
+                        int livePort = h.Settings.Origins[0].Port;
+                        object cfgA = new { Identifier = "dedup-a", Name = "Dedup A", Hostname = "127.0.0.1", Port = livePort, Ssl = false, HealthCheckMethod = "GET", HealthCheckUrl = "/", HealthCheckIntervalMs = 1000, HealthyThreshold = 1, UnhealthyThreshold = 2 };
+                        object cfgB = new { Identifier = "dedup-b", Name = "Dedup B", Hostname = "127.0.0.1", Port = livePort, Ssl = false, HealthCheckMethod = "GET", HealthCheckUrl = "/", HealthCheckIntervalMs = 1000, HealthyThreshold = 1, UnhealthyThreshold = 2 };
+
+                        (int ca, _) = await Send(h, HttpMethod.Post, "/origins", cfgA);
+                        (int cb, _) = await Send(h, HttpMethod.Post, "/origins", cfgB);
+                        Check.Equal(201, ca, "create dedup-a");
+                        Check.Equal(201, cb, "create dedup-b");
+
+                        try
+                        {
+                            await WaitForHealthyAsync(h, new[] { "dedup-a", "dedup-b" }, TimeSpan.FromSeconds(30), ct).ConfigureAwait(false);
+
+                            // Read both from a single snapshot; sharing one monitor keeps their rolling
+                            // histories in lockstep (allowing at most one sample of skew from the snapshot
+                            // being taken mid fan-out).
+                            List<OriginServerHealthStatus> all = await FetchAllOriginHealth(h).ConfigureAwait(false);
+                            OriginServerHealthStatus a = FindHealth(all, "dedup-a")!;
+                            OriginServerHealthStatus b = FindHealth(all, "dedup-b")!;
+
+                            Check.True(a.IsHealthy, "dedup-a is healthy");
+                            Check.True(b.IsHealthy, "dedup-b is healthy");
+                            Check.True(a.History.Count > 0 && b.History.Count > 0, "both origins accrued history");
+                            Check.True(Math.Abs(a.History.Count - b.History.Count) <= 1,
+                                "shared-target histories stay consistent (a=" + a.History.Count + ", b=" + b.History.Count + ")");
+                        }
+                        finally
+                        {
+                            await DeleteOriginByIdentifier(h, "dedup-a").ConfigureAwait(false);
+                            await DeleteOriginByIdentifier(h, "dedup-b").ConfigureAwait(false);
+                        }
+                    }),
+
                     // ---- Endpoints CRUD ----
                     Case("EndpointCrud", "Endpoint create, get, list, update, and delete", async (h, ct) =>
                     {
@@ -659,6 +696,57 @@ namespace Test.Shared
         }
 
         private static string GuidOf(string json) => JsonSerializer.Deserialize<ResourceRef>(json, _Json)?.GUID ?? string.Empty;
+
+        // Fetch the full origin-health list in a single snapshot.
+        private static async Task<List<OriginServerHealthStatus>> FetchAllOriginHealth(ProxyHarness h)
+        {
+            (int status, string body) = await Send(h, HttpMethod.Get, "/origins/health");
+            if (status != 200) return new List<OriginServerHealthStatus>();
+            return JsonSerializer.Deserialize<List<OriginServerHealthStatus>>(body, _Json) ?? new List<OriginServerHealthStatus>();
+        }
+
+        private static OriginServerHealthStatus? FindHealth(List<OriginServerHealthStatus> list, string identifier)
+        {
+            foreach (OriginServerHealthStatus status in list)
+                if (status.Identifier == identifier) return status;
+            return null;
+        }
+
+        // Poll the health endpoint until every named origin reports healthy, or throw on timeout.
+        private static async Task WaitForHealthyAsync(ProxyHarness h, string[] identifiers, TimeSpan timeout, System.Threading.CancellationToken token)
+        {
+            DateTime deadline = DateTime.UtcNow.Add(timeout);
+            while (true)
+            {
+                List<OriginServerHealthStatus> all = await FetchAllOriginHealth(h);
+                bool allHealthy = true;
+                foreach (string identifier in identifiers)
+                {
+                    OriginServerHealthStatus? status = FindHealth(all, identifier);
+                    if (status == null || !status.IsHealthy) { allHealthy = false; break; }
+                }
+                if (allHealthy) return;
+                if (DateTime.UtcNow > deadline)
+                    throw new TimeoutException("origins did not all become healthy within " + timeout.TotalSeconds + "s");
+                await Task.Delay(500, token);
+            }
+        }
+
+        // Resolve an origin's GUID by identifier from the origins list and delete it (best-effort cleanup).
+        private static async Task DeleteOriginByIdentifier(ProxyHarness h, string identifier)
+        {
+            (int status, string body) = await Send(h, HttpMethod.Get, "/origins");
+            if (status != 200) return;
+            List<OriginServerConfig> configs = JsonSerializer.Deserialize<List<OriginServerConfig>>(body, _Json) ?? new List<OriginServerConfig>();
+            foreach (OriginServerConfig config in configs)
+            {
+                if (config.Identifier == identifier)
+                {
+                    await Send(h, HttpMethod.Delete, "/origins/" + config.GUID);
+                    return;
+                }
+            }
+        }
 
         // Locate the auto-increment Id of a listed resource by matching a field, since create responses
         // do not carry the generated Id. Strongly typed over the resource model T with selectors for the
