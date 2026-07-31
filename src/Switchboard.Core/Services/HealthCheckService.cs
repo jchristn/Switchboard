@@ -44,6 +44,7 @@
 
         private readonly string _Header = "[HealthCheckService] ";
         private static readonly TimeSpan _HistoryRetention = TimeSpan.FromHours(24);
+        private const int _MaxHistorySamples = 200;
         private SwitchboardSettings _Settings = null;
         private LoggingModule _Logging = null;
         private Serializer _Serializer = null;
@@ -189,7 +190,6 @@
                 origin.Identifier + " " + origin.Name + " " + origin.Hostname + ":" + origin.Port);
 
             string healthCheckUrl = (origin.Ssl ? "https://" : "http://") + origin.Hostname + ":" + origin.Port + origin.HealthCheckUrl;
-            string previousTarget = null;
 
             using (HttpClient client = new HttpClient())
             {
@@ -197,18 +197,11 @@
 
                 while (!token.IsCancellationRequested)
                 {
-                    // Recompute the target each iteration so edits to the origin's hostname, port, SSL, health
-                    // check URL, or method (applied in place by the configuration reload without restarting
-                    // this task) are picked up live. When the target actually changes, reset the health
-                    // telemetry so metrics and history describe the new target rather than the old one.
+                    // Recompute the target each iteration so in-place edits to the origin's hostname, port,
+                    // SSL, health-check URL, or method (applied by the configuration reload without restarting
+                    // this task) are picked up live. The rolling check history is preserved across edits and
+                    // health transitions so it keeps both healthy and unhealthy samples as a FIFO window.
                     healthCheckUrl = (origin.Ssl ? "https://" : "http://") + origin.Hostname + ":" + origin.Port + origin.HealthCheckUrl;
-                    string target = origin.HealthCheckMethod + " " + healthCheckUrl;
-                    if (previousTarget != null && !String.Equals(previousTarget, target, StringComparison.Ordinal))
-                    {
-                        ResetHealthState(origin);
-                        _Logging.Info(_Header + "origin " + origin.Identifier + " health target changed to " + target + "; resetting health state");
-                    }
-                    previousTarget = target;
 
                     try
                     {
@@ -351,35 +344,18 @@
             }
         }
 
-        // Reset all runtime health telemetry for an origin, used when its health-check target changes so
-        // metrics and history describe the new target from a clean slate. Marks the origin unhealthy until
-        // it re-proves itself against the new address.
-        private void ResetHealthState(OriginServer origin)
-        {
-            lock (origin.Lock)
-            {
-                origin.Healthy = false;
-                origin.HealthCheckSuccess = 0;
-                origin.HealthCheckFailure = 0;
-                origin.LastError = null;
-                origin.FirstCheckUtc = null;
-                origin.LastCheckUtc = null;
-                origin.LastHealthyUtc = null;
-                origin.LastUnhealthyUtc = null;
-                origin.LastStateChangeUtc = null;
-                origin.TotalUptimeMs = 0;
-                origin.TotalDowntimeMs = 0;
-                origin.CheckHistory.Clear();
-            }
-        }
-
-        // Append a check result and prune records older than the 24-hour retention window.
-        // Caller must hold origin.Lock.
+        // Append a check result to the rolling FIFO history. Prunes records older than the 24-hour
+        // retention window, then bounds the window to the most recent _MaxHistorySamples entries so the
+        // oldest samples fall off once the queue is full. Caller must hold origin.Lock.
         private void AppendHistory(OriginServer origin, DateTime now, bool success)
         {
             origin.CheckHistory.Add(new HealthCheckRecord(now, success));
+
             DateTime cutoff = now - _HistoryRetention;
             origin.CheckHistory.RemoveAll(r => r.TimestampUtc < cutoff);
+
+            int overflow = origin.CheckHistory.Count - _MaxHistorySamples;
+            if (overflow > 0) origin.CheckHistory.RemoveRange(0, overflow);
         }
 
         private System.Net.Http.HttpMethod HttpMethodConverter(WatsonWebserver.Core.HttpMethod method)

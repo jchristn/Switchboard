@@ -12,57 +12,34 @@ export function formatDuration(ms) {
   return `${minutes}m`;
 }
 
-// Bucket a rolling health history into bars. Each bar is green (all success), red (all fail),
-// or amber (mixed) — the same semantics used across the sibling projects' dashboards.
-function bucketHistory(history, width) {
-  const now = new Date();
-  const sorted = [...history].sort((a, b) => new Date(a.timestampUtc) - new Date(b.timestampUtc));
-  const oldest = new Date(sorted[0].timestampUtc);
-  const spanHours = (now - oldest) / (1000 * 60 * 60);
+const BAR_GAP = 2;
+const MIN_BAR = 3;
 
-  let buckets = [];
-  if (spanHours < 1) {
-    buckets = sorted.map((r) => ({ success: r.success ? 1 : 0, fail: r.success ? 0 : 1, time: r.timestampUtc }));
-  } else {
-    const bucketMs = spanHours <= 6 ? 60000 : 300000;
-    const bucketMap = new Map();
-    for (const r of sorted) {
-      const key = Math.floor(new Date(r.timestampUtc).getTime() / bucketMs);
-      if (!bucketMap.has(key)) bucketMap.set(key, { success: 0, fail: 0 });
-      const b = bucketMap.get(key);
-      if (r.success) b.success += 1;
-      else b.fail += 1;
-    }
-    for (const [key, val] of bucketMap) {
-      buckets.push({ ...val, time: new Date(key * bucketMs).toISOString() });
-    }
-  }
-
-  const maxBars = Math.floor(width / 6);
-  if (buckets.length > maxBars) buckets = buckets.slice(-maxBars);
-  return buckets;
-}
-
-// A compact bar histogram of recent health check results.
+// A compact bar histogram of recent health checks. One bar per check attempt — green for success,
+// red for failure — rendered as a FIFO window: oldest on the left, newest on the right. Only the most
+// recent attempts that fit in the given width are shown; older ones fall off the left edge.
 export function HealthHistogram({ history, width = 120, height = 24 }) {
   const { t } = useTranslation();
   if (!history || history.length === 0) {
     return <span className="sb-hh-empty">{t('health.noData')}</span>;
   }
 
-  const buckets = bucketHistory(history, width);
-  const barWidth = Math.max(4, Math.floor(width / buckets.length) - 2);
+  const sorted = [...history].sort((a, b) => new Date(a.timestampUtc) - new Date(b.timestampUtc));
+  const maxBars = Math.max(1, Math.floor((width + BAR_GAP) / (MIN_BAR + BAR_GAP)));
+  const shown = sorted.slice(-maxBars);
+  const barWidth = Math.max(
+    MIN_BAR,
+    Math.floor((width - BAR_GAP * (shown.length - 1)) / shown.length)
+  );
 
   return (
     <div className="sb-hh" style={{ height: `${height}px`, maxWidth: `${width}px` }}>
-      {buckets.map((b, i) => {
-        let tone = 'ok';
-        if (b.fail > 0 && b.success === 0) tone = 'fail';
-        else if (b.fail > 0 && b.success > 0) tone = 'mixed';
-        const title = `${new Date(b.time).toLocaleTimeString()} — ${b.success} ok, ${b.fail} fail`;
+      {shown.map((r, i) => {
+        const tone = r.success ? 'ok' : 'fail';
+        const title = `${new Date(r.timestampUtc).toLocaleTimeString()} — ${r.success ? 'ok' : 'fail'}`;
         return (
           <div
-            key={i}
+            key={`${r.timestampUtc}-${i}`}
             className={`sb-hh-bar sb-hh-bar--${tone}`}
             title={title}
             style={{ width: `${barWidth}px`, height: `${height}px` }}
