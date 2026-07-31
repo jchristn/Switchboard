@@ -505,7 +505,7 @@ function EndpointsView() {
         <Modal
           open
           onClose={() => setFormOpen(false)}
-          size="xl"
+          size="large"
           title={editingGuid ? t('endpoints.editTitle') : t('endpoints.createTitle')}
           footer={
             <>
@@ -1105,7 +1105,7 @@ function OriginsTab({
   return (
     <div>
       {isAdmin && (
-        <div className="ep-attach-form">
+        <div className="ep-attach">
           <div className="ep-inline-form">
             <select
               className="form-input ep-inline-form__grow"
@@ -1125,31 +1125,23 @@ function OriginsTab({
             </select>
             <input
               type="number"
-              className="form-input ep-attach-form__num"
+              className="form-input ep-attach__num"
               value={attachWeight}
               onChange={(e) => setAttachWeight(parseInt(e.target.value, 10) || 0)}
               aria-label={t('endpoints.weight')}
               title={t('endpoints.weight')}
-              placeholder={t('endpoints.weight')}
             />
             <input
               type="number"
-              className="form-input ep-attach-form__num"
+              className="form-input ep-attach__num"
               value={attachPriority}
               onChange={(e) => setAttachPriority(parseInt(e.target.value, 10) || 0)}
               aria-label={t('endpoints.priority')}
               title={t('endpoints.priority')}
-              placeholder={t('endpoints.priority')}
             />
-            <button type="button" className="btn btn-primary" onClick={submitAttach} disabled={!attachValue}>
-              <Icons.Plus size={16} />
-              {t('endpoints.attachOrigin')}
-            </button>
-          </div>
-          <div className="ep-inline-form">
             <input
               type="text"
-              className="form-input ep-inline-form__grow"
+              className="form-input ep-attach__text"
               value={attachCanaryHeader}
               onChange={(e) => setAttachCanaryHeader(e.target.value)}
               aria-label={t('endpoints.canaryHeader')}
@@ -1157,12 +1149,16 @@ function OriginsTab({
             />
             <input
               type="text"
-              className="form-input ep-inline-form__grow"
+              className="form-input ep-attach__text"
               value={attachCanaryValue}
               onChange={(e) => setAttachCanaryValue(e.target.value)}
               aria-label={t('endpoints.canaryValue')}
               placeholder={t('endpoints.canaryValuePlaceholder')}
             />
+            <button type="button" className="btn btn-primary" onClick={submitAttach} disabled={!attachValue}>
+              <Icons.Plus size={16} />
+              {t('endpoints.attachOrigin')}
+            </button>
           </div>
           <p className="form-hint">{t('endpoints.mappingParamsHint')}</p>
         </div>

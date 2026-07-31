@@ -24,9 +24,24 @@ namespace Switchboard.Core.Services
 
         /// <summary>
         /// Minimum effective-weight fraction applied during slow start so a warming origin still receives
-        /// some traffic rather than none. Range 0.0 to 1.0.
+        /// some traffic rather than none. Default is 0.1. Minimum is 0.0. Maximum is 1.0. Values are clamped.
         /// </summary>
-        public static double SlowStartFloor { get; set; } = 0.1;
+        public static double SlowStartFloor
+        {
+            get => _SlowStartFloor;
+            set
+            {
+                if (value < 0.0) value = 0.0;
+                if (value > 1.0) value = 1.0;
+                _SlowStartFloor = value;
+            }
+        }
+
+        #endregion
+
+        #region Private-Members
+
+        private static double _SlowStartFloor = 0.1;
 
         #endregion
 

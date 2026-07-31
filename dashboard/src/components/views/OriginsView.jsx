@@ -304,7 +304,7 @@ export default function OriginsView() {
       <Modal
         open={formOpen}
         onClose={() => setFormOpen(false)}
-        size="xl"
+        size="large"
         title={editing ? t('origins.editTitle') : t('origins.createTitle')}
         footer={
           <>

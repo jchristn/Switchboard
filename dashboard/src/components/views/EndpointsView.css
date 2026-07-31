@@ -55,12 +55,6 @@
   margin-block-start: var(--spacing-2);
 }
 
-.form-hint {
-  margin-block-start: var(--spacing-3);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-tertiary);
-}
-
 .btn-sm {
   padding: var(--spacing-1) var(--spacing-2);
   font-size: var(--font-size-sm);
@@ -163,14 +157,16 @@
   }
 }
 
-/* Origin-mapping attach form: weight/priority/canary inputs for per-endpoint routing. */
-.ep-attach-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-  margin-bottom: var(--spacing-4);
+/* Origin-mapping attach form: weight/priority/canary inputs for per-endpoint routing.
+   A single wrapping inline form so it reads as one "attach origin" action. */
+.ep-attach {
+  margin-block-end: var(--spacing-4);
 }
-.ep-attach-form__num {
-  width: 96px;
+.ep-attach__num {
+  inline-size: 84px;
   flex: 0 0 auto;
+}
+.ep-attach__text {
+  inline-size: 160px;
+  flex: 1 1 140px;
 }

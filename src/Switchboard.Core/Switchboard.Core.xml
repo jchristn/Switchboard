@@ -4949,7 +4949,7 @@
         <member name="P:Switchboard.Core.Services.OriginSelector.SlowStartFloor">
             <summary>
             Minimum effective-weight fraction applied during slow start so a warming origin still receives
-            some traffic rather than none. Range 0.0 to 1.0.
+            some traffic rather than none. Default is 0.1. Minimum is 0.0. Maximum is 1.0. Values are clamped.
             </summary>
         </member>
         <member name="M:Switchboard.Core.Services.OriginSelector.Select(Switchboard.Core.ApiEndpoint,System.Collections.Generic.List{Switchboard.Core.OriginServer},System.String,System.Collections.Specialized.NameValueCollection,System.Collections.Generic.ISet{System.String},System.Random,System.DateTime)">

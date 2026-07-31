@@ -269,6 +269,14 @@ input, select, textarea {
   color: var(--color-text-primary);
 }
 
+/* Helper text under a form control. Block so vertical margins apply to inline (span) usage too. */
+.form-hint {
+  display: block;
+  margin-top: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+}
+
 .form-input {
   width: 100%;
   padding: var(--spacing-2) var(--spacing-3);
