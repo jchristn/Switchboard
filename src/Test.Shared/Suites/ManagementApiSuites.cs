@@ -400,38 +400,46 @@ namespace Test.Shared
 
                     Case("OriginHealthDeduplicatesSharedTarget", "Origins sharing a health-check target are probed once and report consistent health", async (h, ct) =>
                     {
-                        // Point two origins at the same live backend (same host:port:method:url) so they
+                        // Point three origins at the same live backend (same host:port:method:url) so they
                         // resolve to a single shared health monitor.
                         int livePort = h.Settings.Origins[0].Port;
-                        object cfgA = new { Identifier = "dedup-a", Name = "Dedup A", Hostname = "127.0.0.1", Port = livePort, Ssl = false, HealthCheckMethod = "GET", HealthCheckUrl = "/", HealthCheckIntervalMs = 1000, HealthyThreshold = 1, UnhealthyThreshold = 2 };
-                        object cfgB = new { Identifier = "dedup-b", Name = "Dedup B", Hostname = "127.0.0.1", Port = livePort, Ssl = false, HealthCheckMethod = "GET", HealthCheckUrl = "/", HealthCheckIntervalMs = 1000, HealthyThreshold = 1, UnhealthyThreshold = 2 };
-
-                        (int ca, _) = await Send(h, HttpMethod.Post, "/origins", cfgA);
-                        (int cb, _) = await Send(h, HttpMethod.Post, "/origins", cfgB);
-                        Check.Equal(201, ca, "create dedup-a");
-                        Check.Equal(201, cb, "create dedup-b");
+                        string[] ids = new[] { "dedup-a", "dedup-b", "dedup-c" };
+                        foreach (string id in ids)
+                        {
+                            (int cs, _) = await Send(h, HttpMethod.Post, "/origins",
+                                new { Identifier = id, Name = id, Hostname = "127.0.0.1", Port = livePort, Ssl = false, HealthCheckMethod = "GET", HealthCheckUrl = "/", HealthCheckIntervalMs = 1000, HealthyThreshold = 1, UnhealthyThreshold = 2 });
+                            Check.Equal(201, cs, "create " + id);
+                        }
 
                         try
                         {
-                            await WaitForHealthyAsync(h, new[] { "dedup-a", "dedup-b" }, TimeSpan.FromSeconds(30), ct).ConfigureAwait(false);
+                            await WaitForHealthyAsync(h, ids, TimeSpan.FromSeconds(30), ct).ConfigureAwait(false);
 
-                            // Read both from a single snapshot; sharing one monitor keeps their rolling
+                            // Read all from a single snapshot; sharing one monitor keeps their rolling
                             // histories in lockstep (allowing at most one sample of skew from the snapshot
                             // being taken mid fan-out).
                             List<OriginServerHealthStatus> all = await FetchAllOriginHealth(h).ConfigureAwait(false);
                             OriginServerHealthStatus a = FindHealth(all, "dedup-a")!;
                             OriginServerHealthStatus b = FindHealth(all, "dedup-b")!;
+                            OriginServerHealthStatus c = FindHealth(all, "dedup-c")!;
 
-                            Check.True(a.IsHealthy, "dedup-a is healthy");
-                            Check.True(b.IsHealthy, "dedup-b is healthy");
-                            Check.True(a.History.Count > 0 && b.History.Count > 0, "both origins accrued history");
-                            Check.True(Math.Abs(a.History.Count - b.History.Count) <= 1,
-                                "shared-target histories stay consistent (a=" + a.History.Count + ", b=" + b.History.Count + ")");
+                            Check.True(a.IsHealthy && b.IsHealthy && c.IsHealthy, "all shared origins healthy");
+                            Check.True(a.History.Count > 0, "origins accrued history");
+                            Check.True(Math.Abs(a.History.Count - b.History.Count) <= 1 && Math.Abs(a.History.Count - c.History.Count) <= 1,
+                                "shared-target histories stay consistent (a=" + a.History.Count + ", b=" + b.History.Count + ", c=" + c.History.Count + ")");
+
+                            // The target must be probed once per interval, not once per subscriber: over a
+                            // ~4s window at a 1s interval each origin should gain ~4 samples, not ~12.
+                            int before = FindHealth(all, "dedup-a")!.History.Count;
+                            await Task.Delay(4000, ct).ConfigureAwait(false);
+                            int after = FindHealth(await FetchAllOriginHealth(h).ConfigureAwait(false), "dedup-a")!.History.Count;
+                            int delta = after - before;
+                            Check.True(delta >= 1 && delta <= 8,
+                                "history grows ~once per interval, not once per subscriber (delta=" + delta + " over ~4s at 1s interval, 3 origins)");
                         }
                         finally
                         {
-                            await DeleteOriginByIdentifier(h, "dedup-a").ConfigureAwait(false);
-                            await DeleteOriginByIdentifier(h, "dedup-b").ConfigureAwait(false);
+                            foreach (string id in ids) await DeleteOriginByIdentifier(h, id).ConfigureAwait(false);
                         }
                     }),
 

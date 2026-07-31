@@ -33,6 +33,10 @@
 - The dashboard Health column now renders a fixed 10-slot histogram — every origin shows the same number of
   bars, filling from newest (right) to oldest (left) with muted cells for not-yet-collected samples — so
   origins added at different times are visually consistent
+- Hardened the shared health monitor so exactly one active check runs per target: each monitor loop
+  verifies it is still the one registered for its key before probing, guaranteeing each origin records a
+  single sample per interval even if a monitor were ever superseded or leaked. Strengthened the
+  shared-target test to assert the sample rate (once per interval, not once per subscriber)
 
 ## Current Version
 

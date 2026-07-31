@@ -240,6 +240,15 @@
                 {
                     long iterationStartMs = Environment.TickCount64;
 
+                    // Defensive: only the monitor currently registered for this key may probe and fan out.
+                    // If this monitor was superseded (or ever leaked) it stops here, guaranteeing exactly
+                    // one active health check per target so each origin records one sample per interval.
+                    lock (_MonitorsLock)
+                    {
+                        if (!_Monitors.TryGetValue(key, out OriginMonitor current) || !ReferenceEquals(current, monitor))
+                            break;
+                    }
+
                     OriginServer[] subscribers;
                     lock (monitor.OriginsLock) subscribers = monitor.Origins.ToArray();
 
