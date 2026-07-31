@@ -3,7 +3,7 @@ set -e
 
 if [ -z "$1" ]; then
     echo "Usage: ./build-dashboard.sh [version-tag]"
-    echo "Example: ./build-dashboard.sh v4.1.0"
+    echo "Example: ./build-dashboard.sh v5.0.0"
     exit 1
 fi
 

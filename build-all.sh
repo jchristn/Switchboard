@@ -3,7 +3,7 @@ set -e
 
 if [ -z "$1" ]; then
     echo "Usage: ./build-all.sh [version-tag]"
-    echo "Example: ./build-all.sh v4.1.0"
+    echo "Example: ./build-all.sh v5.0.0"
     exit 1
 fi
 

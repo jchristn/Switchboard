@@ -99,7 +99,13 @@ Settings are configured via JSON files (typically `sb.json`) or programmatically
 
 ### Load Balancing
 
-Supports multiple load balancing algorithms via `LoadBalancingMode` enum (RoundRobin, etc.)
+Origin selection is a layered pipeline in `OriginSelector` (canary header → availability/ejection → priority
+tier → sticky affinity → mode), invoked by `GatewayService.FindOriginServer`. The `LoadBalancingMode` enum has
+`RoundRobin`, `Random`, `LeastConnections`, `PowerOfTwoChoices`, `Weighted`, and `LatencyBased`. Weight and
+priority are per endpoint-origin mapping; sticky/retry are per endpoint; slow-start/ejection are per origin.
+Passive ejection and EWMA latency are recorded in `GatewayService.RecordProxyOutcome`; retries/failover live in
+`DefaultRoute`. New DB columns require the three-location change in each of the four drivers plus a guarded
+`ALTER TABLE` startup migration. See `LOAD_BALANCING.md` for the full design.
 
 ### Health Checking
 

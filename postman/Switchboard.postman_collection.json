@@ -1,8 +1,8 @@
 {
   "info": {
     "name": "Switchboard Management API",
-    "description": "Management API for Switchboard (v4.1.0). Set the `baseUrl` and `token` collection variables. All requests use bearer auth inherited from the collection. Path variables like {{guid}} / {{id}} / {{userGuid}} are collection variables you can fill in.",
-    "version": "4.1.0",
+    "description": "Management API for Switchboard (v5.0.0). Set the `baseUrl` and `token` collection variables. All requests use bearer auth inherited from the collection. Path variables like {{guid}} / {{id}} / {{userGuid}} are collection variables you can fill in.",
+    "version": "5.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -123,7 +123,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"api-1\",\n  \"name\": \"API Server 1\",\n  \"hostname\": \"api.example.com\",\n  \"port\": 443,\n  \"ssl\": true,\n  \"healthCheckUrl\": \"/health\"\n}",
+              "raw": "{\n  \"identifier\": \"api-1\",\n  \"name\": \"API Server 1\",\n  \"hostname\": \"api.example.com\",\n  \"port\": 443,\n  \"ssl\": true,\n  \"healthCheckUrl\": \"/health\",\n  \"slowStartMs\": 0,\n  \"maxFailures\": 5,\n  \"ejectionDurationMs\": 30000\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -171,7 +171,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"api-1\",\n  \"name\": \"API Server 1\",\n  \"hostname\": \"api.example.com\",\n  \"port\": 443,\n  \"ssl\": true,\n  \"healthCheckUrl\": \"/health\"\n}",
+              "raw": "{\n  \"identifier\": \"api-1\",\n  \"name\": \"API Server 1\",\n  \"hostname\": \"api.example.com\",\n  \"port\": 443,\n  \"ssl\": true,\n  \"healthCheckUrl\": \"/health\",\n  \"slowStartMs\": 0,\n  \"maxFailures\": 5,\n  \"ejectionDurationMs\": 30000\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -239,7 +239,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"user-api\",\n  \"name\": \"User API\",\n  \"loadBalancingMode\": \"RoundRobin\"\n}",
+              "raw": "{\n  \"identifier\": \"user-api\",\n  \"name\": \"User API\",\n  \"loadBalancingMode\": \"Weighted\",\n  \"stickySessionEnabled\": false,\n  \"stickySessionHeader\": null,\n  \"maxRetries\": 1,\n  \"retryOn5xx\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -287,7 +287,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"user-api\",\n  \"name\": \"User API\",\n  \"loadBalancingMode\": \"RoundRobin\"\n}",
+              "raw": "{\n  \"identifier\": \"user-api\",\n  \"name\": \"User API\",\n  \"loadBalancingMode\": \"Weighted\",\n  \"stickySessionEnabled\": false,\n  \"stickySessionHeader\": null,\n  \"maxRetries\": 1,\n  \"retryOn5xx\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -471,7 +471,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"endpointIdentifier\": \"user-api\",\n  \"originIdentifier\": \"api-1\"\n}",
+              "raw": "{\n  \"endpointIdentifier\": \"user-api\",\n  \"originIdentifier\": \"api-1\",\n  \"weight\": 100,\n  \"priority\": 0,\n  \"canaryHeader\": null,\n  \"canaryValue\": null\n}",
               "options": {
                 "raw": {
                   "language": "json"

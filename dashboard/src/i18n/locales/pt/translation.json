@@ -400,7 +400,13 @@
     "saveError": "Falha ao guardar a origem",
     "deleteError": "Falha ao eliminar a origem",
     "empty": "Não há servidores de origem configurados",
-    "emptyHint": "Adicione um servidor de origem para o qual o Switchboard encaminhe."
+    "emptyHint": "Adicione um servidor de origem para o qual o Switchboard encaminhe.",
+    "slowStart": "Início lento (ms)",
+    "slowStartHint": "Aumenta o tráfego para uma origem recém-saudável nesta janela. 0 desativa.",
+    "maxFailures": "Limite de ejeção",
+    "maxFailuresHint": "Requisições falhadas consecutivas antes de ejetar a origem. 0 desativa.",
+    "ejectionDuration": "Duração da ejeção (ms)",
+    "ejectionDurationHint": "Quanto tempo uma origem ejetada fica fora de rotação."
   },
   "endpoints": {
     "title": "Endpoints de API",
@@ -467,7 +473,27 @@
     "detachTitle": "Desanexar origem",
     "detachMessage": "Desanexar a origem \"{{name}}\" deste endpoint?",
     "originsEmpty": "Não há servidores de origem anexados a este endpoint",
-    "originsEmptyHint": "Anexe um servidor de origem para ativar o encaminhamento de pedidos."
+    "originsEmptyHint": "Anexe um servidor de origem para ativar o encaminhamento de pedidos.",
+    "leastConnections": "Menos conexões",
+    "powerOfTwoChoices": "Duas escolhas aleatórias",
+    "weighted": "Ponderado",
+    "latencyBased": "Latência (EWMA)",
+    "maxRetries": "Máx. tentativas",
+    "maxRetriesHint": "Repetir requisições idempotentes falhadas em outras origens.",
+    "stickySessionEnabled": "Sessões fixas",
+    "stickySessionHeader": "Cabeçalho de sessão fixa",
+    "stickySessionHeaderHint": "Cabeçalho cujo valor fixa um cliente a uma origem. Vazio usa o IP do cliente.",
+    "stickySessionHeaderPlaceholder": "ex.: X-Session-Id",
+    "retryOn5xx": "Repetir em 5xx",
+    "weight": "Peso",
+    "priority": "Prioridade",
+    "drained": "Drenado",
+    "canary": "Canary",
+    "canaryHeader": "Cabeçalho canary",
+    "canaryValue": "Valor canary",
+    "canaryHeaderPlaceholder": "Cabeçalho canary (opcional)",
+    "canaryValuePlaceholder": "Valor canary",
+    "mappingParamsHint": "O peso define a fração de tráfego (0 drena). A prioridade cria níveis de backup. Canary fixa requisições correspondentes a esta origem."
   },
   "users": {
     "title": "Utilizadores",

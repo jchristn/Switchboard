@@ -400,7 +400,13 @@
     "saveError": "保存源服务器失败",
     "deleteError": "删除源服务器失败",
     "empty": "未配置任何源服务器",
-    "emptyHint": "添加一个源服务器，供 Switchboard 代理。"
+    "emptyHint": "添加一个源服务器，供 Switchboard 代理。",
+    "slowStart": "慢启动 (ms)",
+    "slowStartHint": "在此时间窗口内逐步向新恢复的源分配流量。0 表示禁用。",
+    "maxFailures": "驱逐阈值",
+    "maxFailuresHint": "连续失败多少次请求后驱逐该源。0 表示禁用。",
+    "ejectionDuration": "驱逐时长 (ms)",
+    "ejectionDurationHint": "被驱逐的源多久后重新参与轮转。"
   },
   "endpoints": {
     "title": "API 端点",
@@ -467,7 +473,27 @@
     "detachTitle": "分离源服务器",
     "detachMessage": "从此端点分离源服务器“{{name}}”？",
     "originsEmpty": "此端点未附加任何源服务器",
-    "originsEmptyHint": "附加一个源服务器以启用请求路由。"
+    "originsEmptyHint": "附加一个源服务器以启用请求路由。",
+    "leastConnections": "最少连接",
+    "powerOfTwoChoices": "二选一（P2C）",
+    "weighted": "加权",
+    "latencyBased": "延迟 (EWMA)",
+    "maxRetries": "最大重试次数",
+    "maxRetriesHint": "对失败的幂等请求重试到其他源。",
+    "stickySessionEnabled": "会话保持",
+    "stickySessionHeader": "会话保持请求头",
+    "stickySessionHeaderHint": "用其值将客户端固定到某个源的请求头。留空则用客户端 IP。",
+    "stickySessionHeaderPlaceholder": "例如 X-Session-Id",
+    "retryOn5xx": "5xx 时重试",
+    "weight": "权重",
+    "priority": "优先级",
+    "drained": "已排空",
+    "canary": "金丝雀",
+    "canaryHeader": "金丝雀请求头",
+    "canaryValue": "金丝雀值",
+    "canaryHeaderPlaceholder": "金丝雀请求头（可选）",
+    "canaryValuePlaceholder": "金丝雀值",
+    "mappingParamsHint": "权重决定流量份额（0 为排空）。优先级用于分层备份。金丝雀将匹配的请求固定到该源。"
   },
   "users": {
     "title": "用户",

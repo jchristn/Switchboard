@@ -400,7 +400,13 @@
     "saveError": "Ursprungsserver konnte nicht gespeichert werden",
     "deleteError": "Ursprungsserver konnte nicht gelöscht werden",
     "empty": "Keine Ursprungsserver konfiguriert",
-    "emptyHint": "Fügen Sie einen Ursprungsserver hinzu, an den Switchboard weiterleitet."
+    "emptyHint": "Fügen Sie einen Ursprungsserver hinzu, an den Switchboard weiterleitet.",
+    "slowStart": "Slow Start (ms)",
+    "slowStartHint": "Traffic zu einem neu gesunden Origin über dieses Fenster hochfahren. 0 deaktiviert.",
+    "maxFailures": "Ausschluss-Schwelle",
+    "maxFailuresHint": "Aufeinanderfolgende fehlgeschlagene Anfragen, bevor der Origin ausgeschlossen wird. 0 deaktiviert.",
+    "ejectionDuration": "Ausschlussdauer (ms)",
+    "ejectionDurationHint": "Wie lange ein ausgeschlossener Origin außerhalb der Rotation bleibt."
   },
   "endpoints": {
     "title": "API-Endpunkte",
@@ -467,7 +473,27 @@
     "detachTitle": "Ursprungsserver abhängen",
     "detachMessage": "Ursprungsserver \"{{name}}\" von diesem Endpunkt abhängen?",
     "originsEmpty": "Keine Ursprungsserver an diesen Endpunkt angehängt",
-    "originsEmptyHint": "Hängen Sie einen Ursprungsserver an, um das Routing von Anfragen zu aktivieren."
+    "originsEmptyHint": "Hängen Sie einen Ursprungsserver an, um das Routing von Anfragen zu aktivieren.",
+    "leastConnections": "Wenigste Verbindungen",
+    "powerOfTwoChoices": "Zwei zufällige Auswahl",
+    "weighted": "Gewichtet",
+    "latencyBased": "Latenz (EWMA)",
+    "maxRetries": "Max. Wiederholungen",
+    "maxRetriesHint": "Fehlgeschlagene idempotente Anfragen an anderen Origins wiederholen.",
+    "stickySessionEnabled": "Sticky Sessions",
+    "stickySessionHeader": "Sticky-Session-Header",
+    "stickySessionHeaderHint": "Header, dessen Wert einen Client an einen Origin bindet. Leer = Client-IP.",
+    "stickySessionHeaderPlaceholder": "z. B. X-Session-Id",
+    "retryOn5xx": "Bei 5xx wiederholen",
+    "weight": "Gewicht",
+    "priority": "Priorität",
+    "drained": "Entleert",
+    "canary": "Canary",
+    "canaryHeader": "Canary-Header",
+    "canaryValue": "Canary-Wert",
+    "canaryHeaderPlaceholder": "Canary-Header (optional)",
+    "canaryValuePlaceholder": "Canary-Wert",
+    "mappingParamsHint": "Gewicht bestimmt den Traffic-Anteil (0 entleert). Priorität bildet Backup-Stufen. Canary bindet passende Anfragen an diesen Origin."
   },
   "users": {
     "title": "Benutzer",

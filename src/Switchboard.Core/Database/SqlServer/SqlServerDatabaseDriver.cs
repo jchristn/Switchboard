@@ -188,6 +188,9 @@ namespace Switchboard.Core.Database.SqlServer
                     capture_response_headers BIT NOT NULL DEFAULT 1,
                     max_capture_request_body_size INT NOT NULL DEFAULT 65536,
                     max_capture_response_body_size INT NOT NULL DEFAULT 65536,
+                    slow_start_ms INT NOT NULL DEFAULT 0,
+                    max_failures INT NOT NULL DEFAULT 5,
+                    ejection_duration_ms INT NOT NULL DEFAULT 30000,
                     created_utc DATETIME2 NOT NULL,
                     modified_utc DATETIME2
                 )",
@@ -213,6 +216,10 @@ namespace Switchboard.Core.Database.SqlServer
                     capture_response_headers BIT NOT NULL DEFAULT 1,
                     max_capture_request_body_size INT NOT NULL DEFAULT 65536,
                     max_capture_response_body_size INT NOT NULL DEFAULT 65536,
+                    sticky_session_enabled BIT NOT NULL DEFAULT 0,
+                    sticky_session_header NVARCHAR(255),
+                    max_retries INT NOT NULL DEFAULT 0,
+                    retry_on_5xx BIT NOT NULL DEFAULT 1,
                     created_utc DATETIME2 NOT NULL,
                     modified_utc DATETIME2
                 )",
@@ -224,6 +231,10 @@ namespace Switchboard.Core.Database.SqlServer
                     endpoint_identifier NVARCHAR(255) NOT NULL,
                     origin_identifier NVARCHAR(255) NOT NULL,
                     sort_order INT NOT NULL DEFAULT 0,
+                    weight INT NOT NULL DEFAULT 100,
+                    priority INT NOT NULL DEFAULT 0,
+                    canary_header NVARCHAR(255),
+                    canary_value NVARCHAR(255),
                     CONSTRAINT FK_eom_endpoint FOREIGN KEY (endpoint_identifier) REFERENCES api_endpoints(identifier) ON DELETE CASCADE,
                     CONSTRAINT FK_eom_origin FOREIGN KEY (origin_identifier) REFERENCES origin_servers(identifier) ON DELETE CASCADE,
                     CONSTRAINT UQ_endpoint_origin UNIQUE (endpoint_identifier, origin_identifier)
@@ -282,6 +293,41 @@ namespace Switchboard.Core.Database.SqlServer
                     error_message NVARCHAR(MAX),
                     success BIT NOT NULL DEFAULT 0
                 )",
+
+                // Load-balancing / intelligent routing columns (schema migration for existing databases).
+                // Each ALTER runs only when the column is absent, so existing databases are upgraded on startup.
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('origin_servers') AND name = 'slow_start_ms')
+                ALTER TABLE origin_servers ADD slow_start_ms INT NOT NULL DEFAULT 0",
+
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('origin_servers') AND name = 'max_failures')
+                ALTER TABLE origin_servers ADD max_failures INT NOT NULL DEFAULT 5",
+
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('origin_servers') AND name = 'ejection_duration_ms')
+                ALTER TABLE origin_servers ADD ejection_duration_ms INT NOT NULL DEFAULT 30000",
+
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('api_endpoints') AND name = 'sticky_session_enabled')
+                ALTER TABLE api_endpoints ADD sticky_session_enabled BIT NOT NULL DEFAULT 0",
+
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('api_endpoints') AND name = 'sticky_session_header')
+                ALTER TABLE api_endpoints ADD sticky_session_header NVARCHAR(255)",
+
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('api_endpoints') AND name = 'max_retries')
+                ALTER TABLE api_endpoints ADD max_retries INT NOT NULL DEFAULT 0",
+
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('api_endpoints') AND name = 'retry_on_5xx')
+                ALTER TABLE api_endpoints ADD retry_on_5xx BIT NOT NULL DEFAULT 1",
+
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('endpoint_origin_mappings') AND name = 'weight')
+                ALTER TABLE endpoint_origin_mappings ADD weight INT NOT NULL DEFAULT 100",
+
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('endpoint_origin_mappings') AND name = 'priority')
+                ALTER TABLE endpoint_origin_mappings ADD priority INT NOT NULL DEFAULT 0",
+
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('endpoint_origin_mappings') AND name = 'canary_header')
+                ALTER TABLE endpoint_origin_mappings ADD canary_header NVARCHAR(255)",
+
+                @"IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('endpoint_origin_mappings') AND name = 'canary_value')
+                ALTER TABLE endpoint_origin_mappings ADD canary_value NVARCHAR(255)",
 
                 // Indexes
                 @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='idx_credentials_user_guid')
@@ -814,6 +860,9 @@ namespace Switchboard.Core.Database.SqlServer
                     values["capture_response_headers"] = o.CaptureResponseHeaders ? 1 : 0;
                     values["max_capture_request_body_size"] = o.MaxCaptureRequestBodySize;
                     values["max_capture_response_body_size"] = o.MaxCaptureResponseBodySize;
+                    values["slow_start_ms"] = o.SlowStartMs;
+                    values["max_failures"] = o.MaxFailures;
+                    values["ejection_duration_ms"] = o.EjectionDurationMs;
                     values["created_utc"] = o.CreatedUtc;
                     values["modified_utc"] = o.ModifiedUtc;
                     break;
@@ -837,6 +886,10 @@ namespace Switchboard.Core.Database.SqlServer
                     values["capture_response_headers"] = e.CaptureResponseHeaders ? 1 : 0;
                     values["max_capture_request_body_size"] = e.MaxCaptureRequestBodySize;
                     values["max_capture_response_body_size"] = e.MaxCaptureResponseBodySize;
+                    values["sticky_session_enabled"] = e.StickySessionEnabled;
+                    values["sticky_session_header"] = e.StickySessionHeader;
+                    values["max_retries"] = e.MaxRetries;
+                    values["retry_on_5xx"] = e.RetryOn5xx;
                     values["created_utc"] = e.CreatedUtc;
                     values["modified_utc"] = e.ModifiedUtc;
                     break;
@@ -846,6 +899,10 @@ namespace Switchboard.Core.Database.SqlServer
                     values["endpoint_identifier"] = m.EndpointIdentifier;
                     values["origin_identifier"] = m.OriginIdentifier;
                     values["sort_order"] = m.SortOrder;
+                    values["weight"] = m.Weight;
+                    values["priority"] = m.Priority;
+                    values["canary_header"] = m.CanaryHeader;
+                    values["canary_value"] = m.CanaryValue;
                     break;
 
                 case EndpointRoute r:
@@ -979,6 +1036,9 @@ namespace Switchboard.Core.Database.SqlServer
                     CaptureResponseHeaders = reader.GetInt32(reader.GetOrdinal("capture_response_headers")) == 1,
                     MaxCaptureRequestBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_request_body_size")),
                     MaxCaptureResponseBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_response_body_size")),
+                    SlowStartMs = reader.GetInt32(reader.GetOrdinal("slow_start_ms")),
+                    MaxFailures = reader.GetInt32(reader.GetOrdinal("max_failures")),
+                    EjectionDurationMs = reader.GetInt32(reader.GetOrdinal("ejection_duration_ms")),
                     CreatedUtc = reader.GetDateTime(reader.GetOrdinal("created_utc"))
                 };
                 if (!reader.IsDBNull(reader.GetOrdinal("name")))
@@ -1008,12 +1068,17 @@ namespace Switchboard.Core.Database.SqlServer
                     CaptureResponseHeaders = reader.GetInt32(reader.GetOrdinal("capture_response_headers")) == 1,
                     MaxCaptureRequestBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_request_body_size")),
                     MaxCaptureResponseBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_response_body_size")),
+                    StickySessionEnabled = reader.GetBoolean(reader.GetOrdinal("sticky_session_enabled")),
+                    MaxRetries = reader.GetInt32(reader.GetOrdinal("max_retries")),
+                    RetryOn5xx = reader.GetBoolean(reader.GetOrdinal("retry_on_5xx")),
                     CreatedUtc = reader.GetDateTime(reader.GetOrdinal("created_utc"))
                 };
                 if (!reader.IsDBNull(reader.GetOrdinal("name")))
                     e.Name = reader.GetString(reader.GetOrdinal("name"));
                 if (!reader.IsDBNull(reader.GetOrdinal("auth_context_header")))
                     e.AuthContextHeader = reader.GetString(reader.GetOrdinal("auth_context_header"));
+                if (!reader.IsDBNull(reader.GetOrdinal("sticky_session_header")))
+                    e.StickySessionHeader = reader.GetString(reader.GetOrdinal("sticky_session_header"));
                 if (!reader.IsDBNull(reader.GetOrdinal("modified_utc")))
                     e.ModifiedUtc = reader.GetDateTime(reader.GetOrdinal("modified_utc"));
                 return (e as T)!;
@@ -1026,8 +1091,14 @@ namespace Switchboard.Core.Database.SqlServer
                     Id = reader.GetInt32(reader.GetOrdinal("id")),
                     EndpointIdentifier = reader.GetString(reader.GetOrdinal("endpoint_identifier")),
                     OriginIdentifier = reader.GetString(reader.GetOrdinal("origin_identifier")),
-                    SortOrder = reader.GetInt32(reader.GetOrdinal("sort_order"))
+                    SortOrder = reader.GetInt32(reader.GetOrdinal("sort_order")),
+                    Weight = reader.GetInt32(reader.GetOrdinal("weight")),
+                    Priority = reader.GetInt32(reader.GetOrdinal("priority"))
                 };
+                if (!reader.IsDBNull(reader.GetOrdinal("canary_header")))
+                    m.CanaryHeader = reader.GetString(reader.GetOrdinal("canary_header"));
+                if (!reader.IsDBNull(reader.GetOrdinal("canary_value")))
+                    m.CanaryValue = reader.GetString(reader.GetOrdinal("canary_value"));
                 return (m as T)!;
             }
 

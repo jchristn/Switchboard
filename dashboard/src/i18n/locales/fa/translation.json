@@ -400,7 +400,13 @@
     "saveError": "ذخیره مبدأ ناموفق بود",
     "deleteError": "حذف مبدأ ناموفق بود",
     "empty": "هیچ سرور مبدئی پیکربندی نشده است",
-    "emptyHint": "یک سرور مبدأ اضافه کنید تا Switchboard به آن پروکسی کند."
+    "emptyHint": "یک سرور مبدأ اضافه کنید تا Switchboard به آن پروکسی کند.",
+    "slowStart": "شروع آهسته (ms)",
+    "slowStartHint": "ترافیک را در این بازه به‌تدریج به مبدأ تازه‌سالم هدایت می‌کند. ۰ غیرفعال است.",
+    "maxFailures": "آستانه اخراج",
+    "maxFailuresHint": "تعداد درخواست‌های ناموفق متوالی پیش از اخراج مبدأ. ۰ غیرفعال است.",
+    "ejectionDuration": "مدت اخراج (ms)",
+    "ejectionDurationHint": "مدت زمانی که مبدأ اخراج‌شده از چرخش خارج می‌ماند."
   },
   "endpoints": {
     "title": "نقاط پایانی API",
@@ -467,7 +473,27 @@
     "detachTitle": "جدا کردن مبدأ",
     "detachMessage": "مبدأ «{{name}}» از این نقطه پایانی جدا شود؟",
     "originsEmpty": "هیچ سرور مبدئی به این نقطه پایانی متصل نشده است",
-    "originsEmptyHint": "یک سرور مبدأ متصل کنید تا مسیریابی درخواست‌ها فعال شود."
+    "originsEmptyHint": "یک سرور مبدأ متصل کنید تا مسیریابی درخواست‌ها فعال شود.",
+    "leastConnections": "کمترین اتصال",
+    "powerOfTwoChoices": "انتخاب از میان دو",
+    "weighted": "وزن‌دار",
+    "latencyBased": "تأخیر (EWMA)",
+    "maxRetries": "حداکثر تلاش مجدد",
+    "maxRetriesHint": "درخواست‌های idempotent ناموفق را روی مبداهای دیگر دوباره تلاش کن.",
+    "stickySessionEnabled": "نشست چسبان",
+    "stickySessionHeader": "هدر نشست چسبان",
+    "stickySessionHeaderHint": "هدری که مقدارش کلاینت را به یک مبدأ می‌چسباند. خالی یعنی IP کلاینت.",
+    "stickySessionHeaderPlaceholder": "مثلاً X-Session-Id",
+    "retryOn5xx": "تلاش مجدد در 5xx",
+    "weight": "وزن",
+    "priority": "اولویت",
+    "drained": "تخلیه‌شده",
+    "canary": "کاناری",
+    "canaryHeader": "هدر کاناری",
+    "canaryValue": "مقدار کاناری",
+    "canaryHeaderPlaceholder": "هدر کاناری (اختیاری)",
+    "canaryValuePlaceholder": "مقدار کاناری",
+    "mappingParamsHint": "وزن سهم ترافیک را تعیین می‌کند (۰ تخلیه). اولویت لایه‌های پشتیبان می‌سازد. کاناری درخواست‌های منطبق را به این مبدأ می‌چسباند."
   },
   "users": {
     "title": "کاربران",

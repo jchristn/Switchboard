@@ -21,7 +21,7 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
 ## Table of Contents
 
 - [What is Switchboard?](#what-is-switchboard)
-- [What's New in v4.1.0](#whats-new-in-v410)
+- [What's New in v5.0.0](#whats-new-in-v500)
 - [Key Features](#key-features)
 - [Who is it for?](#who-is-it-for)
 - [When to Use Switchboard](#when-to-use-switchboard)
@@ -99,12 +99,14 @@ Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers 
 
 ---
 
-## What's New in v4.1.0
+## What's New in v5.0.0
 
-**Current version: `v4.1.0`.** See the [change log](CHANGELOG.md) for the complete history.
+**Current version: `v5.0.0`.** See the [change log](CHANGELOG.md) for the complete history.
 
 Highlights in this release:
 
+- **Intelligent routing and load balancing** – Four new load-balancing modes (least-connections, power-of-two-choices, weighted, and latency-based) plus passive health checks with outlier ejection, automatic retries/failover, sticky sessions, slow start, and per-endpoint weighted canary with header routing. See **[LOAD_BALANCING.md](LOAD_BALANCING.md)** for the full picture.
+- **Live origin health monitoring** – Per-origin uptime, a rolling check-history histogram, and last-error surfaced through `GET /origins/health` and the dashboard.
 - **Live configuration** – Origins, endpoints, routes, and rewrites created through the dashboard or management API now take effect on the running proxy automatically, no restart required.
 - **Reworked management dashboard** – Grouped navigation, an operator overview with KPI cards and a request-activity chart, a request-history inspector, a form-based settings editor that flags restart-required changes, an OpenAPI-driven API Explorer, and a first-run setup wizard.
 - **Expanded internationalization** – The dashboard ships in nine languages: English, Spanish, German, French, Portuguese, Mandarin, Cantonese, Japanese, and Farsi (right-to-left).
@@ -116,7 +118,7 @@ Highlights in this release:
 
 ## Key Features
 
-- ✅ **Flexible Load Balancing** – Round-robin or random distribution across healthy origin servers
+- ✅ **Intelligent Load Balancing** – Round-robin, random, least-connections, power-of-two-choices, weighted, and latency-based (EWMA), with priority tiers, sticky sessions, slow start, passive ejection, retries/failover, and weighted canary ([details](LOAD_BALANCING.md))
 - ✅ **Automatic Health Checks** – Continuous monitoring with configurable thresholds
 - ✅ **Rate Limiting** – Per-origin concurrent request limits and throttling
 - ✅ **Custom Authentication** – Callback-based auth/authz with context forwarding
@@ -175,7 +177,7 @@ Switchboard is designed for:
 Switchboard provides:
 
 1. **Request Routing** – Match incoming requests to API endpoints using parameterized URLs
-2. **Load Balancing** – Distribute traffic across multiple origin servers (round-robin or random)
+2. **Load Balancing** – Distribute traffic across origin servers with round-robin, random, least-connections, power-of-two-choices, weighted, or latency-based selection, plus priority tiers, sticky sessions, and weighted canary (see [LOAD_BALANCING.md](LOAD_BALANCING.md))
 3. **Health Monitoring** – Automatically detect and route around unhealthy backends
 4. **Rate Limiting** – Enforce concurrent request limits per origin server
 5. **Authentication** – Invoke custom callbacks for auth/authz decisions
@@ -258,10 +260,10 @@ Pull from Docker Hub:
 
 ```bash
 # Switchboard Server
-docker pull jchristn77/switchboard:v4.1.0
+docker pull jchristn77/switchboard:v5.0.0
 
 # Switchboard Dashboard (Web UI)
-docker pull jchristn77/switchboard-ui:v4.1.0
+docker pull jchristn77/switchboard-ui:v5.0.0
 ```
 
 Docker images:
@@ -605,7 +607,7 @@ docker run -d \
   -v $(pwd)/sb.json:/app/sb.json \
   -v $(pwd)/logs:/app/logs \
   -v $(pwd)/data:/app/data \
-  jchristn77/switchboard:v4.1.0
+  jchristn77/switchboard:v5.0.0
 ```
 
 #### Building the Dashboard Image

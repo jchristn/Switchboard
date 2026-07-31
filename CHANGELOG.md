@@ -1,7 +1,36 @@
 # Change Log
 
-## Unreleased
+## Current Version
 
+v5.0.0
+
+### Changes in v5.0.0
+
+- Intelligent routing and load balancing. Four new per-endpoint load-balancing modes join round-robin and
+  random: **least-connections**, **power-of-two-choices**, **weighted**, and **latency-based** (EWMA). The
+  gateway now applies a layered selection pipeline per request — explicit canary header match → availability
+  (health, passive ejection, drain) → priority tier → sticky-session affinity → mode — documented in the new
+  [LOAD_BALANCING.md](LOAD_BALANCING.md)
+- **Passive health checks / outlier ejection**: an origin returning transport errors or 5xx on real traffic is
+  ejected from routing after `MaxFailures` consecutive failures for `EjectionDurationMs`, independent of the
+  active health probe
+- **Automatic retries / failover**: a failed idempotent request (transport error or, optionally, a 5xx) is
+  retried against another origin up to the endpoint's `MaxRetries`, never after any bytes have been sent
+- **Weight and priority per endpoint-origin mapping**: weights split traffic proportionally (0 drains an
+  origin); priority tiers create backups used only when the primary tier is down — enabling true per-endpoint
+  weighted canary
+- **Canary header routing**: a per-mapping `CanaryHeader`/`CanaryValue` pins matching requests to a specific
+  origin for explicit blue-green/canary targeting
+- **Sticky sessions**: consistent-hash affinity by a named header (or client IP) pins a client to one origin
+  regardless of the base mode
+- **Slow start**: a newly-healthy origin's effective weight ramps up over `SlowStartMs` so a cold backend is
+  not flooded the instant it recovers
+- Added the backing configuration (origin `SlowStartMs`/`MaxFailures`/`EjectionDurationMs`; endpoint
+  `StickySessionEnabled`/`StickySessionHeader`/`MaxRetries`/`RetryOn5xx`; mapping `Weight`/`Priority`/
+  `CanaryHeader`/`CanaryValue`) across all four database providers with idempotent startup migrations, the
+  dashboard forms, the OpenAPI document, the Postman collection, and `REST_API.md`
+- Added positive and negative tests for every capability: deterministic `OriginSelector` unit tests plus
+  real-daemon integration tests that boot Switchboard in front of live origins on random ports
 - Exposed origin server health checks through the management API and dashboard. Two new read-only,
   bearer-authenticated endpoints — `GET /origins/health` (all origins) and `GET /origins/{guid}/health`
   (single origin) — return live health with uptime percentage, a rolling 24-hour window of individual
@@ -38,9 +67,7 @@
   single sample per interval even if a monitor were ever superseded or leaked. Strengthened the
   shared-target test to assert the sample rate (once per interval, not once per subscriber)
 
-## Current Version
-
-v4.1.0
+## Previous Versions
 
 ### Changes in v4.1.0
 

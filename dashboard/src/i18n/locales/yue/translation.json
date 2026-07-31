@@ -400,7 +400,13 @@
     "saveError": "無法儲存來源",
     "deleteError": "無法刪除來源",
     "empty": "未有設定來源伺服器",
-    "emptyHint": "新增一個來源伺服器俾 Switchboard 代理。"
+    "emptyHint": "新增一個來源伺服器俾 Switchboard 代理。",
+    "slowStart": "慢啟動 (ms)",
+    "slowStartHint": "喺呢個時間窗口內逐步將流量分配俾啱恢復嘅源。0 代表停用。",
+    "maxFailures": "驅逐閾值",
+    "maxFailuresHint": "連續失敗幾多次請求後驅逐該源。0 代表停用。",
+    "ejectionDuration": "驅逐時長 (ms)",
+    "ejectionDurationHint": "被驅逐嘅源幾耐之後先重新參與輪換。"
   },
   "endpoints": {
     "title": "API 端點",
@@ -467,7 +473,27 @@
     "detachTitle": "解除附加來源",
     "detachMessage": "由此端點解除附加來源「{{name}}」？",
     "originsEmpty": "此端點未有附加來源伺服器",
-    "originsEmptyHint": "附加一個來源伺服器以啟用請求路由。"
+    "originsEmptyHint": "附加一個來源伺服器以啟用請求路由。",
+    "leastConnections": "最少連線",
+    "powerOfTwoChoices": "二選一（P2C）",
+    "weighted": "加權",
+    "latencyBased": "延遲 (EWMA)",
+    "maxRetries": "最大重試次數",
+    "maxRetriesHint": "對失敗嘅冪等請求重試去其他源。",
+    "stickySessionEnabled": "會話保持",
+    "stickySessionHeader": "會話保持請求頭",
+    "stickySessionHeaderHint": "用其值將客戶端固定到某個源嘅請求頭。留空就用客戶端 IP。",
+    "stickySessionHeaderPlaceholder": "例如 X-Session-Id",
+    "retryOn5xx": "5xx 時重試",
+    "weight": "權重",
+    "priority": "優先級",
+    "drained": "已排空",
+    "canary": "金絲雀",
+    "canaryHeader": "金絲雀請求頭",
+    "canaryValue": "金絲雀值",
+    "canaryHeaderPlaceholder": "金絲雀請求頭（可選）",
+    "canaryValuePlaceholder": "金絲雀值",
+    "mappingParamsHint": "權重決定流量份額（0 為排空）。優先級用嚟分層備份。金絲雀將匹配嘅請求固定到該源。"
   },
   "users": {
     "title": "用戶",

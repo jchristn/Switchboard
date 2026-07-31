@@ -243,6 +243,55 @@ namespace Switchboard.Core.Models
         }
 
         /// <summary>
+        /// Duration, in milliseconds, over which a newly-healthy origin's effective routing weight ramps
+        /// from a small floor up to its full weight (slow start), so a cold backend is not flooded the
+        /// instant it becomes healthy. Default is 0 (disabled). Minimum is 0. Maximum is 600000 (10 minutes).
+        /// Values are clamped into range.
+        /// </summary>
+        public int SlowStartMs
+        {
+            get => _SlowStartMs;
+            set
+            {
+                if (value < 0) value = 0;
+                if (value > 600000) value = 600000;
+                _SlowStartMs = value;
+            }
+        }
+
+        /// <summary>
+        /// Number of consecutive failed proxied requests (transport errors or, when enabled, upstream 5xx)
+        /// that ejects this origin from the routing pool via passive health checking. Default is 5.
+        /// Minimum is 0 (0 disables passive ejection). Maximum is 1000. Values are clamped into range.
+        /// </summary>
+        public int MaxFailures
+        {
+            get => _MaxFailures;
+            set
+            {
+                if (value < 0) value = 0;
+                if (value > 1000) value = 1000;
+                _MaxFailures = value;
+            }
+        }
+
+        /// <summary>
+        /// Duration, in milliseconds, that an origin remains ejected from the routing pool after passive
+        /// health checking trips, before it is eligible for traffic again. Default is 30000 (30 seconds).
+        /// Minimum is 1000. Maximum is 3600000 (1 hour). Values are clamped into range.
+        /// </summary>
+        public int EjectionDurationMs
+        {
+            get => _EjectionDurationMs;
+            set
+            {
+                if (value < 1000) value = 1000;
+                if (value > 3600000) value = 3600000;
+                _EjectionDurationMs = value;
+            }
+        }
+
+        /// <summary>
         /// Timestamp when this record was created.
         /// </summary>
         public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
@@ -274,6 +323,9 @@ namespace Switchboard.Core.Models
         private int _RateLimitRequestsThreshold = 30;
         private int _MaxCaptureRequestBodySize = 65536;
         private int _MaxCaptureResponseBodySize = 65536;
+        private int _SlowStartMs = 0;
+        private int _MaxFailures = 5;
+        private int _EjectionDurationMs = 30000;
 
         #endregion
 

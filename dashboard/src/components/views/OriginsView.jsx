@@ -34,6 +34,9 @@ const EMPTY_FORM = {
   healthyThreshold: 1,
   maxParallelRequests: 10,
   rateLimitRequestsThreshold: 30,
+  slowStartMs: 0,
+  maxFailures: 5,
+  ejectionDurationMs: 30000,
 };
 
 function DetailItem({ label, children, full = false, mono = false }) {
@@ -144,6 +147,9 @@ export default function OriginsView() {
       healthyThreshold: row.healthyThreshold ?? 1,
       maxParallelRequests: row.maxParallelRequests ?? 10,
       rateLimitRequestsThreshold: row.rateLimitRequestsThreshold ?? 30,
+      slowStartMs: row.slowStartMs ?? 0,
+      maxFailures: row.maxFailures ?? 5,
+      ejectionDurationMs: row.ejectionDurationMs ?? 30000,
     });
     setFormOpen(true);
   };
@@ -298,7 +304,7 @@ export default function OriginsView() {
       <Modal
         open={formOpen}
         onClose={() => setFormOpen(false)}
-        size="large"
+        size="xl"
         title={editing ? t('origins.editTitle') : t('origins.createTitle')}
         footer={
           <>
@@ -442,6 +448,43 @@ export default function OriginsView() {
               onChange={(e) => setField('rateLimitRequestsThreshold', parseInt(e.target.value, 10) || 0)}
             />
           </div>
+
+          <div className="rv-form-grid">
+            <div className="form-group">
+              <label className="form-label" htmlFor="o-slowstart">{t('origins.slowStart')}</label>
+              <input
+                id="o-slowstart"
+                type="number"
+                className="form-input"
+                value={form.slowStartMs}
+                onChange={(e) => setField('slowStartMs', parseInt(e.target.value, 10) || 0)}
+              />
+              <span className="form-hint">{t('origins.slowStartHint')}</span>
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="o-maxfail">{t('origins.maxFailures')}</label>
+              <input
+                id="o-maxfail"
+                type="number"
+                className="form-input"
+                value={form.maxFailures}
+                onChange={(e) => setField('maxFailures', parseInt(e.target.value, 10) || 0)}
+              />
+              <span className="form-hint">{t('origins.maxFailuresHint')}</span>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="o-eject">{t('origins.ejectionDuration')}</label>
+            <input
+              id="o-eject"
+              type="number"
+              className="form-input"
+              value={form.ejectionDurationMs}
+              onChange={(e) => setField('ejectionDurationMs', parseInt(e.target.value, 10) || 0)}
+            />
+            <span className="form-hint">{t('origins.ejectionDurationHint')}</span>
+          </div>
         </form>
       </Modal>
 
@@ -482,6 +525,9 @@ export default function OriginsView() {
             <DetailItem label={t('origins.rateLimit')}>{viewRow.rateLimitRequestsThreshold ?? '—'}</DetailItem>
             <DetailItem label={t('origins.unhealthyThreshold')}>{viewRow.unhealthyThreshold ?? '—'}</DetailItem>
             <DetailItem label={t('origins.healthyThreshold')}>{viewRow.healthyThreshold ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.slowStart')}>{viewRow.slowStartMs ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.maxFailures')}>{viewRow.maxFailures ?? '—'}</DetailItem>
+            <DetailItem label={t('origins.ejectionDuration')}>{viewRow.ejectionDurationMs ?? '—'}</DetailItem>
           </div>
         )}
       </Modal>

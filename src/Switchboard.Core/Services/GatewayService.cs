@@ -48,6 +48,22 @@
             set => _Logging = value ?? throw new ArgumentNullException(nameof(Logging));
         }
 
+        /// <summary>
+        /// Smoothing factor (alpha) for the per-origin exponentially-weighted moving average of response
+        /// latency used by the <see cref="LoadBalancingMode.LatencyBased"/> mode. Higher values weight
+        /// recent samples more heavily. Default is 0.3. Minimum is 0.01. Maximum is 1.0. Values are clamped.
+        /// </summary>
+        public double EwmaSmoothingFactor
+        {
+            get => _EwmaSmoothingFactor;
+            set
+            {
+                if (value < 0.01) value = 0.01;
+                if (value > 1.0) value = 1.0;
+                _EwmaSmoothingFactor = value;
+            }
+        }
+
         #endregion
 
         #region Private-Members
@@ -58,6 +74,7 @@
         private LoggingModule _Logging = null;
         private Serializer _Serializer = null;
         private Random _Random = new Random(Guid.NewGuid().GetHashCode());
+        private double _EwmaSmoothingFactor = 0.3;
         private bool _IsDisposed = false;
 
         private const int BUFFER_SIZE = 65536;
@@ -314,35 +331,7 @@
                     }
                 }
 
-                OriginServer origin = FindOriginServer(match.Endpoint);
-                if (origin == null)
-                {
-                    _Logging.Warn(_Header + "no origin server found for " + ctx.Request.Method.ToString() + " " + ctx.Request.Url.RawWithoutQuery);
-                    ctx.Response.StatusCode = 502;
-                    ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.BadGateway, null, "No origin servers are available to service your request"), true));
-
-                    if (captureContext != null)
-                    {
-                        captureContext.StatusCode = 502;
-                        captureContext.ErrorMessage = "No origin servers available";
-                    }
-                    return;
-                }
-
-                if (captureContext != null)
-                {
-                    captureContext.OriginIdentifier = origin.Identifier;
-                    captureContext.Origin = origin;
-                }
-
-                if (captureContext != null
-                    && !ctx.Request.ChunkedTransfer
-                    && (_Settings.RequestHistory.CaptureRequestBody || match.Endpoint.CaptureRequestBody || origin.CaptureRequestBody))
-                {
-                    CaptureBufferedRequestBody(captureContext, ctx.Request.DataAsBytes);
-                }
-
+                // The request-size limit is origin-independent, so enforce it before selecting an origin.
                 if (match.Endpoint.MaxRequestBodySize > 0 && ctx.Request.ContentLength > match.Endpoint.MaxRequestBodySize)
                 {
                     _Logging.Warn(_Header + "request too large from " + ctx.Request.Source.IpAddress + ": " + ctx.Request.ContentLength + " bytes");
@@ -358,41 +347,85 @@
                     return;
                 }
 
-                int totalRequests =
-                    Volatile.Read(ref origin.ActiveRequests) +
-                    Volatile.Read(ref origin.PendingRequests);
+                // Select an origin and proxy the request, retrying against other origins on failure when the
+                // endpoint permits it and the method is idempotent. Never retry once bytes have been sent.
+                HashSet<string> triedOrigins = new HashSet<string>(StringComparer.Ordinal);
+                bool idempotent = IsIdempotentMethod(ctx.Request.Method);
+                int maxAttempts = 1 + (idempotent ? match.Endpoint.MaxRetries : 0);
+                ProxyOutcome outcome = ProxyOutcome.Failed;
 
-                if (totalRequests > origin.RateLimitRequestsThreshold)
+                for (int attempt = 0; attempt < maxAttempts; attempt++)
                 {
-                    _Logging.Warn(_Header + "too many active requests for origin " + origin.Identifier + ", sending 429 response to request from " + ctx.Request.Source.IpAddress);
-                    ctx.Response.StatusCode = 429;
-                    ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.SlowDown)));
+                    OriginServer origin = FindOriginServer(match.Endpoint, ctx, triedOrigins);
+                    if (origin == null) break;
+                    triedOrigins.Add(origin.Identifier);
 
                     if (captureContext != null)
                     {
-                        captureContext.StatusCode = 429;
-                        captureContext.ErrorMessage = "Rate limit exceeded";
+                        captureContext.OriginIdentifier = origin.Identifier;
+                        captureContext.Origin = origin;
                     }
-                    return;
+
+                    if (captureContext != null
+                        && !ctx.Request.ChunkedTransfer
+                        && (_Settings.RequestHistory.CaptureRequestBody || match.Endpoint.CaptureRequestBody || origin.CaptureRequestBody))
+                    {
+                        CaptureBufferedRequestBody(captureContext, ctx.Request.DataAsBytes);
+                    }
+
+                    int totalRequests =
+                        Volatile.Read(ref origin.ActiveRequests) +
+                        Volatile.Read(ref origin.PendingRequests);
+
+                    if (totalRequests > origin.RateLimitRequestsThreshold)
+                    {
+                        _Logging.Warn(_Header + "too many active requests for origin " + origin.Identifier + ", sending 429 response to request from " + ctx.Request.Source.IpAddress);
+                        ctx.Response.StatusCode = 429;
+                        ctx.Response.ContentType = Constants.JsonContentType;
+                        await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.SlowDown)));
+
+                        if (captureContext != null)
+                        {
+                            captureContext.StatusCode = 429;
+                            captureContext.ErrorMessage = "Rate limit exceeded";
+                        }
+                        return;
+                    }
+
+                    Interlocked.Increment(ref origin.PendingRequests);
+
+                    bool lastAttempt = (attempt == maxAttempts - 1);
+                    outcome = await ProxyRequest(
+                        requestGuid,
+                        ctx,
+                        match,
+                        origin,
+                        authContext,
+                        captureContext,
+                        lastAttempt).ConfigureAwait(false);
+
+                    if (outcome == ProxyOutcome.Completed) break;
+
+                    if (outcome == ProxyOutcome.FailedResponseStarted)
+                    {
+                        _Logging.Warn(_Header + "streaming response from " + origin.Identifier + " failed after bytes were sent; cannot retry request " + requestGuid.ToString());
+                        if (captureContext != null)
+                        {
+                            captureContext.StatusCode = ctx.Response.StatusCode;
+                            captureContext.ErrorMessage = "Origin response failed after response started";
+                        }
+                        return;
+                    }
+
+                    _Logging.Warn(_Header + "attempt " + (attempt + 1) + " to origin " + origin.Identifier + " failed for endpoint " + match.Endpoint.Identifier + (lastAttempt ? "; no further origins to try" : "; retrying against another origin"));
                 }
 
-                Interlocked.Increment(ref origin.PendingRequests);
-
-                bool responseReceived = await ProxyRequest(
-                    requestGuid,
-                    ctx,
-                    match,
-                    origin,
-                    authContext,
-                    captureContext);
-
-                if (!responseReceived)
+                if (outcome != ProxyOutcome.Completed)
                 {
-                    _Logging.Warn(_Header + "no response or exception from " + origin.Identifier + " for API endpoint " + match.Endpoint.Identifier);
+                    _Logging.Warn(_Header + "no successful response for API endpoint " + match.Endpoint.Identifier + " after " + triedOrigins.Count + " origin attempt(s)");
                     ctx.Response.StatusCode = 502;
                     ctx.Response.ContentType = Constants.JsonContentType;
-                    await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.BadGateway), true));
+                    await ctx.Response.Send(_Serializer.SerializeJson(new SwitchboardApiErrorResponse(ApiErrorEnum.BadGateway, null, "No origin servers are available to service your request"), true));
 
                     if (captureContext != null)
                     {
@@ -717,55 +750,69 @@
             return null;
         }
 
-        private OriginServer FindOriginServer(ApiEndpoint endpoint)
+        private OriginServer FindOriginServer(ApiEndpoint endpoint, HttpContextBase ctx, ISet<string> exclude)
         {
             if (endpoint == null) return null;
-            if (endpoint.OriginServers == null || endpoint.OriginServers.Count < 1) return null;
 
-            OriginServer origin = null;
+            string clientIp = ctx?.Request?.Source?.IpAddress;
+            System.Collections.Specialized.NameValueCollection headers = ctx?.Request?.Headers;
 
             lock (endpoint.Lock)
             {
-                List<OriginServer> healthyOrigins = _Settings.Origins
-                    .Where(b => endpoint.OriginServers.Contains(b.Identifier))
-                    .Where(b =>
-                    {
-                        lock (b.Lock)
-                        {
-                            return b.Healthy;
-                        }
-                    })
-                    .ToList();
+                return OriginSelector.Select(endpoint, _Settings.Origins, clientIp, headers, exclude, _Random, DateTime.UtcNow);
+            }
+        }
 
-                if (healthyOrigins.Count < 1)
+        // Idempotent methods may be safely retried against another origin after a failed attempt.
+        private static bool IsIdempotentMethod(WatsonWebserver.Core.HttpMethod method)
+        {
+            switch (method)
+            {
+                case WatsonWebserver.Core.HttpMethod.GET:
+                case WatsonWebserver.Core.HttpMethod.HEAD:
+                case WatsonWebserver.Core.HttpMethod.OPTIONS:
+                case WatsonWebserver.Core.HttpMethod.PUT:
+                case WatsonWebserver.Core.HttpMethod.DELETE:
+                case WatsonWebserver.Core.HttpMethod.TRACE:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        // Record a proxied-request outcome onto the origin for passive health checking and latency-aware
+        // load balancing. A null response or a 5xx status is a failure; enough consecutive failures ejects
+        // the origin from routing for its ejection window. Successful latencies feed the EWMA.
+        private void RecordProxyOutcome(OriginServer origin, int statusCode, bool hadResponse, double latencyMs)
+        {
+            bool failure = !hadResponse || statusCode >= 500;
+            DateTime now = DateTime.UtcNow;
+
+            lock (origin.Lock)
+            {
+                if (!failure)
                 {
-                    _Logging.Warn(_Header + "no healthy origins found for endpoint " + endpoint.Identifier);
-                    return null;
-                }
-                else
-                {
-                    if (endpoint.LoadBalancing == LoadBalancingMode.Random)
-                    {
-                        int index = _Random.Next(0, healthyOrigins.Count);
-                        endpoint.LastIndex = index;
-                        origin = healthyOrigins[index];
-                        if (origin != default(OriginServer)) return origin;
-                        return null;
-                    }
-                    else if (endpoint.LoadBalancing == LoadBalancingMode.RoundRobin)
-                    {
-                        if (endpoint.LastIndex >= healthyOrigins.Count) endpoint.LastIndex = 0;
-                        origin = healthyOrigins[endpoint.LastIndex];
+                    origin.ConsecutiveProxyFailures = 0;
+                    origin.EjectedUntilUtc = null;
 
-                        if ((endpoint.LastIndex + 1) >= healthyOrigins.Count) endpoint.LastIndex = 0;
-                        else endpoint.LastIndex = endpoint.LastIndex + 1;
-
-                        if (origin != default(OriginServer)) return origin;
-                        return null;
+                    if (!origin.HasLatencySample)
+                    {
+                        origin.EwmaLatencyMs = latencyMs;
+                        origin.HasLatencySample = true;
                     }
                     else
                     {
-                        throw new ArgumentException("Unknown load balancing scheme '" + endpoint.LoadBalancing.ToString() + "'.");
+                        origin.EwmaLatencyMs = (_EwmaSmoothingFactor * latencyMs) + ((1.0 - _EwmaSmoothingFactor) * origin.EwmaLatencyMs);
+                    }
+                }
+                else
+                {
+                    origin.ConsecutiveProxyFailures++;
+                    if (origin.MaxFailures > 0 && origin.ConsecutiveProxyFailures >= origin.MaxFailures)
+                    {
+                        origin.EjectedUntilUtc = now.AddMilliseconds(origin.EjectionDurationMs);
+                        origin.ConsecutiveProxyFailures = 0;
+                        _Logging.Warn(_Header + "origin " + origin.Identifier + " ejected from routing for " + origin.EjectionDurationMs + "ms after " + origin.MaxFailures + " consecutive failures");
                     }
                 }
             }
@@ -798,17 +845,19 @@
             }
         }
 
-        private async Task<bool> ProxyRequest(
+        private async Task<ProxyOutcome> ProxyRequest(
             Guid requestGuid,
             HttpContextBase ctx,
             MatchingApiEndpoint endpoint,
             OriginServer origin,
             AuthContext authResult,
-            RequestCaptureContext captureContext = null)
+            RequestCaptureContext captureContext = null,
+            bool isLastAttempt = true)
         {
             _Logging.Debug(_Header + "proxying request to " + origin.Identifier + " for endpoint " + endpoint.Endpoint.Identifier + " for request " + requestGuid.ToString());
 
             RestResponse resp = null;
+            bool responseStarted = false;
 
             using (Timestamp ts = new Timestamp())
             {
@@ -1005,6 +1054,19 @@
 
                             #endregion
 
+                            // When the response is a retryable failure (5xx) and another attempt remains,
+                            // do not forward it to the client; return Failed so the caller retries another
+                            // origin. Streaming responses cannot be deferred once received.
+                            bool isStreamingResponse = resp.ServerSentEvents || resp.ChunkedTransferEncoding;
+                            if (!isLastAttempt
+                                && !isStreamingResponse
+                                && endpoint.Endpoint.RetryOn5xx
+                                && resp.StatusCode >= 500)
+                            {
+                                _Logging.Debug(_Header + "deferring HTTP " + resp.StatusCode + " from origin " + origin.Identifier + " for retry of request " + requestGuid.ToString());
+                                return ProxyOutcome.Failed;
+                            }
+
                             #region Capture-Response-Data
 
                             if (captureContext != null)
@@ -1062,6 +1124,8 @@
                             #endregion
 
                             #region Send-Response
+
+                            responseStarted = true;
 
                             if (resp.ServerSentEvents)
                             {
@@ -1138,12 +1202,12 @@
 
                             #endregion
 
-                            return true;
+                            return ProxyOutcome.Completed;
                         }
                         else
                         {
                             _Logging.Warn(_Header + "no response from origin " + url);
-                            return false;
+                            return ProxyOutcome.Failed;
                         }
 
                         #endregion
@@ -1158,7 +1222,7 @@
                         + " for request " + requestGuid.ToString()
                         + ": " + hre.Message);
 
-                    return false;
+                    return responseStarted ? ProxyOutcome.FailedResponseStarted : ProxyOutcome.Failed;
                 }
                 catch (SocketException se)
                 {
@@ -1169,7 +1233,7 @@
                         + " for request " + requestGuid.ToString()
                         + ": " + se.Message);
 
-                    return false;
+                    return responseStarted ? ProxyOutcome.FailedResponseStarted : ProxyOutcome.Failed;
                 }
                 catch (Exception e)
                 {
@@ -1181,7 +1245,7 @@
                         + Environment.NewLine
                         + e.ToString());
 
-                    return false;
+                    return responseStarted ? ProxyOutcome.FailedResponseStarted : ProxyOutcome.Failed;
                 }
                 finally
                 {
@@ -1193,6 +1257,10 @@
                         + "endpoint " + endpoint.Endpoint.Identifier + " "
                         + (resp != null ? resp.StatusCode : "0") + " "
                         + "(" + ts.TotalMs + "ms)");
+
+                    // Feed the outcome into passive health checking and latency-aware balancing before the
+                    // response is disposed. A null response or a 5xx status counts as a failure.
+                    RecordProxyOutcome(origin, resp != null ? resp.StatusCode : 0, resp != null, (double)ts.TotalMs);
 
                     if (resp != null) resp.Dispose();
 

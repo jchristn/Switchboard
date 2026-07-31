@@ -656,7 +656,10 @@ namespace Switchboard.Core.Services
                         ["UnhealthyThreshold"] = new Dictionary<string, object> { ["type"] = "integer" },
                         ["HealthyThreshold"] = new Dictionary<string, object> { ["type"] = "integer" },
                         ["MaxParallelRequests"] = new Dictionary<string, object> { ["type"] = "integer" },
-                        ["RateLimitRequestsThreshold"] = new Dictionary<string, object> { ["type"] = "integer" }
+                        ["RateLimitRequestsThreshold"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["SlowStartMs"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "Slow-start ramp window in ms (0 disables)." },
+                        ["MaxFailures"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "Consecutive proxied failures before passive ejection (0 disables)." },
+                        ["EjectionDurationMs"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "How long an ejected origin stays out of rotation, in ms." }
                     }
                 },
                 ["HealthCheckRecord"] = new Dictionary<string, object>
@@ -705,10 +708,14 @@ namespace Switchboard.Core.Services
                         ["GUID"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
                         ["Identifier"] = new Dictionary<string, object> { ["type"] = "string" },
                         ["Name"] = new Dictionary<string, object> { ["type"] = "string" },
-                        ["LoadBalancing"] = new Dictionary<string, object> { ["type"] = "string", ["enum"] = new List<string> { "RoundRobin", "Random" } },
+                        ["LoadBalancingMode"] = new Dictionary<string, object> { ["type"] = "string", ["enum"] = new List<string> { "RoundRobin", "Random", "LeastConnections", "PowerOfTwoChoices", "Weighted", "LatencyBased" } },
                         ["TimeoutMs"] = new Dictionary<string, object> { ["type"] = "integer" },
                         ["BlockHttp10"] = new Dictionary<string, object> { ["type"] = "boolean" },
-                        ["MaxRequestBodySize"] = new Dictionary<string, object> { ["type"] = "integer", ["format"] = "int64" }
+                        ["MaxRequestBodySize"] = new Dictionary<string, object> { ["type"] = "integer", ["format"] = "int64" },
+                        ["StickySessionEnabled"] = new Dictionary<string, object> { ["type"] = "boolean", ["description"] = "Enable session affinity via consistent hashing." },
+                        ["StickySessionHeader"] = new Dictionary<string, object> { ["type"] = "string", ["nullable"] = true, ["description"] = "Header whose value is the affinity key; null uses client IP." },
+                        ["MaxRetries"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "Additional origins to try on failure (idempotent methods only)." },
+                        ["RetryOn5xx"] = new Dictionary<string, object> { ["type"] = "boolean", ["description"] = "Treat upstream 5xx as retryable." }
                     }
                 },
                 ["EndpointRoute"] = new Dictionary<string, object>
@@ -729,8 +736,15 @@ namespace Switchboard.Core.Services
                     ["properties"] = new Dictionary<string, object>
                     {
                         ["Id"] = new Dictionary<string, object> { ["type"] = "integer" },
-                        ["EndpointGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
-                        ["OriginGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" }
+                        ["EndpointIdentifier"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["OriginIdentifier"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["EndpointGUID"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["OriginGUID"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["SortOrder"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["Weight"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "Relative routing weight (0 drains the origin)." },
+                        ["Priority"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "Priority tier; lower is preferred, higher tiers are backups." },
+                        ["CanaryHeader"] = new Dictionary<string, object> { ["type"] = "string", ["nullable"] = true, ["description"] = "Header name that pins matching requests to this origin." },
+                        ["CanaryValue"] = new Dictionary<string, object> { ["type"] = "string", ["nullable"] = true, ["description"] = "Required value of the canary header." }
                     }
                 },
                 ["UrlRewrite"] = new Dictionary<string, object>

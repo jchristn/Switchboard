@@ -74,7 +74,7 @@ namespace LoadGenerator
             "PostmanRuntime/7.37.0",
             "okhttp/4.12.0",
             "python-requests/2.31.0",
-            "Switchboard-Client/4.1.0"
+            "Switchboard-Client/5.0.0"
         };
 
         private static readonly string[] _SearchTerms =

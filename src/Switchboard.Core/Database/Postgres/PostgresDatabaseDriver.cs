@@ -171,6 +171,9 @@ namespace Switchboard.Core.Database.Postgres
                     capture_response_headers BOOLEAN NOT NULL DEFAULT TRUE,
                     max_capture_request_body_size INTEGER NOT NULL DEFAULT 65536,
                     max_capture_response_body_size INTEGER NOT NULL DEFAULT 65536,
+                    slow_start_ms INTEGER NOT NULL DEFAULT 0,
+                    max_failures INTEGER NOT NULL DEFAULT 5,
+                    ejection_duration_ms INTEGER NOT NULL DEFAULT 30000,
                     created_utc TIMESTAMP NOT NULL,
                     modified_utc TIMESTAMP
                 );
@@ -195,6 +198,10 @@ namespace Switchboard.Core.Database.Postgres
                     capture_response_headers BOOLEAN NOT NULL DEFAULT TRUE,
                     max_capture_request_body_size INTEGER NOT NULL DEFAULT 65536,
                     max_capture_response_body_size INTEGER NOT NULL DEFAULT 65536,
+                    sticky_session_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+                    sticky_session_header VARCHAR(255),
+                    max_retries INTEGER NOT NULL DEFAULT 0,
+                    retry_on_5xx BOOLEAN NOT NULL DEFAULT TRUE,
                     created_utc TIMESTAMP NOT NULL,
                     modified_utc TIMESTAMP
                 );
@@ -205,6 +212,10 @@ namespace Switchboard.Core.Database.Postgres
                     endpoint_identifier VARCHAR(255) NOT NULL REFERENCES api_endpoints(identifier) ON DELETE CASCADE,
                     origin_identifier VARCHAR(255) NOT NULL REFERENCES origin_servers(identifier) ON DELETE CASCADE,
                     sort_order INTEGER NOT NULL DEFAULT 0,
+                    weight INTEGER NOT NULL DEFAULT 100,
+                    priority INTEGER NOT NULL DEFAULT 0,
+                    canary_header VARCHAR(255),
+                    canary_value VARCHAR(255),
                     UNIQUE (endpoint_identifier, origin_identifier)
                 );
 
@@ -296,6 +307,20 @@ namespace Switchboard.Core.Database.Postgres
 
             // Schema migration: Add is_read_only column if not exists
             await AddColumnIfNotExistsAsync("credentials", "is_read_only", "BOOLEAN NOT NULL DEFAULT FALSE", token).ConfigureAwait(false);
+
+            // Schema migrations (v5.0.0): intelligent routing / load-balancing columns. Each ALTER runs
+            // only when the column is absent, so existing databases are upgraded on startup.
+            await AddColumnIfNotExistsAsync("origin_servers", "slow_start_ms", "INTEGER NOT NULL DEFAULT 0", token).ConfigureAwait(false);
+            await AddColumnIfNotExistsAsync("origin_servers", "max_failures", "INTEGER NOT NULL DEFAULT 5", token).ConfigureAwait(false);
+            await AddColumnIfNotExistsAsync("origin_servers", "ejection_duration_ms", "INTEGER NOT NULL DEFAULT 30000", token).ConfigureAwait(false);
+            await AddColumnIfNotExistsAsync("api_endpoints", "sticky_session_enabled", "BOOLEAN NOT NULL DEFAULT FALSE", token).ConfigureAwait(false);
+            await AddColumnIfNotExistsAsync("api_endpoints", "sticky_session_header", "VARCHAR(255)", token).ConfigureAwait(false);
+            await AddColumnIfNotExistsAsync("api_endpoints", "max_retries", "INTEGER NOT NULL DEFAULT 0", token).ConfigureAwait(false);
+            await AddColumnIfNotExistsAsync("api_endpoints", "retry_on_5xx", "BOOLEAN NOT NULL DEFAULT TRUE", token).ConfigureAwait(false);
+            await AddColumnIfNotExistsAsync("endpoint_origin_mappings", "weight", "INTEGER NOT NULL DEFAULT 100", token).ConfigureAwait(false);
+            await AddColumnIfNotExistsAsync("endpoint_origin_mappings", "priority", "INTEGER NOT NULL DEFAULT 0", token).ConfigureAwait(false);
+            await AddColumnIfNotExistsAsync("endpoint_origin_mappings", "canary_header", "VARCHAR(255)", token).ConfigureAwait(false);
+            await AddColumnIfNotExistsAsync("endpoint_origin_mappings", "canary_value", "VARCHAR(255)", token).ConfigureAwait(false);
         }
 
         private async Task AddColumnIfNotExistsAsync(string tableName, string columnName, string columnDefinition, CancellationToken token)
@@ -801,6 +826,9 @@ namespace Switchboard.Core.Database.Postgres
                     values["capture_response_headers"] = o.CaptureResponseHeaders;
                     values["max_capture_request_body_size"] = o.MaxCaptureRequestBodySize;
                     values["max_capture_response_body_size"] = o.MaxCaptureResponseBodySize;
+                    values["slow_start_ms"] = o.SlowStartMs;
+                    values["max_failures"] = o.MaxFailures;
+                    values["ejection_duration_ms"] = o.EjectionDurationMs;
                     values["created_utc"] = o.CreatedUtc;
                     values["modified_utc"] = o.ModifiedUtc;
                     break;
@@ -824,6 +852,10 @@ namespace Switchboard.Core.Database.Postgres
                     values["capture_response_headers"] = e.CaptureResponseHeaders;
                     values["max_capture_request_body_size"] = e.MaxCaptureRequestBodySize;
                     values["max_capture_response_body_size"] = e.MaxCaptureResponseBodySize;
+                    values["sticky_session_enabled"] = e.StickySessionEnabled;
+                    values["sticky_session_header"] = e.StickySessionHeader;
+                    values["max_retries"] = e.MaxRetries;
+                    values["retry_on_5xx"] = e.RetryOn5xx;
                     values["created_utc"] = e.CreatedUtc;
                     values["modified_utc"] = e.ModifiedUtc;
                     break;
@@ -833,6 +865,10 @@ namespace Switchboard.Core.Database.Postgres
                     values["endpoint_identifier"] = m.EndpointIdentifier;
                     values["origin_identifier"] = m.OriginIdentifier;
                     values["sort_order"] = m.SortOrder;
+                    values["weight"] = m.Weight;
+                    values["priority"] = m.Priority;
+                    values["canary_header"] = m.CanaryHeader;
+                    values["canary_value"] = m.CanaryValue;
                     break;
 
                 case EndpointRoute r:
@@ -966,6 +1002,9 @@ namespace Switchboard.Core.Database.Postgres
                     CaptureResponseHeaders = reader.GetBoolean(reader.GetOrdinal("capture_response_headers")),
                     MaxCaptureRequestBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_request_body_size")),
                     MaxCaptureResponseBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_response_body_size")),
+                    SlowStartMs = reader.GetInt32(reader.GetOrdinal("slow_start_ms")),
+                    MaxFailures = reader.GetInt32(reader.GetOrdinal("max_failures")),
+                    EjectionDurationMs = reader.GetInt32(reader.GetOrdinal("ejection_duration_ms")),
                     CreatedUtc = reader.GetDateTime(reader.GetOrdinal("created_utc"))
                 };
                 if (!reader.IsDBNull(reader.GetOrdinal("name")))
@@ -995,12 +1034,17 @@ namespace Switchboard.Core.Database.Postgres
                     CaptureResponseHeaders = reader.GetBoolean(reader.GetOrdinal("capture_response_headers")),
                     MaxCaptureRequestBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_request_body_size")),
                     MaxCaptureResponseBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_response_body_size")),
+                    StickySessionEnabled = reader.GetBoolean(reader.GetOrdinal("sticky_session_enabled")),
+                    MaxRetries = reader.GetInt32(reader.GetOrdinal("max_retries")),
+                    RetryOn5xx = reader.GetBoolean(reader.GetOrdinal("retry_on_5xx")),
                     CreatedUtc = reader.GetDateTime(reader.GetOrdinal("created_utc"))
                 };
                 if (!reader.IsDBNull(reader.GetOrdinal("name")))
                     e.Name = reader.GetString(reader.GetOrdinal("name"));
                 if (!reader.IsDBNull(reader.GetOrdinal("auth_context_header")))
                     e.AuthContextHeader = reader.GetString(reader.GetOrdinal("auth_context_header"));
+                if (!reader.IsDBNull(reader.GetOrdinal("sticky_session_header")))
+                    e.StickySessionHeader = reader.GetString(reader.GetOrdinal("sticky_session_header"));
                 if (!reader.IsDBNull(reader.GetOrdinal("modified_utc")))
                     e.ModifiedUtc = reader.GetDateTime(reader.GetOrdinal("modified_utc"));
                 return (e as T)!;
@@ -1013,8 +1057,14 @@ namespace Switchboard.Core.Database.Postgres
                     Id = reader.GetInt32(reader.GetOrdinal("id")),
                     EndpointIdentifier = reader.GetString(reader.GetOrdinal("endpoint_identifier")),
                     OriginIdentifier = reader.GetString(reader.GetOrdinal("origin_identifier")),
-                    SortOrder = reader.GetInt32(reader.GetOrdinal("sort_order"))
+                    SortOrder = reader.GetInt32(reader.GetOrdinal("sort_order")),
+                    Weight = reader.GetInt32(reader.GetOrdinal("weight")),
+                    Priority = reader.GetInt32(reader.GetOrdinal("priority"))
                 };
+                if (!reader.IsDBNull(reader.GetOrdinal("canary_header")))
+                    m.CanaryHeader = reader.GetString(reader.GetOrdinal("canary_header"));
+                if (!reader.IsDBNull(reader.GetOrdinal("canary_value")))
+                    m.CanaryValue = reader.GetString(reader.GetOrdinal("canary_value"));
                 return (m as T)!;
             }
 

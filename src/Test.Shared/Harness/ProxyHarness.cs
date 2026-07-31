@@ -27,6 +27,7 @@ namespace Test.Shared.Harness
         private readonly int _MaxParallelRequests;
         private readonly int _RateLimitThreshold;
         private readonly bool _EnableManagement;
+        private readonly Action<SwitchboardSettings>? _Configure;
         private readonly string _DbPath;
         private readonly SemaphoreSlim _StartLock = new SemaphoreSlim(1, 1);
         private readonly List<OriginHost> _Origins = new List<OriginHost>();
@@ -44,17 +45,20 @@ namespace Test.Shared.Harness
         /// <param name="maxParallelRequests">Per-origin parallel request cap.</param>
         /// <param name="rateLimitThreshold">Per-origin rate limit threshold.</param>
         /// <param name="enableManagement">True to enable the management REST API on the daemon.</param>
+        /// <param name="configure">Optional callback to mutate the built settings before the daemon starts, for example to set the endpoint's load-balancing mode, per-origin routing config, or per-endpoint origin bindings. May be null.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="originNames"/> is null.</exception>
         public ProxyHarness(
             IReadOnlyList<string> originNames,
             int maxParallelRequests = 100,
             int rateLimitThreshold = 1000,
-            bool enableManagement = false)
+            bool enableManagement = false,
+            Action<SwitchboardSettings>? configure = null)
         {
             _OriginNames = originNames ?? throw new ArgumentNullException(nameof(originNames));
             _MaxParallelRequests = maxParallelRequests;
             _RateLimitThreshold = rateLimitThreshold;
             _EnableManagement = enableManagement;
+            _Configure = configure;
             _DbPath = Path.Combine(Path.GetTempPath(), "switchboard_harness_" + Guid.NewGuid().ToString("N") + ".db");
         }
 
@@ -122,6 +126,7 @@ namespace Test.Shared.Harness
                 _OriginPorts = originPorts;
 
                 _Settings = BuildSettings();
+                _Configure?.Invoke(_Settings);
 
                 foreach (KeyValuePair<string, int> kvp in _OriginPorts)
                 {

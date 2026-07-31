@@ -400,7 +400,13 @@
     "saveError": "Failed to save origin",
     "deleteError": "Failed to delete origin",
     "empty": "No origin servers configured",
-    "emptyHint": "Add an origin server for Switchboard to proxy to."
+    "emptyHint": "Add an origin server for Switchboard to proxy to.",
+    "slowStart": "Slow Start (ms)",
+    "slowStartHint": "Ramp traffic to a newly-healthy origin over this window. 0 disables.",
+    "maxFailures": "Ejection Threshold",
+    "maxFailuresHint": "Consecutive failed requests before the origin is ejected. 0 disables.",
+    "ejectionDuration": "Ejection Duration (ms)",
+    "ejectionDurationHint": "How long an ejected origin stays out of rotation."
   },
   "endpoints": {
     "title": "API Endpoints",
@@ -467,7 +473,27 @@
     "detachTitle": "Detach Origin",
     "detachMessage": "Detach origin \"{{name}}\" from this endpoint?",
     "originsEmpty": "No origin servers attached to this endpoint",
-    "originsEmptyHint": "Attach an origin server to enable request routing."
+    "originsEmptyHint": "Attach an origin server to enable request routing.",
+    "leastConnections": "Least Connections",
+    "powerOfTwoChoices": "Power of Two Choices",
+    "weighted": "Weighted",
+    "latencyBased": "Latency (EWMA)",
+    "maxRetries": "Max Retries",
+    "maxRetriesHint": "Retry failed idempotent requests against other origins.",
+    "stickySessionEnabled": "Sticky sessions",
+    "stickySessionHeader": "Sticky Session Header",
+    "stickySessionHeaderHint": "Header whose value pins a client to an origin. Blank uses client IP.",
+    "stickySessionHeaderPlaceholder": "e.g. X-Session-Id",
+    "retryOn5xx": "Retry on 5xx",
+    "weight": "Weight",
+    "priority": "Priority",
+    "drained": "Drained",
+    "canary": "Canary",
+    "canaryHeader": "Canary Header",
+    "canaryValue": "Canary Value",
+    "canaryHeaderPlaceholder": "Canary header (optional)",
+    "canaryValuePlaceholder": "Canary value",
+    "mappingParamsHint": "Weight sets traffic share (0 drains). Priority tiers backups. Canary pins matching requests to this origin."
   },
   "users": {
     "title": "Users",

@@ -271,6 +271,9 @@ namespace Switchboard.Core.Services
             origin.HealthyThreshold = cfg.HealthyThreshold;
             origin.MaxParallelRequests = cfg.MaxParallelRequests;
             origin.RateLimitRequestsThreshold = cfg.RateLimitRequestsThreshold;
+            origin.SlowStartMs = cfg.SlowStartMs;
+            origin.MaxFailures = cfg.MaxFailures;
+            origin.EjectionDurationMs = cfg.EjectionDurationMs;
             origin.LogRequestBody = cfg.LogRequestBody;
             origin.LogResponseBody = cfg.LogResponseBody;
             origin.CaptureRequestBody = cfg.CaptureRequestBody;
@@ -305,7 +308,11 @@ namespace Switchboard.Core.Services
                 CaptureRequestHeaders = cfg.CaptureRequestHeaders,
                 CaptureResponseHeaders = cfg.CaptureResponseHeaders,
                 MaxCaptureRequestBodySize = cfg.MaxCaptureRequestBodySize,
-                MaxCaptureResponseBodySize = cfg.MaxCaptureResponseBodySize
+                MaxCaptureResponseBodySize = cfg.MaxCaptureResponseBodySize,
+                StickySessionEnabled = cfg.StickySessionEnabled,
+                StickySessionHeader = cfg.StickySessionHeader,
+                MaxRetries = cfg.MaxRetries,
+                RetryOn5xx = cfg.RetryOn5xx
             };
 
             if (!String.IsNullOrEmpty(cfg.AuthContextHeader)) ep.AuthContextHeader = cfg.AuthContextHeader;
@@ -337,13 +344,27 @@ namespace Switchboard.Core.Services
                 map[rewrite.SourcePattern] = rewrite.TargetPattern;
             }
 
-            // Origin mappings -> ordered list of origin identifiers.
-            ep.OriginServers = mappings
-                .Where(m => m.EndpointIdentifier == cfg.Identifier)
+            // Origin mappings -> per-endpoint origin bindings (weight, priority, canary) ordered by sort
+            // order, plus the flat identifier list kept in sync for callers that only need identifiers.
+            List<EndpointOriginMapping> endpointMappings = mappings
+                .Where(m => m.EndpointIdentifier == cfg.Identifier && !String.IsNullOrEmpty(m.OriginIdentifier))
                 .OrderBy(m => m.SortOrder)
-                .Select(m => m.OriginIdentifier)
-                .Where(id => !String.IsNullOrEmpty(id))
                 .ToList();
+
+            List<OriginBinding> bindings = new List<OriginBinding>();
+            foreach (EndpointOriginMapping mapping in endpointMappings)
+            {
+                bindings.Add(new OriginBinding(mapping.OriginIdentifier)
+                {
+                    Weight = mapping.Weight,
+                    Priority = mapping.Priority,
+                    CanaryHeader = mapping.CanaryHeader,
+                    CanaryValue = mapping.CanaryValue
+                });
+            }
+
+            ep.OriginBindings = bindings;
+            ep.OriginServers = bindings.Select(b => b.Identifier).ToList();
 
             return ep;
         }
@@ -365,7 +386,8 @@ namespace Switchboard.Core.Services
                     .Append(o.HealthCheckMethod).Append('|').Append(o.HealthCheckUrl).Append('|')
                     .Append(o.HealthCheckIntervalMs).Append('|').Append(o.HealthyThreshold).Append('|')
                     .Append(o.UnhealthyThreshold).Append('|').Append(o.MaxParallelRequests).Append('|')
-                    .Append(o.RateLimitRequestsThreshold).Append(';');
+                    .Append(o.RateLimitRequestsThreshold).Append('|').Append(o.SlowStartMs).Append('|')
+                    .Append(o.MaxFailures).Append('|').Append(o.EjectionDurationMs).Append(';');
             }
 
             foreach (ApiEndpointConfig e in endpoints.OrderBy(x => x.Identifier, StringComparer.Ordinal))
@@ -374,7 +396,9 @@ namespace Switchboard.Core.Services
                     .Append(e.LoadBalancingMode).Append('|').Append(e.TimeoutMs).Append('|')
                     .Append(e.BlockHttp10).Append('|').Append(e.MaxRequestBodySize).Append('|')
                     .Append(e.IncludeAuthContextHeader).Append('|').Append(e.AuthContextHeader).Append('|')
-                    .Append(e.UseGlobalBlockedHeaders).Append(';');
+                    .Append(e.UseGlobalBlockedHeaders).Append('|').Append(e.StickySessionEnabled).Append('|')
+                    .Append(e.StickySessionHeader).Append('|').Append(e.MaxRetries).Append('|')
+                    .Append(e.RetryOn5xx).Append(';');
             }
 
             foreach (EndpointRoute r in routes
@@ -389,7 +413,8 @@ namespace Switchboard.Core.Services
                 .OrderBy(x => x.EndpointIdentifier, StringComparer.Ordinal).ThenBy(x => x.SortOrder).ThenBy(x => x.OriginIdentifier, StringComparer.Ordinal))
             {
                 sb.Append("M|").Append(m.EndpointIdentifier).Append('|').Append(m.OriginIdentifier).Append('|')
-                    .Append(m.SortOrder).Append(';');
+                    .Append(m.SortOrder).Append('|').Append(m.Weight).Append('|').Append(m.Priority).Append('|')
+                    .Append(m.CanaryHeader).Append('|').Append(m.CanaryValue).Append(';');
             }
 
             foreach (UrlRewrite w in rewrites

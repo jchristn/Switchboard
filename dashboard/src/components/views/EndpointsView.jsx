@@ -24,6 +24,18 @@ import './EndpointsView.css';
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
+const LB_MODES = ['RoundRobin', 'Random', 'LeastConnections', 'PowerOfTwoChoices', 'Weighted', 'LatencyBased'];
+
+// Short i18n key suffix per load-balancing mode; used for both the select options and the table badge.
+const LB_MODE_KEY = {
+  RoundRobin: 'roundRobin',
+  Random: 'random',
+  LeastConnections: 'leastConnections',
+  PowerOfTwoChoices: 'powerOfTwoChoices',
+  Weighted: 'weighted',
+  LatencyBased: 'latencyBased',
+};
+
 const EMPTY_ENDPOINT = {
   identifier: '',
   name: '',
@@ -34,6 +46,10 @@ const EMPTY_ENDPOINT = {
   includeAuthContextHeader: false,
   authContextHeader: '',
   useGlobalBlockedHeaders: true,
+  stickySessionEnabled: false,
+  stickySessionHeader: '',
+  maxRetries: 0,
+  retryOn5xx: true,
 };
 
 // Normalize an endpoint record into the editable form shape.
@@ -49,6 +65,10 @@ function endpointToForm(e) {
     includeAuthContextHeader: e.includeAuthContextHeader || false,
     authContextHeader: e.authContextHeader || '',
     useGlobalBlockedHeaders: e.useGlobalBlockedHeaders !== false,
+    stickySessionEnabled: e.stickySessionEnabled || false,
+    stickySessionHeader: e.stickySessionHeader || '',
+    maxRetries: e.maxRetries ?? 0,
+    retryOn5xx: e.retryOn5xx !== false,
   };
 }
 
@@ -331,7 +351,7 @@ function EndpointsView() {
 
   const originByIdentifier = (identifier) => origins.find((o) => o.identifier === identifier);
 
-  const attachOrigin = async (originIdentifier) => {
+  const attachOrigin = async (originIdentifier, extra = {}) => {
     const origin = originByIdentifier(originIdentifier);
     if (!origin) return;
     try {
@@ -340,6 +360,10 @@ function EndpointsView() {
         endpointGuid: detail.guid,
         originIdentifier: origin.identifier,
         originGuid: origin.guid,
+        weight: Number.isFinite(extra.weight) ? extra.weight : 100,
+        priority: Number.isFinite(extra.priority) ? extra.priority : 0,
+        canaryHeader: extra.canaryHeader || null,
+        canaryValue: extra.canaryValue || null,
       });
       showSuccess(t('endpoints.originAttached'));
       setAttachValue('');
@@ -397,11 +421,10 @@ function EndpointsView() {
       key: 'loadBalancingMode',
       label: t('endpoints.loadBalancing'),
       sortable: true,
-      render: (row) => (
-        <Badge tone={row.loadBalancingMode === 'Random' ? 'accent' : 'info'}>
-          {row.loadBalancingMode === 'Random' ? t('endpoints.random') : t('endpoints.roundRobin')}
-        </Badge>
-      ),
+      render: (row) => {
+        const key = LB_MODE_KEY[row.loadBalancingMode];
+        return <Badge tone="info">{key ? t(`endpoints.${key}`) : row.loadBalancingMode || '—'}</Badge>;
+      },
     },
     {
       key: 'actions',
@@ -482,7 +505,7 @@ function EndpointsView() {
         <Modal
           open
           onClose={() => setFormOpen(false)}
-          size="large"
+          size="xl"
           title={editingGuid ? t('endpoints.editTitle') : t('endpoints.createTitle')}
           footer={
             <>
@@ -684,8 +707,11 @@ function EndpointFormFields({ form, setForm, disableIdentifier = false, readOnly
             onChange={(e) => set({ loadBalancingMode: e.target.value })}
             disabled={readOnly}
           >
-            <option value="RoundRobin">{t('endpoints.roundRobin')}</option>
-            <option value="Random">{t('endpoints.random')}</option>
+            {LB_MODES.map((mode) => (
+              <option key={mode} value={mode}>
+                {t(`endpoints.${LB_MODE_KEY[mode]}`)}
+              </option>
+            ))}
           </select>
         </div>
         <div className="form-group">
@@ -724,6 +750,32 @@ function EndpointFormFields({ form, setForm, disableIdentifier = false, readOnly
         </div>
       </div>
 
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">{t('endpoints.maxRetries')}</label>
+          <input
+            type="number"
+            className="form-input"
+            value={form.maxRetries}
+            onChange={(e) => set({ maxRetries: parseInt(e.target.value, 10) || 0 })}
+            disabled={readOnly}
+          />
+          <span className="form-hint">{t('endpoints.maxRetriesHint')}</span>
+        </div>
+        <div className="form-group">
+          <label className="form-label">{t('endpoints.stickySessionHeader')}</label>
+          <input
+            type="text"
+            className="form-input"
+            value={form.stickySessionHeader}
+            onChange={(e) => set({ stickySessionHeader: e.target.value })}
+            disabled={readOnly || !form.stickySessionEnabled}
+            placeholder={t('endpoints.stickySessionHeaderPlaceholder')}
+          />
+          <span className="form-hint">{t('endpoints.stickySessionHeaderHint')}</span>
+        </div>
+      </div>
+
       <div className="form-checks">
         <label className="form-checkbox">
           <input
@@ -751,6 +803,24 @@ function EndpointFormFields({ form, setForm, disableIdentifier = false, readOnly
             disabled={readOnly}
           />
           {t('endpoints.useGlobalBlockedHeaders')}
+        </label>
+        <label className="form-checkbox">
+          <input
+            type="checkbox"
+            checked={form.stickySessionEnabled}
+            onChange={(e) => set({ stickySessionEnabled: e.target.checked })}
+            disabled={readOnly}
+          />
+          {t('endpoints.stickySessionEnabled')}
+        </label>
+        <label className="form-checkbox">
+          <input
+            type="checkbox"
+            checked={form.retryOn5xx}
+            onChange={(e) => set({ retryOn5xx: e.target.checked })}
+            disabled={readOnly}
+          />
+          {t('endpoints.retryOn5xx')}
         </label>
       </div>
     </>
@@ -945,6 +1015,19 @@ function OriginsTab({
   onAttach,
   onDetach,
 }) {
+  // Per-mapping routing parameters for the origin being attached.
+  const [attachWeight, setAttachWeight] = useState(100);
+  const [attachPriority, setAttachPriority] = useState(0);
+  const [attachCanaryHeader, setAttachCanaryHeader] = useState('');
+  const [attachCanaryValue, setAttachCanaryValue] = useState('');
+
+  const resetAttachParams = () => {
+    setAttachWeight(100);
+    setAttachPriority(0);
+    setAttachCanaryHeader('');
+    setAttachCanaryValue('');
+  };
+
   const columns = [
     {
       key: 'originIdentifier',
@@ -974,6 +1057,26 @@ function OriginsTab({
       },
     },
     {
+      key: 'weight',
+      label: t('endpoints.weight'),
+      align: 'end',
+      render: (row) =>
+        row.weight === 0 ? <Badge tone="warning">{t('endpoints.drained')}</Badge> : (row.weight ?? 100),
+    },
+    { key: 'priority', label: t('endpoints.priority'), align: 'end', render: (row) => row.priority ?? 0 },
+    {
+      key: 'canary',
+      label: t('endpoints.canary'),
+      render: (row) =>
+        row.canaryHeader ? (
+          <code className="ep-code">
+            {row.canaryHeader}={row.canaryValue}
+          </code>
+        ) : (
+          <span className="ep-muted">—</span>
+        ),
+    },
+    {
       key: 'actions',
       label: '',
       isAction: true,
@@ -988,35 +1091,80 @@ function OriginsTab({
     },
   ];
 
+  const submitAttach = () => {
+    if (!attachValue) return;
+    onAttach(attachValue, {
+      weight: attachWeight,
+      priority: attachPriority,
+      canaryHeader: attachCanaryHeader.trim() || null,
+      canaryValue: attachCanaryValue.trim() || null,
+    });
+    resetAttachParams();
+  };
+
   return (
     <div>
       {isAdmin && (
-        <div className="ep-inline-form">
-          <select
-            className="form-input ep-inline-form__grow"
-            value={attachValue}
-            onChange={(e) => setAttachValue(e.target.value)}
-            disabled={unmappedOrigins.length === 0}
-            aria-label={t('endpoints.selectOrigin')}
-          >
-            <option value="">
-              {unmappedOrigins.length === 0 ? t('endpoints.allOriginsMapped') : t('endpoints.selectOrigin')}
-            </option>
-            {unmappedOrigins.map((o) => (
-              <option key={o.guid} value={o.identifier}>
-                {o.name || o.identifier} ({o.hostname}:{o.port})
+        <div className="ep-attach-form">
+          <div className="ep-inline-form">
+            <select
+              className="form-input ep-inline-form__grow"
+              value={attachValue}
+              onChange={(e) => setAttachValue(e.target.value)}
+              disabled={unmappedOrigins.length === 0}
+              aria-label={t('endpoints.selectOrigin')}
+            >
+              <option value="">
+                {unmappedOrigins.length === 0 ? t('endpoints.allOriginsMapped') : t('endpoints.selectOrigin')}
               </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => attachValue && onAttach(attachValue)}
-            disabled={!attachValue}
-          >
-            <Icons.Plus size={16} />
-            {t('endpoints.attachOrigin')}
-          </button>
+              {unmappedOrigins.map((o) => (
+                <option key={o.guid} value={o.identifier}>
+                  {o.name || o.identifier} ({o.hostname}:{o.port})
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              className="form-input ep-attach-form__num"
+              value={attachWeight}
+              onChange={(e) => setAttachWeight(parseInt(e.target.value, 10) || 0)}
+              aria-label={t('endpoints.weight')}
+              title={t('endpoints.weight')}
+              placeholder={t('endpoints.weight')}
+            />
+            <input
+              type="number"
+              className="form-input ep-attach-form__num"
+              value={attachPriority}
+              onChange={(e) => setAttachPriority(parseInt(e.target.value, 10) || 0)}
+              aria-label={t('endpoints.priority')}
+              title={t('endpoints.priority')}
+              placeholder={t('endpoints.priority')}
+            />
+            <button type="button" className="btn btn-primary" onClick={submitAttach} disabled={!attachValue}>
+              <Icons.Plus size={16} />
+              {t('endpoints.attachOrigin')}
+            </button>
+          </div>
+          <div className="ep-inline-form">
+            <input
+              type="text"
+              className="form-input ep-inline-form__grow"
+              value={attachCanaryHeader}
+              onChange={(e) => setAttachCanaryHeader(e.target.value)}
+              aria-label={t('endpoints.canaryHeader')}
+              placeholder={t('endpoints.canaryHeaderPlaceholder')}
+            />
+            <input
+              type="text"
+              className="form-input ep-inline-form__grow"
+              value={attachCanaryValue}
+              onChange={(e) => setAttachCanaryValue(e.target.value)}
+              aria-label={t('endpoints.canaryValue')}
+              placeholder={t('endpoints.canaryValuePlaceholder')}
+            />
+          </div>
+          <p className="form-hint">{t('endpoints.mappingParamsHint')}</p>
         </div>
       )}
 

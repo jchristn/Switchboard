@@ -1,7 +1,7 @@
 @echo off
 if "%~1"=="" (
     echo Usage: build-all.bat [version-tag]
-    echo Example: build-all.bat v4.1.0
+    echo Example: build-all.bat v5.0.0
     exit /b 1
 )
 

@@ -1,7 +1,7 @@
 @echo off
 if "%~1"=="" (
     echo Usage: build-dashboard.bat [version-tag]
-    echo Example: build-dashboard.bat v4.1.0
+    echo Example: build-dashboard.bat v5.0.0
     exit /b 1
 )
 

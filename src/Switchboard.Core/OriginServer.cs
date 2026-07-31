@@ -175,6 +175,53 @@
         }
 
         /// <summary>
+        /// Duration, in milliseconds, over which a newly-healthy origin's effective routing weight ramps
+        /// up from a small floor to full (slow start). Default is 0 (disabled). Minimum is 0. Maximum is
+        /// 600000. Values are clamped into range.
+        /// </summary>
+        public int SlowStartMs
+        {
+            get => _SlowStartMs;
+            set
+            {
+                if (value < 0) value = 0;
+                if (value > 600000) value = 600000;
+                _SlowStartMs = value;
+            }
+        }
+
+        /// <summary>
+        /// Consecutive failed proxied requests that ejects this origin from routing via passive health
+        /// checking. Default is 5. Minimum is 0 (0 disables passive ejection). Maximum is 1000. Values are
+        /// clamped into range.
+        /// </summary>
+        public int MaxFailures
+        {
+            get => _MaxFailures;
+            set
+            {
+                if (value < 0) value = 0;
+                if (value > 1000) value = 1000;
+                _MaxFailures = value;
+            }
+        }
+
+        /// <summary>
+        /// Duration, in milliseconds, this origin stays ejected after passive health checking trips.
+        /// Default is 30000. Minimum is 1000. Maximum is 3600000. Values are clamped into range.
+        /// </summary>
+        public int EjectionDurationMs
+        {
+            get => _EjectionDurationMs;
+            set
+            {
+                if (value < 1000) value = 1000;
+                if (value > 3600000) value = 3600000;
+                _EjectionDurationMs = value;
+            }
+        }
+
+        /// <summary>
         /// True to log the request body.
         /// </summary>
         public bool LogRequestBody { get; set; } = false;
@@ -270,6 +317,14 @@
         internal long TotalDowntimeMs = 0;
         internal string LastError = null;
         internal readonly List<HealthCheckRecord> CheckHistory = new List<HealthCheckRecord>();
+
+        // Passive-health and latency state, maintained by GatewayService from proxied-request outcomes.
+        // EwmaLatencyMs is guarded by Lock (double reads/writes are not atomic); the failure counter and
+        // ejection deadline are also mutated under Lock alongside the passive-health decision.
+        internal double EwmaLatencyMs = 0.0;
+        internal bool HasLatencySample = false;
+        internal int ConsecutiveProxyFailures = 0;
+        internal DateTime? EjectedUntilUtc = null;
         internal SemaphoreSlim Semaphore
         {
             get
@@ -298,6 +353,9 @@
         private SemaphoreSlim _Semaphore = null;
         private int _MaxCaptureRequestBodySize = 65536;
         private int _MaxCaptureResponseBodySize = 65536;
+        private int _SlowStartMs = 0;
+        private int _MaxFailures = 5;
+        private int _EjectionDurationMs = 30000;
 
         #endregion
 

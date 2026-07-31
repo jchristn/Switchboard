@@ -400,7 +400,13 @@
     "saveError": "No se pudo guardar el origen",
     "deleteError": "No se pudo eliminar el origen",
     "empty": "No hay servidores de origen configurados",
-    "emptyHint": "Agrega un servidor de origen para que Switchboard redirija hacia él."
+    "emptyHint": "Agrega un servidor de origen para que Switchboard redirija hacia él.",
+    "slowStart": "Inicio lento (ms)",
+    "slowStartHint": "Aumenta el tráfico a un origen recién sano durante este período. 0 lo desactiva.",
+    "maxFailures": "Umbral de expulsión",
+    "maxFailuresHint": "Solicitudes fallidas consecutivas antes de expulsar el origen. 0 lo desactiva.",
+    "ejectionDuration": "Duración de expulsión (ms)",
+    "ejectionDurationHint": "Cuánto tiempo un origen expulsado permanece fuera de rotación."
   },
   "endpoints": {
     "title": "Endpoints de API",
@@ -467,7 +473,27 @@
     "detachTitle": "Desvincular origen",
     "detachMessage": "¿Desvincular el origen \"{{name}}\" de este endpoint?",
     "originsEmpty": "No hay servidores de origen adjuntos a este endpoint",
-    "originsEmptyHint": "Adjunta un servidor de origen para habilitar el enrutamiento de solicitudes."
+    "originsEmptyHint": "Adjunta un servidor de origen para habilitar el enrutamiento de solicitudes.",
+    "leastConnections": "Menos conexiones",
+    "powerOfTwoChoices": "Dos opciones aleatorias",
+    "weighted": "Ponderado",
+    "latencyBased": "Latencia (EWMA)",
+    "maxRetries": "Reintentos máximos",
+    "maxRetriesHint": "Reintentar solicitudes idempotentes fallidas en otros orígenes.",
+    "stickySessionEnabled": "Sesiones persistentes",
+    "stickySessionHeader": "Encabezado de sesión persistente",
+    "stickySessionHeaderHint": "Encabezado cuyo valor fija un cliente a un origen. Vacío usa la IP del cliente.",
+    "stickySessionHeaderPlaceholder": "p. ej. X-Session-Id",
+    "retryOn5xx": "Reintentar en 5xx",
+    "weight": "Peso",
+    "priority": "Prioridad",
+    "drained": "Drenado",
+    "canary": "Canary",
+    "canaryHeader": "Encabezado canary",
+    "canaryValue": "Valor canary",
+    "canaryHeaderPlaceholder": "Encabezado canary (opcional)",
+    "canaryValuePlaceholder": "Valor canary",
+    "mappingParamsHint": "El peso define la cuota de tráfico (0 drena). La prioridad crea niveles de respaldo. Canary fija las solicitudes coincidentes a este origen."
   },
   "users": {
     "title": "Usuarios",

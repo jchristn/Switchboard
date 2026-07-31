@@ -118,6 +118,43 @@ namespace Switchboard.Core.Models
         public bool UseGlobalBlockedHeaders { get; set; } = true;
 
         /// <summary>
+        /// True to enable sticky sessions (session affinity). When enabled, requests are consistently
+        /// hashed to the same origin using the value of <see cref="StickySessionHeader"/> when set, or the
+        /// client IP address otherwise, so a given client is pinned to one origin regardless of the base
+        /// load-balancing mode. Default is false.
+        /// </summary>
+        public bool StickySessionEnabled { get; set; } = false;
+
+        /// <summary>
+        /// Name of the request header whose value is used as the sticky-session affinity key. When null
+        /// (the default) and sticky sessions are enabled, the client IP address is used instead.
+        /// </summary>
+        public string? StickySessionHeader { get; set; } = null;
+
+        /// <summary>
+        /// Maximum number of additional origins to try after the first failed attempt (transport error or,
+        /// when <see cref="RetryOn5xx"/> is enabled, an upstream 5xx) before returning an error. Retries
+        /// apply only to idempotent request methods and only while no response bytes have been sent to the
+        /// client. Default is 0 (no retries). Minimum is 0. Maximum is 10. Values are clamped into range.
+        /// </summary>
+        public int MaxRetries
+        {
+            get => _MaxRetries;
+            set
+            {
+                if (value < 0) value = 0;
+                if (value > 10) value = 10;
+                _MaxRetries = value;
+            }
+        }
+
+        /// <summary>
+        /// True to treat an upstream 5xx response as a retryable failure (in addition to transport errors)
+        /// when <see cref="MaxRetries"/> is greater than 0. Default is true.
+        /// </summary>
+        public bool RetryOn5xx { get; set; } = true;
+
+        /// <summary>
         /// Enable capture of request body for this endpoint.
         /// Default is false.
         /// </summary>
@@ -187,6 +224,7 @@ namespace Switchboard.Core.Models
         private int _TimeoutMs = 60000;
         private string _LoadBalancingMode = "RoundRobin";
         private int _MaxRequestBodySize = (512 * 1024 * 1024);
+        private int _MaxRetries = 0;
         private int _MaxCaptureRequestBodySize = 65536;
         private int _MaxCaptureResponseBodySize = 65536;
 

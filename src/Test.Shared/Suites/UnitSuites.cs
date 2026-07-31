@@ -245,6 +245,9 @@ namespace Test.Shared
                         Check.Equal(30, o.RateLimitRequestsThreshold, "RateLimitRequestsThreshold default");
                         Check.Equal("/", o.HealthCheckUrl, "HealthCheckUrl default");
                         Check.False(o.Healthy, "Healthy default false");
+                        Check.Equal(0, o.SlowStartMs, "SlowStartMs default");
+                        Check.Equal(5, o.MaxFailures, "MaxFailures default");
+                        Check.Equal(30000, o.EjectionDurationMs, "EjectionDurationMs default");
                         return Task.CompletedTask;
                     }),
 

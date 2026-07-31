@@ -30,6 +30,33 @@
             Load-balancing mode.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.StickySessionEnabled">
+            <summary>
+            True to enable sticky sessions (session affinity). When enabled, requests are consistently
+            hashed to the same origin using <see cref="P:Switchboard.Core.ApiEndpoint.StickySessionHeader"/> when set, or the client IP
+            address otherwise, overriding the base load-balancing mode. Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.StickySessionHeader">
+            <summary>
+            Name of the request header whose value is the sticky-session affinity key. When null (the
+            default) and sticky sessions are enabled, the client IP address is used instead.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.MaxRetries">
+            <summary>
+            Maximum number of additional origins to try after a failed attempt (transport error or, when
+            <see cref="P:Switchboard.Core.ApiEndpoint.RetryOn5xx"/> is enabled, an upstream 5xx) before returning an error. Retries apply
+            only to idempotent methods and only while no response bytes have been sent. Default is 0.
+            Minimum is 0. Maximum is 10. Values are clamped into range.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.RetryOn5xx">
+            <summary>
+            True to treat an upstream 5xx response as a retryable failure when <see cref="P:Switchboard.Core.ApiEndpoint.MaxRetries"/> is
+            greater than 0. Default is true.
+            </summary>
+        </member>
         <member name="P:Switchboard.Core.ApiEndpoint.IncludeAuthContextHeader">
             <summary>
             Boolean indicating whether or not the auth context header should be included for authenticated requests.
@@ -63,6 +90,14 @@
         <member name="P:Switchboard.Core.ApiEndpoint.OriginServers">
             <summary>
             Origin server identifiers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.ApiEndpoint.OriginBindings">
+            <summary>
+            Per-endpoint origin bindings carrying weight, priority tier, and canary header match for each
+            origin. Populated from endpoint-origin mappings for database-managed endpoints. When empty (for
+            example, file-configured endpoints), the load balancer treats every entry in
+            <see cref="P:Switchboard.Core.ApiEndpoint.OriginServers"/> as a default binding (weight 100, priority 0, no canary).
             </summary>
         </member>
         <member name="P:Switchboard.Core.ApiEndpoint.LastIndex">
@@ -2746,17 +2781,41 @@
         </member>
         <member name="T:Switchboard.Core.LoadBalancingMode">
             <summary>
-            Load balancing mode.
+            Load balancing mode used to select an origin server from the healthy pool for an endpoint.
             </summary>
         </member>
         <member name="F:Switchboard.Core.LoadBalancingMode.Random">
             <summary>
-            Random.
+            Select a healthy origin uniformly at random. Weight is ignored.
             </summary>
         </member>
         <member name="F:Switchboard.Core.LoadBalancingMode.RoundRobin">
             <summary>
-            Round robin.
+            Rotate through the healthy origins in order. Weight is ignored.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.LoadBalancingMode.LeastConnections">
+            <summary>
+            Select the healthy origin with the fewest in-flight requests, normalized by weight
+            (load divided by effective weight). Spreads load toward less-busy backends.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.LoadBalancingMode.PowerOfTwoChoices">
+            <summary>
+            Sample two healthy origins at random (weighted) and pick the less-busy of the two
+            (load divided by effective weight). Approximates least-connections without a full scan
+            and avoids the herd effect of always choosing the single least-busy origin.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.LoadBalancingMode.Weighted">
+            <summary>
+            Select a healthy origin at random with probability proportional to its effective weight.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.LoadBalancingMode.LatencyBased">
+            <summary>
+            Select the healthy origin with the lowest exponentially-weighted moving average (EWMA)
+            response latency. Origins with no latency samples yet are preferred so they gather data.
             </summary>
         </member>
         <member name="T:Switchboard.Core.MatchingApiEndpoint">
@@ -2865,6 +2924,34 @@
         <member name="P:Switchboard.Core.Models.ApiEndpointConfig.UseGlobalBlockedHeaders">
             <summary>
             True to use global blocked headers.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.StickySessionEnabled">
+            <summary>
+            True to enable sticky sessions (session affinity). When enabled, requests are consistently
+            hashed to the same origin using the value of <see cref="P:Switchboard.Core.Models.ApiEndpointConfig.StickySessionHeader"/> when set, or the
+            client IP address otherwise, so a given client is pinned to one origin regardless of the base
+            load-balancing mode. Default is false.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.StickySessionHeader">
+            <summary>
+            Name of the request header whose value is used as the sticky-session affinity key. When null
+            (the default) and sticky sessions are enabled, the client IP address is used instead.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.MaxRetries">
+            <summary>
+            Maximum number of additional origins to try after the first failed attempt (transport error or,
+            when <see cref="P:Switchboard.Core.Models.ApiEndpointConfig.RetryOn5xx"/> is enabled, an upstream 5xx) before returning an error. Retries
+            apply only to idempotent request methods and only while no response bytes have been sent to the
+            client. Default is 0 (no retries). Minimum is 0. Maximum is 10. Values are clamped into range.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.ApiEndpointConfig.RetryOn5xx">
+            <summary>
+            True to treat an upstream 5xx response as a retryable failure (in addition to transport errors)
+            when <see cref="P:Switchboard.Core.Models.ApiEndpointConfig.MaxRetries"/> is greater than 0. Default is true.
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.ApiEndpointConfig.CaptureRequestBody">
@@ -3208,8 +3295,37 @@
         </member>
         <member name="P:Switchboard.Core.Models.EndpointOriginMapping.SortOrder">
             <summary>
-            Sort order for load balancing priority.
+            Sort order for the origin within the endpoint.
             Lower values are considered first in round-robin.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.Weight">
+            <summary>
+            Relative routing weight for this origin within the endpoint. Higher weights receive
+            proportionally more traffic in weight-aware load-balancing modes. A weight of 0 drains the
+            origin: it is still health-checked but never selected, which is useful for canary rollouts and
+            graceful draining. Default is 100. Minimum is 0. Maximum is 10000. Values are clamped into range.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.Priority">
+            <summary>
+            Priority tier for this origin within the endpoint. Lower numbers are higher priority: only the
+            lowest priority tier present among available origins receives traffic, and higher-numbered tiers
+            act as backups used only when the whole lower tier is unavailable. Default is 0. Minimum is 0.
+            Maximum is 1000. Values are clamped into range.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.CanaryHeader">
+            <summary>
+            Optional request header name that, when present with the value in <see cref="P:Switchboard.Core.Models.EndpointOriginMapping.CanaryValue"/>,
+            forces matching requests to this origin (explicit canary/blue-green targeting). Null (the
+            default) disables header-based targeting for this mapping.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.EndpointOriginMapping.CanaryValue">
+            <summary>
+            Required value of <see cref="P:Switchboard.Core.Models.EndpointOriginMapping.CanaryHeader"/> for the canary header match to apply. Null (the
+            default) disables header-based targeting for this mapping.
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.EndpointOriginMapping.CreatedUtc">
@@ -3327,6 +3443,60 @@
             </summary>
             <param name="timestampUtc">Timestamp, in UTC, at which the health check was performed.</param>
             <param name="success">True if the health check succeeded.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.OriginBinding">
+            <summary>
+            The per-endpoint view of an origin server, projected from an endpoint-origin mapping. Carries the
+            routing weight, priority tier, and optional canary header match that apply to this origin only when
+            it is used by a specific endpoint. Weight and priority are per-mapping so the same origin can play
+            different roles across endpoints (for example, a canary target for one endpoint and a full-weight
+            backend for another).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginBinding.Identifier">
+            <summary>
+            Identifier of the bound origin server.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginBinding.Weight">
+            <summary>
+            Relative routing weight for this origin within the endpoint. Higher weights receive
+            proportionally more traffic in weight-aware modes. A weight of 0 drains the origin: it is still
+            health-checked but never selected. Default is 100. Minimum is 0. Maximum is 10000.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginBinding.Priority">
+            <summary>
+            Priority tier for this origin within the endpoint. Lower numbers are higher priority: only the
+            lowest priority tier present among available origins is used, and higher-numbered tiers act as
+            backups that receive traffic only when the whole lower tier is unavailable. Default is 0.
+            Minimum is 0. Maximum is 1000.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginBinding.CanaryHeader">
+            <summary>
+            Optional request header name that, when present with the value in <see cref="P:Switchboard.Core.Models.OriginBinding.CanaryValue"/>,
+            forces the request to this origin (explicit canary/blue-green targeting). Null disables the
+            header match for this binding.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginBinding.CanaryValue">
+            <summary>
+            Required value of <see cref="P:Switchboard.Core.Models.OriginBinding.CanaryHeader"/> for the canary match to apply. Null disables the
+            header match for this binding.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginBinding.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginBinding.#ctor(System.String)">
+            <summary>
+            Instantiate with an identifier.
+            </summary>
+            <param name="identifier">Origin server identifier. Cannot be null or empty.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="identifier"/> is null or empty.</exception>
         </member>
         <member name="T:Switchboard.Core.Models.OriginServerConfig">
             <summary>
@@ -3464,6 +3634,28 @@
             <summary>
             Maximum response body size to capture in bytes.
             Default is 64KB.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.SlowStartMs">
+            <summary>
+            Duration, in milliseconds, over which a newly-healthy origin's effective routing weight ramps
+            from a small floor up to its full weight (slow start), so a cold backend is not flooded the
+            instant it becomes healthy. Default is 0 (disabled). Minimum is 0. Maximum is 600000 (10 minutes).
+            Values are clamped into range.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.MaxFailures">
+            <summary>
+            Number of consecutive failed proxied requests (transport errors or, when enabled, upstream 5xx)
+            that ejects this origin from the routing pool via passive health checking. Default is 5.
+            Minimum is 0 (0 disables passive ejection). Maximum is 1000. Values are clamped into range.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerConfig.EjectionDurationMs">
+            <summary>
+            Duration, in milliseconds, that an origin remains ejected from the routing pool after passive
+            health checking trips, before it is eligible for traffic again. Default is 30000 (30 seconds).
+            Minimum is 1000. Maximum is 3600000 (1 hour). Values are clamped into range.
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.OriginServerConfig.CreatedUtc">
@@ -4380,6 +4572,26 @@
             Default is 30.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.OriginServer.SlowStartMs">
+            <summary>
+            Duration, in milliseconds, over which a newly-healthy origin's effective routing weight ramps
+            up from a small floor to full (slow start). Default is 0 (disabled). Minimum is 0. Maximum is
+            600000. Values are clamped into range.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.MaxFailures">
+            <summary>
+            Consecutive failed proxied requests that ejects this origin from routing via passive health
+            checking. Default is 5. Minimum is 0 (0 disables passive ejection). Maximum is 1000. Values are
+            clamped into range.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.OriginServer.EjectionDurationMs">
+            <summary>
+            Duration, in milliseconds, this origin stays ejected after passive health checking trips.
+            Default is 30000. Minimum is 1000. Maximum is 3600000. Values are clamped into range.
+            </summary>
+        </member>
         <member name="P:Switchboard.Core.OriginServer.LogRequestBody">
             <summary>
             True to log the request body.
@@ -4500,6 +4712,13 @@
         <member name="P:Switchboard.Core.Services.GatewayService.Logging">
             <summary>
             Logging module.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.GatewayService.EwmaSmoothingFactor">
+            <summary>
+            Smoothing factor (alpha) for the per-origin exponentially-weighted moving average of response
+            latency used by the <see cref="F:Switchboard.Core.LoadBalancingMode.LatencyBased"/> mode. Higher values weight
+            recent samples more heavily. Default is 0.3. Minimum is 0.01. Maximum is 1.0. Values are clamped.
             </summary>
         </member>
         <member name="M:Switchboard.Core.Services.GatewayService.#ctor(Switchboard.Core.SwitchboardSettings,Switchboard.Core.SwitchboardCallbacks,SyslogLogging.LoggingModule,SerializationHelper.Serializer)">
@@ -4715,6 +4934,61 @@
             Dispose.
             </summary>
             <param name="disposing">Disposing.</param>
+        </member>
+        <member name="T:Switchboard.Core.Services.OriginSelector">
+            <summary>
+            Selects an origin server for a request according to an endpoint's load-balancing configuration.
+            The selection is a layered pipeline, applied in order: (1) explicit canary header match, (2)
+            availability filtering (healthy, not passively ejected, not drained, not already tried this
+            request), (3) priority tiering (lowest priority number wins; higher tiers are backups), (4) sticky
+            session affinity via consistent hashing when enabled, and finally (5) the base load-balancing mode.
+            The class is pure and side-effect free apart from advancing the endpoint's round-robin cursor;
+            callers hold <c>endpoint.Lock</c> around a call so that cursor advance is serialized.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.OriginSelector.SlowStartFloor">
+            <summary>
+            Minimum effective-weight fraction applied during slow start so a warming origin still receives
+            some traffic rather than none. Range 0.0 to 1.0.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Services.OriginSelector.Select(Switchboard.Core.ApiEndpoint,System.Collections.Generic.List{Switchboard.Core.OriginServer},System.String,System.Collections.Specialized.NameValueCollection,System.Collections.Generic.ISet{System.String},System.Random,System.DateTime)">
+            <summary>
+            Select an origin server for a request, or null when no origin is available.
+            </summary>
+            <param name="endpoint">Endpoint whose origins and load-balancing configuration are used. Cannot be null.</param>
+            <param name="allOrigins">All configured runtime origins; the endpoint's origins are resolved from this list. Cannot be null.</param>
+            <param name="clientIp">Client IP address used as the default sticky-session key. May be null.</param>
+            <param name="headers">Request headers used for canary matching and header-based stickiness. May be null.</param>
+            <param name="exclude">Origin identifiers to exclude (for example, origins already tried during retries). May be null.</param>
+            <param name="rng">Random source for random/weighted/two-choice modes. Cannot be null.</param>
+            <param name="nowUtc">Current UTC time, used for slow-start and ejection calculations.</param>
+            <returns>The selected origin, or null when none is available.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="endpoint"/>, <paramref name="allOrigins"/>, or <paramref name="rng"/> is null.</exception>
+        </member>
+        <member name="T:Switchboard.Core.Services.ProxyOutcome">
+            <summary>
+            Result of a single attempt to proxy a request to one origin server. Used by the gateway's
+            retry/failover loop to decide whether another origin may be tried.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Services.ProxyOutcome.Completed">
+            <summary>
+            The response was fully handled and written to the client (a success, or a failure surfaced to
+            the client because no further retry was permitted). The request is finished.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Services.ProxyOutcome.Failed">
+            <summary>
+            The attempt failed before any bytes were written to the client (a transport error, or a
+            retryable upstream status), so the request may safely be retried against another origin.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Services.ProxyOutcome.FailedResponseStarted">
+            <summary>
+            The attempt began streaming a response to the client (server-sent events or chunked transfer)
+            and then failed. Bytes were already sent, so the request cannot be retried and must be aborted.
+            </summary>
         </member>
         <member name="T:Switchboard.Core.Services.RequestCaptureContext">
             <summary>

@@ -195,6 +195,9 @@ namespace Switchboard.Core.Database.Sqlite
                     capture_response_headers INTEGER NOT NULL DEFAULT 1,
                     max_capture_request_body_size INTEGER NOT NULL DEFAULT 65536,
                     max_capture_response_body_size INTEGER NOT NULL DEFAULT 65536,
+                    slow_start_ms INTEGER NOT NULL DEFAULT 0,
+                    max_failures INTEGER NOT NULL DEFAULT 5,
+                    ejection_duration_ms INTEGER NOT NULL DEFAULT 30000,
                     created_utc TEXT NOT NULL,
                     modified_utc TEXT
                 );
@@ -219,6 +222,10 @@ namespace Switchboard.Core.Database.Sqlite
                     capture_response_headers INTEGER NOT NULL DEFAULT 1,
                     max_capture_request_body_size INTEGER NOT NULL DEFAULT 65536,
                     max_capture_response_body_size INTEGER NOT NULL DEFAULT 65536,
+                    sticky_session_enabled INTEGER NOT NULL DEFAULT 0,
+                    sticky_session_header TEXT,
+                    max_retries INTEGER NOT NULL DEFAULT 0,
+                    retry_on_5xx INTEGER NOT NULL DEFAULT 1,
                     created_utc TEXT NOT NULL,
                     modified_utc TEXT
                 );
@@ -229,6 +236,10 @@ namespace Switchboard.Core.Database.Sqlite
                     endpoint_identifier TEXT NOT NULL,
                     origin_identifier TEXT NOT NULL,
                     sort_order INTEGER NOT NULL DEFAULT 0,
+                    weight INTEGER NOT NULL DEFAULT 100,
+                    priority INTEGER NOT NULL DEFAULT 0,
+                    canary_header TEXT,
+                    canary_value TEXT,
                     FOREIGN KEY (endpoint_identifier) REFERENCES api_endpoints(identifier) ON DELETE CASCADE,
                     FOREIGN KEY (origin_identifier) REFERENCES origin_servers(identifier) ON DELETE CASCADE,
                     UNIQUE (endpoint_identifier, origin_identifier)
@@ -310,6 +321,20 @@ namespace Switchboard.Core.Database.Sqlite
                 "SELECT COUNT(*) FROM pragma_table_info('credentials') WHERE name='is_read_only'",
                 "ALTER TABLE credentials ADD COLUMN is_read_only INTEGER NOT NULL DEFAULT 0",
                 token).ConfigureAwait(false);
+
+            // Schema migrations (v5.0.0): intelligent routing / load-balancing columns. Each ALTER runs
+            // only when the column is absent, so existing databases are upgraded on startup.
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('origin_servers') WHERE name='slow_start_ms'", "ALTER TABLE origin_servers ADD COLUMN slow_start_ms INTEGER NOT NULL DEFAULT 0", token).ConfigureAwait(false);
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('origin_servers') WHERE name='max_failures'", "ALTER TABLE origin_servers ADD COLUMN max_failures INTEGER NOT NULL DEFAULT 5", token).ConfigureAwait(false);
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('origin_servers') WHERE name='ejection_duration_ms'", "ALTER TABLE origin_servers ADD COLUMN ejection_duration_ms INTEGER NOT NULL DEFAULT 30000", token).ConfigureAwait(false);
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('api_endpoints') WHERE name='sticky_session_enabled'", "ALTER TABLE api_endpoints ADD COLUMN sticky_session_enabled INTEGER NOT NULL DEFAULT 0", token).ConfigureAwait(false);
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('api_endpoints') WHERE name='sticky_session_header'", "ALTER TABLE api_endpoints ADD COLUMN sticky_session_header TEXT", token).ConfigureAwait(false);
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('api_endpoints') WHERE name='max_retries'", "ALTER TABLE api_endpoints ADD COLUMN max_retries INTEGER NOT NULL DEFAULT 0", token).ConfigureAwait(false);
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('api_endpoints') WHERE name='retry_on_5xx'", "ALTER TABLE api_endpoints ADD COLUMN retry_on_5xx INTEGER NOT NULL DEFAULT 1", token).ConfigureAwait(false);
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('endpoint_origin_mappings') WHERE name='weight'", "ALTER TABLE endpoint_origin_mappings ADD COLUMN weight INTEGER NOT NULL DEFAULT 100", token).ConfigureAwait(false);
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('endpoint_origin_mappings') WHERE name='priority'", "ALTER TABLE endpoint_origin_mappings ADD COLUMN priority INTEGER NOT NULL DEFAULT 0", token).ConfigureAwait(false);
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('endpoint_origin_mappings') WHERE name='canary_header'", "ALTER TABLE endpoint_origin_mappings ADD COLUMN canary_header TEXT", token).ConfigureAwait(false);
+            await ExecuteMigrationIfNeededAsync("SELECT COUNT(*) FROM pragma_table_info('endpoint_origin_mappings') WHERE name='canary_value'", "ALTER TABLE endpoint_origin_mappings ADD COLUMN canary_value TEXT", token).ConfigureAwait(false);
         }
 
         private async Task ExecuteMigrationIfNeededAsync(string checkSql, string migrateSql, CancellationToken token)
@@ -789,6 +814,9 @@ namespace Switchboard.Core.Database.Sqlite
                     values["capture_response_headers"] = o.CaptureResponseHeaders ? 1 : 0;
                     values["max_capture_request_body_size"] = o.MaxCaptureRequestBodySize;
                     values["max_capture_response_body_size"] = o.MaxCaptureResponseBodySize;
+                    values["slow_start_ms"] = o.SlowStartMs;
+                    values["max_failures"] = o.MaxFailures;
+                    values["ejection_duration_ms"] = o.EjectionDurationMs;
                     values["created_utc"] = o.CreatedUtc.ToString("o");
                     values["modified_utc"] = o.ModifiedUtc?.ToString("o");
                     break;
@@ -812,6 +840,10 @@ namespace Switchboard.Core.Database.Sqlite
                     values["capture_response_headers"] = e.CaptureResponseHeaders ? 1 : 0;
                     values["max_capture_request_body_size"] = e.MaxCaptureRequestBodySize;
                     values["max_capture_response_body_size"] = e.MaxCaptureResponseBodySize;
+                    values["sticky_session_enabled"] = e.StickySessionEnabled ? 1 : 0;
+                    values["sticky_session_header"] = e.StickySessionHeader;
+                    values["max_retries"] = e.MaxRetries;
+                    values["retry_on_5xx"] = e.RetryOn5xx ? 1 : 0;
                     values["created_utc"] = e.CreatedUtc.ToString("o");
                     values["modified_utc"] = e.ModifiedUtc?.ToString("o");
                     break;
@@ -821,6 +853,10 @@ namespace Switchboard.Core.Database.Sqlite
                     values["endpoint_identifier"] = m.EndpointIdentifier;
                     values["origin_identifier"] = m.OriginIdentifier;
                     values["sort_order"] = m.SortOrder;
+                    values["weight"] = m.Weight;
+                    values["priority"] = m.Priority;
+                    values["canary_header"] = m.CanaryHeader;
+                    values["canary_value"] = m.CanaryValue;
                     break;
 
                 case EndpointRoute r:
@@ -954,6 +990,9 @@ namespace Switchboard.Core.Database.Sqlite
                     CaptureResponseHeaders = reader.GetInt32(reader.GetOrdinal("capture_response_headers")) == 1,
                     MaxCaptureRequestBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_request_body_size")),
                     MaxCaptureResponseBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_response_body_size")),
+                    SlowStartMs = reader.GetInt32(reader.GetOrdinal("slow_start_ms")),
+                    MaxFailures = reader.GetInt32(reader.GetOrdinal("max_failures")),
+                    EjectionDurationMs = reader.GetInt32(reader.GetOrdinal("ejection_duration_ms")),
                     CreatedUtc = DateTime.Parse(reader.GetString(reader.GetOrdinal("created_utc")))
                 };
                 if (!reader.IsDBNull(reader.GetOrdinal("name")))
@@ -983,12 +1022,17 @@ namespace Switchboard.Core.Database.Sqlite
                     CaptureResponseHeaders = reader.GetInt32(reader.GetOrdinal("capture_response_headers")) == 1,
                     MaxCaptureRequestBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_request_body_size")),
                     MaxCaptureResponseBodySize = reader.GetInt32(reader.GetOrdinal("max_capture_response_body_size")),
+                    MaxRetries = reader.GetInt32(reader.GetOrdinal("max_retries")),
+                    RetryOn5xx = reader.GetInt32(reader.GetOrdinal("retry_on_5xx")) == 1,
+                    StickySessionEnabled = reader.GetInt32(reader.GetOrdinal("sticky_session_enabled")) == 1,
                     CreatedUtc = DateTime.Parse(reader.GetString(reader.GetOrdinal("created_utc")))
                 };
                 if (!reader.IsDBNull(reader.GetOrdinal("name")))
                     e.Name = reader.GetString(reader.GetOrdinal("name"));
                 if (!reader.IsDBNull(reader.GetOrdinal("auth_context_header")))
                     e.AuthContextHeader = reader.GetString(reader.GetOrdinal("auth_context_header"));
+                if (!reader.IsDBNull(reader.GetOrdinal("sticky_session_header")))
+                    e.StickySessionHeader = reader.GetString(reader.GetOrdinal("sticky_session_header"));
                 if (!reader.IsDBNull(reader.GetOrdinal("modified_utc")))
                     e.ModifiedUtc = DateTime.Parse(reader.GetString(reader.GetOrdinal("modified_utc")));
                 return (e as T)!;
@@ -1001,8 +1045,14 @@ namespace Switchboard.Core.Database.Sqlite
                     Id = reader.GetInt32(reader.GetOrdinal("id")),
                     EndpointIdentifier = reader.GetString(reader.GetOrdinal("endpoint_identifier")),
                     OriginIdentifier = reader.GetString(reader.GetOrdinal("origin_identifier")),
-                    SortOrder = reader.GetInt32(reader.GetOrdinal("sort_order"))
+                    SortOrder = reader.GetInt32(reader.GetOrdinal("sort_order")),
+                    Weight = reader.GetInt32(reader.GetOrdinal("weight")),
+                    Priority = reader.GetInt32(reader.GetOrdinal("priority"))
                 };
+                if (!reader.IsDBNull(reader.GetOrdinal("canary_header")))
+                    m.CanaryHeader = reader.GetString(reader.GetOrdinal("canary_header"));
+                if (!reader.IsDBNull(reader.GetOrdinal("canary_value")))
+                    m.CanaryValue = reader.GetString(reader.GetOrdinal("canary_value"));
                 return (m as T)!;
             }
 

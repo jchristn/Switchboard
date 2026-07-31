@@ -400,7 +400,13 @@
     "saveError": "オリジンの保存に失敗しました",
     "deleteError": "オリジンの削除に失敗しました",
     "empty": "オリジンサーバーが構成されていません",
-    "emptyHint": "Switchboard がプロキシするオリジンサーバーを追加してください。"
+    "emptyHint": "Switchboard がプロキシするオリジンサーバーを追加してください。",
+    "slowStart": "スロースタート (ms)",
+    "slowStartHint": "新たに正常化したオリジンへのトラフィックをこの期間で徐々に増やします。0 で無効。",
+    "maxFailures": "排除しきい値",
+    "maxFailuresHint": "オリジンを排除するまでの連続失敗リクエスト数。0 で無効。",
+    "ejectionDuration": "排除時間 (ms)",
+    "ejectionDurationHint": "排除されたオリジンがローテーションから外れている時間。"
   },
   "endpoints": {
     "title": "APIエンドポイント",
@@ -467,7 +473,27 @@
     "detachTitle": "オリジンを切断",
     "detachMessage": "オリジン「{{name}}」をこのエンドポイントから切断しますか?",
     "originsEmpty": "このエンドポイントに接続されたオリジンサーバーはありません",
-    "originsEmptyHint": "リクエストのルーティングを有効にするには、オリジンサーバーを接続してください。"
+    "originsEmptyHint": "リクエストのルーティングを有効にするには、オリジンサーバーを接続してください。",
+    "leastConnections": "最少接続",
+    "powerOfTwoChoices": "ランダム2択",
+    "weighted": "重み付け",
+    "latencyBased": "レイテンシ (EWMA)",
+    "maxRetries": "最大リトライ回数",
+    "maxRetriesHint": "失敗した冪等リクエストを他のオリジンで再試行します。",
+    "stickySessionEnabled": "スティッキーセッション",
+    "stickySessionHeader": "スティッキーセッション ヘッダー",
+    "stickySessionHeaderHint": "値でクライアントをオリジンに固定するヘッダー。空欄ならクライアントIPを使用。",
+    "stickySessionHeaderPlaceholder": "例: X-Session-Id",
+    "retryOn5xx": "5xx で再試行",
+    "weight": "重み",
+    "priority": "優先度",
+    "drained": "ドレイン",
+    "canary": "カナリア",
+    "canaryHeader": "カナリア ヘッダー",
+    "canaryValue": "カナリア 値",
+    "canaryHeaderPlaceholder": "カナリア ヘッダー（任意）",
+    "canaryValuePlaceholder": "カナリア 値",
+    "mappingParamsHint": "重みはトラフィック配分を決めます（0 でドレイン）。優先度はバックアップの階層です。カナリアは一致するリクエストをこのオリジンに固定します。"
   },
   "users": {
     "title": "ユーザー",

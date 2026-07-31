@@ -23,6 +23,8 @@ namespace Test.Shared.Harness
         private WebserverSettings _Settings;
         private Webserver? _Server;
         private bool _Disposed;
+        private volatile int _ForcedStatusCode;
+        private volatile int _ArtificialDelayMs;
 
         /// <summary>
         /// Initialize a new origin host.
@@ -46,6 +48,27 @@ namespace Test.Shared.Harness
         public string ServerName
         {
             get { return _ServerName; }
+        }
+
+        /// <summary>
+        /// HTTP status code to force on non-health (REST echo) responses. 0 (the default) returns the
+        /// normal status. Used to simulate an origin that passes active health checks but fails real
+        /// traffic, for retry and passive-ejection tests. Thread-safe.
+        /// </summary>
+        public int ForcedStatusCode
+        {
+            get { return _ForcedStatusCode; }
+            set { _ForcedStatusCode = value; }
+        }
+
+        /// <summary>
+        /// Artificial delay, in milliseconds, added to non-health (REST echo) responses to simulate a slow
+        /// origin, for latency-aware and least-connections tests. Default is 0. Thread-safe.
+        /// </summary>
+        public int ArtificialDelayMs
+        {
+            get { return _ArtificialDelayMs; }
+            set { _ArtificialDelayMs = value; }
         }
 
         /// <summary>
@@ -231,10 +254,14 @@ namespace Test.Shared.Harness
 
         private async Task HandleRestRequest(HttpContextBase ctx)
         {
+            int delay = _ArtificialDelayMs;
+            if (delay > 0) await Task.Delay(delay).ConfigureAwait(false);
+
             string responseContent = CreateRestResponse(ctx);
             string contentType = ctx.Request.Url.RawWithoutQuery.Contains("/api/") ? "application/json" : "text/plain";
 
-            ctx.Response.StatusCode = GetStatusCodeForMethod(ctx.Request.Method);
+            int forced = _ForcedStatusCode;
+            ctx.Response.StatusCode = forced > 0 ? forced : GetStatusCodeForMethod(ctx.Request.Method);
             ctx.Response.ContentType = contentType;
             ctx.Response.Headers.Add("X-Origin-Server", _ServerName);
 

@@ -400,7 +400,13 @@
     "saveError": "Échec de l'enregistrement du serveur d'origine",
     "deleteError": "Échec de la suppression du serveur d'origine",
     "empty": "Aucun serveur d'origine configuré",
-    "emptyHint": "Ajoutez un serveur d'origine vers lequel Switchboard proxifiera."
+    "emptyHint": "Ajoutez un serveur d'origine vers lequel Switchboard proxifiera.",
+    "slowStart": "Démarrage lent (ms)",
+    "slowStartHint": "Montée progressive du trafic vers une origine récemment saine. 0 désactive.",
+    "maxFailures": "Seuil d'éjection",
+    "maxFailuresHint": "Requêtes échouées consécutives avant l'éjection de l'origine. 0 désactive.",
+    "ejectionDuration": "Durée d'éjection (ms)",
+    "ejectionDurationHint": "Durée pendant laquelle une origine éjectée reste hors rotation."
   },
   "endpoints": {
     "title": "Points de terminaison API",
@@ -467,7 +473,27 @@
     "detachTitle": "Détacher l'origine",
     "detachMessage": "Détacher le serveur d'origine « {{name}} » de ce point de terminaison ?",
     "originsEmpty": "Aucun serveur d'origine attaché à ce point de terminaison",
-    "originsEmptyHint": "Attachez un serveur d'origine pour activer le routage des requêtes."
+    "originsEmptyHint": "Attachez un serveur d'origine pour activer le routage des requêtes.",
+    "leastConnections": "Moins de connexions",
+    "powerOfTwoChoices": "Deux choix aléatoires",
+    "weighted": "Pondéré",
+    "latencyBased": "Latence (EWMA)",
+    "maxRetries": "Nombre max de tentatives",
+    "maxRetriesHint": "Réessayer les requêtes idempotentes échouées sur d’autres origines.",
+    "stickySessionEnabled": "Sessions persistantes",
+    "stickySessionHeader": "En-tête de session persistante",
+    "stickySessionHeaderHint": "En-tête dont la valeur fixe un client à une origine. Vide = IP du client.",
+    "stickySessionHeaderPlaceholder": "ex. X-Session-Id",
+    "retryOn5xx": "Réessayer sur 5xx",
+    "weight": "Poids",
+    "priority": "Priorité",
+    "drained": "Drainé",
+    "canary": "Canary",
+    "canaryHeader": "En-tête canary",
+    "canaryValue": "Valeur canary",
+    "canaryHeaderPlaceholder": "En-tête canary (facultatif)",
+    "canaryValuePlaceholder": "Valeur canary",
+    "mappingParamsHint": "Le poids définit la part de trafic (0 draine). La priorité crée des niveaux de secours. Canary fixe les requêtes correspondantes à cette origine."
   },
   "users": {
     "title": "Utilisateurs",

@@ -162,3 +162,15 @@
     inline-size: 100%;
   }
 }
+
+/* Origin-mapping attach form: weight/priority/canary inputs for per-endpoint routing. */
+.ep-attach-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
+}
+.ep-attach-form__num {
+  width: 96px;
+  flex: 0 0 auto;
+}

@@ -213,7 +213,7 @@ Returns the health status of the Switchboard instance. Response fields are **cam
 {
   "status": "healthy",
   "timestamp": "2026-07-29T10:30:00.0000000Z",
-  "version": "4.1.0"
+  "version": "5.0.0"
 }
 ```
 
@@ -625,6 +625,9 @@ Validates the current configuration, or a proposed one supplied in the request b
 | `HealthyThreshold` | integer | No | 1 | Successful checks before marking healthy |
 | `MaxParallelRequests` | integer | No | 10 | Maximum concurrent requests |
 | `RateLimitRequestsThreshold` | integer | No | 30 | Total requests before rate limiting |
+| `SlowStartMs` | integer | No | 0 | Slow-start ramp window in ms after becoming healthy (0 disables; max 600000) |
+| `MaxFailures` | integer | No | 5 | Consecutive proxied failures before passive ejection (0 disables; max 1000) |
+| `EjectionDurationMs` | integer | No | 30000 | How long an ejected origin stays out of rotation, in ms (min 1000; max 3600000) |
 | `LogRequest` | boolean | No | false | Log requests to this origin |
 | `LogRequestBody` | boolean | No | false | Log request bodies |
 | `LogResponse` | boolean | No | false | Log responses |
@@ -707,7 +710,11 @@ A single health check result within the rolling history window.
 | `Identifier` | string | Yes | - | Unique identifier for referencing |
 | `Name` | string | No | null | Display name |
 | `TimeoutMs` | integer | No | 60000 | Request timeout in milliseconds |
-| `LoadBalancingMode` | string | No | `"RoundRobin"` | `"RoundRobin"` or `"Random"` |
+| `LoadBalancingMode` | string | No | `"RoundRobin"` | One of `"RoundRobin"`, `"Random"`, `"LeastConnections"`, `"PowerOfTwoChoices"`, `"Weighted"`, `"LatencyBased"`. See [LOAD_BALANCING.md](LOAD_BALANCING.md) |
+| `StickySessionEnabled` | boolean | No | false | Pin clients to an origin via consistent hashing |
+| `StickySessionHeader` | string | No | null | Header whose value is the affinity key; null uses client IP |
+| `MaxRetries` | integer | No | 0 | Additional origins to try on failure, idempotent methods only (0 disables; max 10) |
+| `RetryOn5xx` | boolean | No | true | Treat an upstream 5xx as a retryable failure |
 | `BlockHttp10` | boolean | No | false | Block HTTP/1.0 requests |
 | `MaxRequestBodySize` | integer | No | 536870912 | Maximum request body size (512MB) |
 | `LogRequestFull` | boolean | No | false | Log full request details |
@@ -781,8 +788,16 @@ A single health check result within the rolling history window.
 | `EndpointGUID` | string (GUID) | Yes | - | Endpoint GUID (required on create) |
 | `OriginIdentifier` | string | Yes | - | Origin server identifier |
 | `OriginGUID` | string (GUID) | Yes | - | Origin server GUID (required on create) |
-| `SortOrder` | integer | No | 0 | Load balancing priority |
+| `SortOrder` | integer | No | 0 | Ordering within the endpoint (lower = first) |
+| `Weight` | integer | No | 100 | Relative routing weight for this origin within the endpoint; 0 drains it (min 0; max 10000) |
+| `Priority` | integer | No | 0 | Priority tier; lower is preferred, higher tiers are backups (min 0; max 1000) |
+| `CanaryHeader` | string | No | null | Request header that pins matching requests to this origin |
+| `CanaryValue` | string | No | null | Required value of `CanaryHeader` for the match |
 | `CreatedUtc` | datetime | No | Current time | Creation timestamp |
+
+Weight, priority, and canary are per endpoint-origin mapping, so the same origin can play different
+roles across endpoints (for example, a canary target for one endpoint and a full-weight backend for
+another). See [LOAD_BALANCING.md](LOAD_BALANCING.md).
 
 **Example:**
 
@@ -793,7 +808,11 @@ A single health check result within the rolling history window.
   "EndpointGUID": "660e8400-e29b-41d4-a716-446655440001",
   "OriginIdentifier": "backend-api-1",
   "OriginGUID": "550e8400-e29b-41d4-a716-446655440000",
-  "SortOrder": 0
+  "SortOrder": 0,
+  "Weight": 100,
+  "Priority": 0,
+  "CanaryHeader": null,
+  "CanaryValue": null
 }
 ```
 
