@@ -12,7 +12,7 @@ v5.0.0
   proxied request with W3C `traceparent` propagated to the origin. Configuration lives in a new `Telemetry`
   settings block (surfaced in the dashboard under Settings and a new read-only **Observability** view), and
   `docker compose up` now brings up a turnkey OpenTelemetry Collector + Prometheus + Tempo + Loki + Grafana
-  stack (Grafana on `:3001` with a pre-provisioned dashboard). See [TELEMETRY.md](TELEMETRY.md)
+  stack (Grafana on `:3001` with a pre-provisioned dashboard). See the [Observability](README.md#observability) section
 - Intelligent routing and load balancing. Four new per-endpoint load-balancing modes join round-robin and
   random: **least-connections**, **power-of-two-choices**, **weighted**, and **latency-based** (EWMA). The
   gateway now applies a layered selection pipeline per request — explicit canary header match → availability

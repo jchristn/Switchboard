@@ -45,6 +45,7 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
   - [Running the Dashboard](#running-the-dashboard)
   - [Database Configuration](#database-configuration)
   - [Request History](#request-history)
+- [Observability](#observability)
 - [Support](#support)
 - [Contributing](#contributing)
 - [License](#license)
@@ -105,7 +106,7 @@ Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers 
 
 Highlights in this release:
 
-- **Observability with OpenTelemetry** – Metrics and traces export over OTLP: request rate/latency/body sizes, per-origin load/health/ejections, load-balancer selections, and retries/failovers, plus one span per proxied request with `traceparent` propagated downstream. `docker compose up` brings up a turnkey Prometheus + Tempo + Loki + Grafana stack (Grafana on `:3001`, pre-provisioned dashboard). See **[TELEMETRY.md](TELEMETRY.md)**.
+- **Observability with OpenTelemetry** – Metrics and traces export over OTLP: request rate/latency/body sizes, per-origin load/health/ejections, load-balancer selections, and retries/failovers, plus one span per proxied request with `traceparent` propagated downstream. `docker compose up` brings up a turnkey Prometheus + Tempo + Loki + Grafana stack (Grafana on `:3001`, pre-provisioned dashboard). See the [Observability](#observability) section.
 - **Intelligent routing and load balancing** – Four new load-balancing modes (least-connections, power-of-two-choices, weighted, and latency-based) plus passive health checks with outlier ejection, automatic retries/failover, sticky sessions, slow start, and per-endpoint weighted canary with header routing. See **[LOAD_BALANCING.md](LOAD_BALANCING.md)** for the full picture.
 - **Live origin health monitoring** – Per-origin uptime, a rolling check-history histogram, and last-error surfaced through `GET /origins/health` and the dashboard.
 - **Live configuration** – Origins, endpoints, routes, and rewrites created through the dashboard or management API now take effect on the running proxy automatically, no restart required.
@@ -121,7 +122,7 @@ Highlights in this release:
 ## Key Features
 
 - ✅ **Intelligent Load Balancing** – Round-robin, random, least-connections, power-of-two-choices, weighted, and latency-based (EWMA), with priority tiers, sticky sessions, slow start, passive ejection, retries/failover, and weighted canary ([details](LOAD_BALANCING.md))
-- ✅ **Observability** – OpenTelemetry metrics + traces over OTLP, with a bundled Prometheus/Tempo/Loki/Grafana stack ([details](TELEMETRY.md))
+- ✅ **Observability** – OpenTelemetry metrics + traces over OTLP, with a bundled Prometheus/Tempo/Loki/Grafana stack ([details](#observability))
 - ✅ **Automatic Health Checks** – Continuous monitoring with configurable thresholds
 - ✅ **Rate Limiting** – Per-origin concurrent request limits and throttling
 - ✅ **Custom Authentication** – Callback-based auth/authz with context forwarding
@@ -529,8 +530,8 @@ This starts every service in the stack. Default URLs and credentials:
 
 > Change the admin token before exposing Switchboard beyond localhost: set `Management.AdminToken` in
 > `sb.json` (or via **Settings** in the dashboard). In Grafana, `Dashboards → Switchboard Overview` is
-> pre-provisioned; panels fill once traffic flows through the proxy. See **[TELEMETRY.md](TELEMETRY.md)**
-> for the observability details.
+> pre-provisioned; panels fill once traffic flows through the proxy. See the
+> [Observability](#observability) section for details.
 
 The database-specific compose files additionally start their database container with the credentials
 defined in that file (for example MySQL: user `switchboard` / password `switchboard123`).
@@ -1055,6 +1056,67 @@ curl -H "Authorization: Bearer your-token" \
 curl -H "Authorization: Bearer your-token" \
   http://localhost:8000/_sb/v1.0/history/stats
 ```
+
+---
+
+## Observability
+
+Switchboard instruments its request hot path with **OpenTelemetry** and exports **metrics and traces**
+over OTLP. The `docker compose` stacks bundle a complete, pre-configured backend — OpenTelemetry
+Collector, Prometheus, Tempo, Loki, and Grafana — so you get dashboards with zero manual setup.
+
+### What's exported
+
+- **Metrics** — request rate/latency (histogram) and body sizes by endpoint; per-origin request counts,
+  active/pending load, health (`up`), ejections, EWMA latency, and uptime ratio; load-balancer selections;
+  retries and failovers; gateway rejections by reason; and build/config info. Series are labeled only by
+  bounded values (endpoint, origin, method, status code, reason) — never by raw path or client IP.
+- **Traces** — one span per proxied request (`proxy {endpoint}`) with the endpoint, origin, method, and
+  status attributes; the W3C `traceparent` header is propagated to the origin so it can continue the trace.
+- **Logs** — collected from Switchboard's log files by the Collector's filelog receiver and shipped to Loki.
+
+### Enabling it
+
+Telemetry is **off by default** in a standalone build and **on** in the bundled Docker stacks. Turn it on
+by setting the `Telemetry` block in `sb.json` (or from the dashboard under **Settings → Telemetry &
+Observability**, or the management API), pointing OTLP at your collector:
+
+```json
+"Telemetry": {
+  "Enable": true,
+  "ServiceName": "switchboard",
+  "Metrics": { "Enable": true, "ExportIntervalMs": 15000 },
+  "Traces": { "Enable": true, "SamplingRatio": 1.0, "PropagateToOrigin": true },
+  "Logs": { "Enable": true, "MinimumSeverity": 1 },
+  "Otlp": { "Endpoint": "http://otel-collector:4317", "Protocol": "grpc", "TimeoutMs": 10000, "Headers": null }
+}
+```
+
+Most fields require a restart to rewire the exporters; `Traces.PropagateToOrigin` applies live. The OTLP
+`Headers` value is treated as a secret and masked by the management API. Switchboard exposes no metrics
+port of its own — Prometheus scrapes the Collector.
+
+### Accessing Grafana
+
+After `docker compose up -d`, give the containers a few seconds, then:
+
+1. Open **http://localhost:3001**. You are **not** prompted to log in — the stack enables anonymous
+   access with the Admin role. (If you later disable anonymous access, Grafana's default login is
+   `admin` / `admin`.)
+2. The Prometheus, Tempo, and Loki data sources are already wired up — nothing to configure.
+3. Open **Dashboards** → **Switchboard Overview** (it is provisioned into the top-level list).
+4. **Panels start empty.** They fill once traffic flows through the proxy and the first export/scrape
+   interval elapses (~15 s). Generate some traffic — e.g. `curl http://localhost:8000/` a few times, or
+   run the `LoadGenerator` project — then refresh.
+5. For traces and logs, use **Explore** (compass icon): pick **Tempo** to find spans (service
+   `switchboard`) or **Loki** to query logs (`{service_name="switchboard"}`); you can pivot from a trace
+   to its logs and back.
+
+The dashboard's **Observability** view (under *Operate*) shows live telemetry status — enabled signals,
+OTLP endpoint, sampling ratio — and links straight out to Grafana and Prometheus.
+
+> Ports (host): Grafana `3001`, Prometheus `9090`, OTLP `4317`/`4318`. See the
+> [Docker Compose services table](#quick-start-with-docker-compose) for every service's URL and credentials.
 
 ---
 

@@ -1,9 +1,12 @@
 # Switchboard Observability Plan — OpenTelemetry, Prometheus, Grafana
 
-Status: **Planned** — ships as part of the unreleased **v5.0.0** (no version bump). This is an
-implementation plan, not yet built. Each task has a checkbox a
-developer can annotate (`[ ]` → `[x]`) as work lands. Acceptance criteria are stated per workstream and a
-final end-to-end verification section closes it out.
+> **Archived.** This was the implementation plan for the observability feature shipped in **v5.0.0**. It is
+> kept for historical reference; the user-facing documentation now lives in the **Observability** section of
+> the [README](../README.md#observability). Relative links below point at the repository root.
+
+Status: **Delivered in v5.0.0** (no version bump). This document was the implementation plan. Each task has a
+checkbox a developer can annotate (`[ ]` → `[x]`) as work lands. Acceptance criteria are stated per workstream
+and a final end-to-end verification section closes it out.
 
 ## Context
 

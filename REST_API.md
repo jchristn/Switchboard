@@ -558,7 +558,8 @@ Returns the full server configuration with secrets (`Database.Password`, `Manage
 - `restartRequiredSettings` — dotted paths that only take effect after a restart
 - `runtimeEditableSettings` — dotted paths that apply immediately
 
-The `Telemetry` block configures OpenTelemetry export (see [TELEMETRY.md](TELEMETRY.md)). All of its
+The `Telemetry` block configures OpenTelemetry export (see the [Observability](README.md#observability)
+section of the README). All of its
 fields require a restart except `Telemetry.Traces.PropagateToOrigin`, which applies immediately:
 
 | Field | Type | Default | Description |
