@@ -7,6 +7,7 @@ namespace Test.Shared
     using System.Threading.Tasks;
 
     using RestWrapper;
+    using Switchboard.Core;
     using Test.Shared.Harness;
     using Touchstone.Core;
 
@@ -139,6 +140,34 @@ namespace Test.Shared
 
                                 (int ok, int fail) result = await traffic.ConfigureAwait(false);
                                 Check.True(result.fail != 10, "not all requests failed during partial outage (ok=" + result.ok + ", fail=" + result.fail + ")");
+                            }
+                            finally
+                            {
+                                harness.Dispose();
+                            }
+                        }),
+
+                    new TestCaseDescriptor("Health", "HealthReTargetsAfterEdit", "Editing an origin's address re-targets its health check without a restart",
+                        executeAsync: async ct =>
+                        {
+                            ProxyHarness harness = new ProxyHarness(Origins(1));
+                            try
+                            {
+                                await harness.StartAsync(ct).ConfigureAwait(false);
+
+                                OriginServer origin = harness.Settings.Origins[0];
+                                int livePort = origin.Port;
+                                Check.True(origin.Healthy, "origin starts healthy");
+
+                                // Repoint the origin at a port with nothing listening (in place, as the
+                                // configuration reload does). The running task must pick up the new target
+                                // and drive the origin unhealthy.
+                                origin.Port = 65533;
+                                await WaitAsync(() => !origin.Healthy, TimeSpan.FromSeconds(20), ct).ConfigureAwait(false);
+
+                                // Restore the live address; the same task must recover the origin to healthy.
+                                origin.Port = livePort;
+                                await WaitAsync(() => origin.Healthy, TimeSpan.FromSeconds(20), ct).ConfigureAwait(false);
                             }
                             finally
                             {

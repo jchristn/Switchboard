@@ -341,6 +341,63 @@ namespace Test.Shared
                         Check.Equal(404, nf, "get after delete");
                     }),
 
+                    // ---- Origins health ----
+                    Case("ListOriginsHealthAuthorized", "GET /origins/health returns health for each origin", async (h, ct) =>
+                    {
+                        (int s, string b) = await Send(h, HttpMethod.Get, "/origins/health");
+                        Check.Equal(200, s, "health list status");
+                        Check.Contains(b, "Server 1", "origin present in health list");
+                        Check.Contains(b, "IsHealthy", "health status field present");
+                        Check.Contains(b, "History", "history field present");
+                        // The harness waits for all origins to be healthy before running cases.
+                        Check.Contains(b, "\"IsHealthy\": true", "origin reported healthy");
+                    }),
+
+                    Case("ListOriginsHealthUnauthorized", "GET /origins/health without a token returns 401", async (h, ct) =>
+                    {
+                        (int s, _) = await Send(h, HttpMethod.Get, "/origins/health", token: null);
+                        Check.Equal(401, s, "health list unauthorized status");
+                    }),
+
+                    Case("ListOriginsHealthBadToken", "GET /origins/health with a wrong token returns 401", async (h, ct) =>
+                    {
+                        (int s, _) = await Send(h, HttpMethod.Get, "/origins/health", token: "not-the-admin-token");
+                        Check.Equal(401, s, "health list bad token status");
+                    }),
+
+                    Case("GetOriginHealthAuthorized", "GET /origins/{guid}/health returns a single origin's health", async (h, ct) =>
+                    {
+                        (int ls, string lb) = await Send(h, HttpMethod.Get, "/origins");
+                        Check.Equal(200, ls, "list origins for guid");
+                        List<ResourceRef> origins = JsonSerializer.Deserialize<List<ResourceRef>>(lb, _Json) ?? new List<ResourceRef>();
+                        Check.True(origins.Count > 0, "at least one origin listed");
+                        string guid = origins[0].GUID ?? string.Empty;
+                        Check.True(!string.IsNullOrEmpty(guid), "origin guid resolved");
+
+                        (int s, string b) = await Send(h, HttpMethod.Get, "/origins/" + guid + "/health");
+                        Check.Equal(200, s, "single health status");
+                        Check.Contains(b, "IsHealthy", "health status field present");
+                        Check.Contains(b, guid, "returned health carries the requested guid");
+                    }),
+
+                    Case("GetOriginHealthNotFound", "GET /origins/{guid}/health for an unknown GUID returns 404", async (h, ct) =>
+                    {
+                        (int s, _) = await Send(h, HttpMethod.Get, "/origins/" + Guid.NewGuid() + "/health");
+                        Check.Equal(404, s, "unknown origin health not found");
+                    }),
+
+                    Case("GetOriginHealthBadGuid", "GET /origins/{guid}/health with a malformed GUID returns 400", async (h, ct) =>
+                    {
+                        (int s, _) = await Send(h, HttpMethod.Get, "/origins/not-a-guid/health");
+                        Check.Equal(400, s, "malformed guid bad request");
+                    }),
+
+                    Case("GetOriginHealthUnauthorized", "GET /origins/{guid}/health without a token returns 401", async (h, ct) =>
+                    {
+                        (int s, _) = await Send(h, HttpMethod.Get, "/origins/" + Guid.NewGuid() + "/health", token: null);
+                        Check.Equal(401, s, "single health unauthorized status");
+                    }),
+
                     // ---- Endpoints CRUD ----
                     Case("EndpointCrud", "Endpoint create, get, list, update, and delete", async (h, ct) =>
                     {

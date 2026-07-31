@@ -576,6 +576,23 @@
     "empty": "Keine URL-Umschreibungen konfiguriert",
     "emptyHint": "Fügen Sie eine Umschreibung hinzu, um Anfrage-URLs zu transformieren."
   },
+  "health": {
+    "titleFor": "Zustand: {{name}}",
+    "details": "Zustandsdetails anzeigen",
+    "status": "Status",
+    "uptime": "Verfügbarkeit",
+    "historySpan": "Verlaufszeitraum",
+    "consecutiveOk": "Erfolge in Folge",
+    "consecutiveFail": "Fehler in Folge",
+    "lastError": "Letzter Fehler",
+    "healthHistory": "Zustandsverlauf",
+    "firstCheck": "Erste Prüfung",
+    "lastCheck": "Letzte Prüfung",
+    "lastHealthy": "Zuletzt gesund",
+    "lastUnhealthy": "Zuletzt fehlerhaft",
+    "noData": "Keine Daten",
+    "notAvailable": "k. A."
+  },
   "status": {
     "healthy": "Fehlerfrei",
     "unhealthy": "Fehlerhaft",

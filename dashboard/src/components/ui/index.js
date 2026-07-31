@@ -6,6 +6,8 @@ export * as Icons from './Icons';
 
 export { default as Badge, StatusBadge, MethodBadge, HealthBadge } from './Badge';
 
+export { HealthHistogram, HealthDetailModal, formatDuration } from './HealthHistogram';
+
 export { default as CopyButton } from './CopyButton';
 export { default as CopyableId } from './CopyableId';
 

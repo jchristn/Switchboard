@@ -3301,6 +3301,33 @@
             <param name="urlPattern">URL pattern.</param>
             <param name="requiresAuthentication">True if authentication is required.</param>
         </member>
+        <member name="T:Switchboard.Core.Models.HealthCheckRecord">
+            <summary>
+            A single origin server health check result, recorded in the rolling in-memory history window.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.HealthCheckRecord.TimestampUtc">
+            <summary>
+            Timestamp, in UTC, at which the health check was performed.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.HealthCheckRecord.Success">
+            <summary>
+            True if the health check succeeded.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.HealthCheckRecord.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.HealthCheckRecord.#ctor(System.DateTime,System.Boolean)">
+            <summary>
+            Instantiate with values.
+            </summary>
+            <param name="timestampUtc">Timestamp, in UTC, at which the health check was performed.</param>
+            <param name="success">True if the health check succeeded.</param>
+        </member>
         <member name="T:Switchboard.Core.Models.OriginServerConfig">
             <summary>
             Origin server configuration.
@@ -3464,6 +3491,122 @@
             Instantiate with identifier.
             </summary>
             <param name="identifier">Unique identifier.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.OriginServerHealthStatus">
+            <summary>
+            Point-in-time health status for an origin server, exposed via the management API.
+            Combines the origin's runtime health state with computed values (current-period uptime and
+            downtime, uptime percentage). This is a read-only snapshot; the authoritative runtime state is
+            maintained on the <see cref="T:Switchboard.Core.OriginServer"/> instance by the health check service.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.Identifier">
+            <summary>
+            Unique identifier of the origin server.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.GUID">
+            <summary>
+            Unique GUID of the origin server, derived deterministically from the identifier so it is
+            stable across reads and matches the GUID used to address the origin's configuration.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.Name">
+            <summary>
+            Display name of the origin server. May be null.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.Hostname">
+            <summary>
+            Hostname of the origin server.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.Port">
+            <summary>
+            TCP port of the origin server.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.IsHealthy">
+            <summary>
+            True if the origin server is currently considered healthy.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.FirstCheckUtc">
+            <summary>
+            Timestamp, in UTC, of the first health check performed against this origin since startup.
+            Null if no check has been performed yet.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.LastCheckUtc">
+            <summary>
+            Timestamp, in UTC, of the most recent health check. Null if no check has been performed yet.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.LastHealthyUtc">
+            <summary>
+            Timestamp, in UTC, of the most recent transition to the healthy state. Null if never healthy.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.LastUnhealthyUtc">
+            <summary>
+            Timestamp, in UTC, of the most recent transition to the unhealthy state. Null if never unhealthy.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.LastStateChangeUtc">
+            <summary>
+            Timestamp, in UTC, of the most recent transition in either direction. Null if no transition
+            has occurred.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.TotalUptimeMs">
+            <summary>
+            Cumulative time, in milliseconds, the origin has spent healthy, including the current period.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.TotalDowntimeMs">
+            <summary>
+            Cumulative time, in milliseconds, the origin has spent unhealthy, including the current period.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.UptimePercentage">
+            <summary>
+            Uptime percentage (0-100) computed from total uptime and downtime.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.ConsecutiveSuccesses">
+            <summary>
+            Number of consecutive successful health checks.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.ConsecutiveFailures">
+            <summary>
+            Number of consecutive failed health checks.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.LastError">
+            <summary>
+            Error message from the most recent failed health check. Null when the last check succeeded.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.OriginServerHealthStatus.History">
+            <summary>
+            Rolling window of individual check results, retained for up to 24 hours.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerHealthStatus.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.Models.OriginServerHealthStatus.FromOrigin(Switchboard.Core.OriginServer)">
+            <summary>
+            Create a health status snapshot from an origin server's runtime state.
+            Reads the origin's state under its lock and computes the current in-progress uptime/downtime
+            period on top of the banked totals.
+            </summary>
+            <param name="origin">Origin server. Cannot be null.</param>
+            <returns>Health status snapshot.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="origin"/> is null.</exception>
         </member>
         <member name="T:Switchboard.Core.Models.OriginServerState">
             <summary>
@@ -3759,6 +3902,24 @@
             </summary>
             <param name="version">Version number.</param>
             <param name="description">Description.</param>
+        </member>
+        <member name="T:Switchboard.Core.Models.SettingsResponse">
+            <summary>
+            The settings payload returned by the management API: the full <see cref="T:Switchboard.Core.SwitchboardSettings"/>
+            tree (with secrets masked) plus metadata describing which fields require a restart and which
+            apply at runtime. The metadata arrays are serialized in camelCase and after the configuration
+            sections, matching the documented response shape.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.SettingsResponse.RestartRequiredSettings">
+            <summary>
+            Dotted setting paths that only take effect after a restart.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Models.SettingsResponse.RuntimeEditableSettings">
+            <summary>
+            Dotted setting paths that apply immediately at runtime.
+            </summary>
         </member>
         <member name="T:Switchboard.Core.Models.TimeSeriesBucket">
             <summary>

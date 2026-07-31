@@ -13,6 +13,7 @@
     using System.Threading.Tasks;
     using RestWrapper;
     using SerializationHelper;
+    using Switchboard.Core.Models;
     using SyslogLogging;
     using Timestamps;
     using UrlMatcher;
@@ -42,6 +43,7 @@
         #region Private-Members
 
         private readonly string _Header = "[HealthCheckService] ";
+        private static readonly TimeSpan _HistoryRetention = TimeSpan.FromHours(24);
         private SwitchboardSettings _Settings = null;
         private LoggingModule _Logging = null;
         private Serializer _Serializer = null;
@@ -187,6 +189,7 @@
                 origin.Identifier + " " + origin.Name + " " + origin.Hostname + ":" + origin.Port);
 
             string healthCheckUrl = (origin.Ssl ? "https://" : "http://") + origin.Hostname + ":" + origin.Port + origin.HealthCheckUrl;
+            string previousTarget = null;
 
             using (HttpClient client = new HttpClient())
             {
@@ -194,6 +197,19 @@
 
                 while (!token.IsCancellationRequested)
                 {
+                    // Recompute the target each iteration so edits to the origin's hostname, port, SSL, health
+                    // check URL, or method (applied in place by the configuration reload without restarting
+                    // this task) are picked up live. When the target actually changes, reset the health
+                    // telemetry so metrics and history describe the new target rather than the old one.
+                    healthCheckUrl = (origin.Ssl ? "https://" : "http://") + origin.Hostname + ":" + origin.Port + origin.HealthCheckUrl;
+                    string target = origin.HealthCheckMethod + " " + healthCheckUrl;
+                    if (previousTarget != null && !String.Equals(previousTarget, target, StringComparison.Ordinal))
+                    {
+                        ResetHealthState(origin);
+                        _Logging.Info(_Header + "origin " + origin.Identifier + " health target changed to " + target + "; resetting health state");
+                    }
+                    previousTarget = target;
+
                     try
                     {
                         HttpRequestMessage request = new HttpRequestMessage(HttpMethodConverter(origin.HealthCheckMethod), healthCheckUrl);
@@ -201,141 +217,51 @@
 
                         if (response.IsSuccessStatusCode)
                         {
-                            lock (origin.Lock)
-                            {
-                                if (origin.HealthCheckSuccess < 99) origin.HealthCheckSuccess++;
-                                origin.HealthCheckFailure = 0;
-
-                                if (!origin.Healthy && origin.HealthCheckSuccess >= origin.HealthyThreshold)
-                                {
-                                    origin.Healthy = true;
-                                    _Logging.Info(_Header + "origin " + origin.Identifier + " is now healthy");
-                                }
-                            }
-
+                            RecordSuccess(origin);
                             _Logging.Debug(_Header + "health check succeeded for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl);
                         }
                         else
                         {
-                            lock (origin.Lock)
-                            {
-                                if (origin.HealthCheckFailure < 99) origin.HealthCheckFailure++;
-                                origin.HealthCheckSuccess = 0;
-
-                                if (origin.Healthy && origin.HealthCheckFailure >= origin.UnhealthyThreshold)
-                                {
-                                    origin.Healthy = false;
-                                    _Logging.Warn(_Header + "origin " + origin.Identifier + " is now unhealthy (HTTP " + (int)response.StatusCode + ")");
-                                }
-                            }
-
+                            RecordFailure(origin, "HTTP " + (int)response.StatusCode);
                             _Logging.Debug(_Header + "health check failed for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + " with status " + (int)response.StatusCode);
                         }
                     }
                     catch (HttpRequestException hre)
                     {
-                        lock (origin.Lock)
-                        {
-                            if (origin.HealthCheckFailure < 99) origin.HealthCheckFailure++;
-                            origin.HealthCheckSuccess = 0;
-
-                            if (origin.Healthy && origin.HealthCheckFailure >= origin.UnhealthyThreshold)
-                            {
-                                origin.Healthy = false;
-                                _Logging.Warn(_Header + "origin " + origin.Identifier + " is now unhealthy (timeout)");
-                            }
-                        }
-
+                        RecordFailure(origin, hre.Message);
                         _Logging.Debug(_Header + "health check failed for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + ": " + hre.Message);
                     }
                     catch (HttpIOException ioe)
                     {
-                        lock (origin.Lock)
-                        {
-                            if (origin.HealthCheckFailure < 99) origin.HealthCheckFailure++;
-                            origin.HealthCheckSuccess = 0;
-
-                            if (origin.Healthy && origin.HealthCheckFailure >= origin.UnhealthyThreshold)
-                            {
-                                origin.Healthy = false;
-                                _Logging.Warn(_Header + "origin " + origin.Identifier + " is now unhealthy (timeout)");
-                            }
-                        }
-
+                        RecordFailure(origin, ioe.Message);
                         _Logging.Debug(_Header + "health check failed for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + ": " + ioe.Message);
                     }
                     catch (SocketException se)
                     {
-                        lock (origin.Lock)
-                        {
-                            if (origin.HealthCheckFailure < 99) origin.HealthCheckFailure++;
-                            origin.HealthCheckSuccess = 0;
-
-                            if (origin.Healthy && origin.HealthCheckFailure >= origin.UnhealthyThreshold)
-                            {
-                                origin.Healthy = false;
-                                _Logging.Warn(_Header + "origin " + origin.Identifier + " is now unhealthy (timeout)");
-                            }
-                        }
-
+                        RecordFailure(origin, se.Message);
                         _Logging.Debug(_Header + "health check failed for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + ": " + se.Message);
                     }
                     catch (TaskCanceledException)
                     {
-                        // Expected when cancellation is requested or timeout occurs
+                        // Expected when cancellation is requested or a timeout occurs. Only a timeout is a failure.
                         if (!token.IsCancellationRequested)
                         {
-                            // This was a timeout, not a cancellation
-                            lock (origin.Lock)
-                            {
-                                if (origin.HealthCheckFailure < 99) origin.HealthCheckFailure++;
-                                origin.HealthCheckSuccess = 0;
-
-                                if (origin.Healthy && origin.HealthCheckFailure >= origin.UnhealthyThreshold)
-                                {
-                                    origin.Healthy = false;
-                                    _Logging.Warn(_Header + "origin " + origin.Identifier + " is now unhealthy (timeout)");
-                                }
-                            }
-
+                            RecordFailure(origin, "Timeout");
                             _Logging.Debug(_Header + "health check timeout for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl);
                         }
                     }
                     catch (OperationCanceledException)
                     {
-                        // Expected when cancellation is requested or timeout occurs
+                        // Expected when cancellation is requested or a timeout occurs. Only a timeout is a failure.
                         if (!token.IsCancellationRequested)
                         {
-                            // This was a timeout, not a cancellation
-                            lock (origin.Lock)
-                            {
-                                if (origin.HealthCheckFailure < 99) origin.HealthCheckFailure++;
-                                origin.HealthCheckSuccess = 0;
-
-                                if (origin.Healthy && origin.HealthCheckFailure >= origin.UnhealthyThreshold)
-                                {
-                                    origin.Healthy = false;
-                                    _Logging.Warn(_Header + "origin " + origin.Identifier + " is now unhealthy (timeout)");
-                                }
-                            }
-
+                            RecordFailure(origin, "Timeout");
                             _Logging.Debug(_Header + "health check timeout for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl);
                         }
                     }
                     catch (Exception e)
                     {
-                        lock (origin.Lock)
-                        {
-                            if (origin.HealthCheckFailure < 99) origin.HealthCheckFailure++;
-                            origin.HealthCheckSuccess = 0;
-
-                            if (origin.Healthy && origin.HealthCheckFailure >= origin.UnhealthyThreshold)
-                            {
-                                origin.Healthy = false;
-                                _Logging.Warn(_Header + "origin " + origin.Identifier + " is now unhealthy (" + e.GetType().Name + ")");
-                            }
-                        }
-
+                        RecordFailure(origin, e.Message);
                         _Logging.Debug(_Header + "health check exception for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl + Environment.NewLine + e.ToString());
                     }
 
@@ -348,6 +274,112 @@
             }
 
             _Logging.Debug(_Header + "stopping healthcheck task for origin " + origin.Identifier + " " + origin.Name + " " + healthCheckUrl);
+        }
+
+        // Record a successful health check against the origin and flip it healthy once the healthy
+        // threshold is reached. Updates the rolling history, timestamps, and banked uptime/downtime
+        // under the origin's lock.
+        private void RecordSuccess(OriginServer origin)
+        {
+            DateTime now = DateTime.UtcNow;
+
+            lock (origin.Lock)
+            {
+                if (origin.FirstCheckUtc == null)
+                {
+                    origin.FirstCheckUtc = now;
+                    origin.LastStateChangeUtc = now;
+                }
+
+                origin.LastCheckUtc = now;
+                AppendHistory(origin, now, true);
+
+                if (origin.HealthCheckSuccess < 99) origin.HealthCheckSuccess++;
+                origin.HealthCheckFailure = 0;
+                origin.LastError = null;
+
+                if (!origin.Healthy && origin.HealthCheckSuccess >= origin.HealthyThreshold)
+                {
+                    if (origin.LastStateChangeUtc.HasValue)
+                    {
+                        long downtimeMs = (long)(now - origin.LastStateChangeUtc.Value).TotalMilliseconds;
+                        if (downtimeMs > 0) origin.TotalDowntimeMs += downtimeMs;
+                    }
+
+                    origin.Healthy = true;
+                    origin.LastHealthyUtc = now;
+                    origin.LastStateChangeUtc = now;
+                    _Logging.Info(_Header + "origin " + origin.Identifier + " is now healthy");
+                }
+            }
+        }
+
+        // Record a failed health check against the origin and flip it unhealthy once the unhealthy
+        // threshold is reached. Captures the error message and banks uptime on transition, under lock.
+        private void RecordFailure(OriginServer origin, string errorMessage)
+        {
+            DateTime now = DateTime.UtcNow;
+
+            lock (origin.Lock)
+            {
+                if (origin.FirstCheckUtc == null)
+                {
+                    origin.FirstCheckUtc = now;
+                    origin.LastStateChangeUtc = now;
+                }
+
+                origin.LastCheckUtc = now;
+                AppendHistory(origin, now, false);
+
+                if (origin.HealthCheckFailure < 99) origin.HealthCheckFailure++;
+                origin.HealthCheckSuccess = 0;
+                origin.LastError = errorMessage;
+
+                if (origin.Healthy && origin.HealthCheckFailure >= origin.UnhealthyThreshold)
+                {
+                    if (origin.LastStateChangeUtc.HasValue)
+                    {
+                        long uptimeMs = (long)(now - origin.LastStateChangeUtc.Value).TotalMilliseconds;
+                        if (uptimeMs > 0) origin.TotalUptimeMs += uptimeMs;
+                    }
+
+                    origin.Healthy = false;
+                    origin.LastUnhealthyUtc = now;
+                    origin.LastStateChangeUtc = now;
+                    _Logging.Warn(_Header + "origin " + origin.Identifier + " is now unhealthy: " + (errorMessage ?? "check failed"));
+                }
+            }
+        }
+
+        // Reset all runtime health telemetry for an origin, used when its health-check target changes so
+        // metrics and history describe the new target from a clean slate. Marks the origin unhealthy until
+        // it re-proves itself against the new address.
+        private void ResetHealthState(OriginServer origin)
+        {
+            lock (origin.Lock)
+            {
+                origin.Healthy = false;
+                origin.HealthCheckSuccess = 0;
+                origin.HealthCheckFailure = 0;
+                origin.LastError = null;
+                origin.FirstCheckUtc = null;
+                origin.LastCheckUtc = null;
+                origin.LastHealthyUtc = null;
+                origin.LastUnhealthyUtc = null;
+                origin.LastStateChangeUtc = null;
+                origin.TotalUptimeMs = 0;
+                origin.TotalDowntimeMs = 0;
+                origin.CheckHistory.Clear();
+            }
+        }
+
+        // Append a check result and prune records older than the 24-hour retention window.
+        // Caller must hold origin.Lock.
+        private void AppendHistory(OriginServer origin, DateTime now, bool success)
+        {
+            origin.CheckHistory.Add(new HealthCheckRecord(now, success));
+            DateTime cutoff = now - _HistoryRetention;
+            origin.CheckHistory.RemoveAll(r => r.TimestampUtc < cutoff);
         }
 
         private System.Net.Http.HttpMethod HttpMethodConverter(WatsonWebserver.Core.HttpMethod method)

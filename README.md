@@ -892,6 +892,13 @@ curl -X POST -H "Authorization: Bearer your-token" \
 
 # Check system health
 curl -H "Authorization: Bearer your-token" http://localhost:8000/_sb/v1.0/health
+
+# Live origin server health (uptime, rolling check history, last error) for all origins
+curl -H "Authorization: Bearer your-token" http://localhost:8000/_sb/v1.0/origins/health
+
+# Live health for a single origin by GUID
+curl -H "Authorization: Bearer your-token" \
+  http://localhost:8000/_sb/v1.0/origins/{guid}/health
 ```
 
 The management API also exposes endpoints that back the dashboard's overview, settings, and
@@ -922,7 +929,9 @@ See [REST_API.md](REST_API.md) for complete API reference.
 
 The web dashboard is the primary way to operate a Switchboard server. It provides an overview with
 KPI cards and a request-activity chart, a request-history inspector, full CRUD for origins,
-endpoints, routes, users, credentials, blocked headers, and URL rewrites, a form-based settings
+endpoints, routes, users, credentials, blocked headers, and URL rewrites, live origin health
+monitoring (a status badge and bar histogram of recent checks per origin, plus a detail modal with
+uptime, consecutive counts, last error, and check timestamps), a form-based settings
 editor that flags which changes need a restart, a one-click server restart, an OpenAPI-driven API
 Explorer, and a first-run setup wizard. It ships in nine languages — English, Spanish, German,
 French, Portuguese, Mandarin, Cantonese, Japanese, and Farsi (Farsi with right-to-left layout) — and

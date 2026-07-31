@@ -276,6 +276,58 @@ DELETE /_sb/v1.0/origins/{guid}
 
 `GET`/`PUT` return the [OriginServerConfig](#originserverconfig); `DELETE` returns `204 No Content`.
 
+#### List Origin Server Health
+
+```
+GET /_sb/v1.0/origins/health
+```
+
+Returns the live health status of every origin server, including uptime, a rolling 24-hour window of
+individual check results, and the most recent error. Health is tracked in memory by the background
+health checker and is not persisted.
+
+**Response:** Array of [OriginServerHealthStatus](#originserverhealthstatus)
+
+#### Get Origin Server Health
+
+```
+GET /_sb/v1.0/origins/{guid}/health
+```
+
+Returns the live health status of a single origin server, addressed by the same deterministic `GUID`
+used for its configuration.
+
+**Response:** [OriginServerHealthStatus](#originserverhealthstatus) — `400` for a malformed GUID,
+`404` when no origin matches the GUID.
+
+**Example:**
+
+```json
+{
+  "Identifier": "backend-api-1",
+  "GUID": "550e8400-e29b-41d4-a716-446655440000",
+  "Name": "Backend API Server 1",
+  "Hostname": "api.example.com",
+  "Port": 443,
+  "IsHealthy": true,
+  "FirstCheckUtc": "2026-07-30T12:00:00.0000000Z",
+  "LastCheckUtc": "2026-07-30T12:05:00.0000000Z",
+  "LastHealthyUtc": "2026-07-30T12:00:02.0000000Z",
+  "LastUnhealthyUtc": null,
+  "LastStateChangeUtc": "2026-07-30T12:00:02.0000000Z",
+  "TotalUptimeMs": 298000,
+  "TotalDowntimeMs": 2000,
+  "UptimePercentage": 99.33,
+  "ConsecutiveSuccesses": 60,
+  "ConsecutiveFailures": 0,
+  "LastError": null,
+  "History": [
+    { "TimestampUtc": "2026-07-30T12:04:55.0000000Z", "Success": true },
+    { "TimestampUtc": "2026-07-30T12:05:00.0000000Z", "Success": true }
+  ]
+}
+```
+
 ---
 
 ### API Endpoints
@@ -603,6 +655,46 @@ Validates the current configuration, or a proposed one supplied in the request b
   "RateLimitRequestsThreshold": 50
 }
 ```
+
+---
+
+### OriginServerHealthStatus
+
+Read-only health snapshot for an origin server. Returned by the origin health endpoints; never accepted
+as input. All timestamps are UTC. Uptime and downtime include the current in-progress period, so
+`UptimePercentage` reflects the moment the snapshot was taken.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Identifier` | string | Origin server identifier |
+| `GUID` | string (GUID) | Deterministic GUID (matches the origin's configuration GUID) |
+| `Name` | string | Display name (may be null) |
+| `Hostname` | string | Origin hostname |
+| `Port` | integer | Origin TCP port |
+| `IsHealthy` | boolean | Whether the origin is currently considered healthy |
+| `FirstCheckUtc` | datetime | First health check since startup (null if none yet) |
+| `LastCheckUtc` | datetime | Most recent health check (null if none yet) |
+| `LastHealthyUtc` | datetime | Most recent transition to healthy (null if never healthy) |
+| `LastUnhealthyUtc` | datetime | Most recent transition to unhealthy (null if never unhealthy) |
+| `LastStateChangeUtc` | datetime | Most recent transition in either direction (null if none) |
+| `TotalUptimeMs` | integer (int64) | Cumulative healthy time in milliseconds |
+| `TotalDowntimeMs` | integer (int64) | Cumulative unhealthy time in milliseconds |
+| `UptimePercentage` | number (double) | Uptime percentage (0–100) |
+| `ConsecutiveSuccesses` | integer | Consecutive successful checks |
+| `ConsecutiveFailures` | integer | Consecutive failed checks |
+| `LastError` | string | Error from the most recent failed check (null when the last check succeeded) |
+| `History` | array | Rolling 24-hour window of [HealthCheckRecord](#healthcheckrecord) entries |
+
+---
+
+### HealthCheckRecord
+
+A single health check result within the rolling history window.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `TimestampUtc` | datetime | When the check was performed (UTC) |
+| `Success` | boolean | Whether the check succeeded |
 
 ---
 

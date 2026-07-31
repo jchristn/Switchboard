@@ -1,9 +1,11 @@
 ﻿namespace Switchboard.Core
 {
     using System;
+    using System.Collections.Generic;
     using System.Text.Json;
     using System.Text.Json.Serialization;
     using System.Threading;
+    using Switchboard.Core.Models;
     using WatsonWebserver.Core;
 
     /// <summary>
@@ -256,6 +258,18 @@
         internal bool ModelsDiscovered = false;
         internal int ActiveRequests = 0;
         internal int PendingRequests = 0;
+
+        // Runtime health telemetry, maintained by HealthCheckService under Lock and surfaced through
+        // OriginServerHealthStatus.FromOrigin. In-memory only; never persisted.
+        internal DateTime? FirstCheckUtc = null;
+        internal DateTime? LastCheckUtc = null;
+        internal DateTime? LastHealthyUtc = null;
+        internal DateTime? LastUnhealthyUtc = null;
+        internal DateTime? LastStateChangeUtc = null;
+        internal long TotalUptimeMs = 0;
+        internal long TotalDowntimeMs = 0;
+        internal string LastError = null;
+        internal readonly List<HealthCheckRecord> CheckHistory = new List<HealthCheckRecord>();
         internal SemaphoreSlim Semaphore
         {
             get

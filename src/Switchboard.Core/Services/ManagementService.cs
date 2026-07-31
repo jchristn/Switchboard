@@ -175,7 +175,10 @@ namespace Switchboard.Core.Services
 
             // Origin servers
             webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, basePath + "/origins", GetOriginsAsync);
+            // Health routes are registered as static so they resolve ahead of the /{guid} parameter route.
+            webserver.Routes.PreAuthentication.Static.Add(HttpMethod.GET, basePath + "/origins/health", GetOriginsHealthAsync);
             webserver.Routes.PreAuthentication.Static.Add(HttpMethod.POST, basePath + "/origins", CreateOriginAsync);
+            webserver.Routes.PreAuthentication.Parameter.Add(HttpMethod.GET, basePath + "/origins/{guid}/health", GetOriginHealthAsync);
             webserver.Routes.PreAuthentication.Parameter.Add(HttpMethod.GET, basePath + "/origins/{guid}", GetOriginAsync);
             webserver.Routes.PreAuthentication.Parameter.Add(HttpMethod.PUT, basePath + "/origins/{guid}", UpdateOriginAsync);
             webserver.Routes.PreAuthentication.Parameter.Add(HttpMethod.DELETE, basePath + "/origins/{guid}", DeleteOriginAsync);
@@ -571,6 +574,53 @@ namespace Switchboard.Core.Services
                 await _Client.OriginServers.DeleteByGuidAsync(guid, ctx.Token).ConfigureAwait(false);
                 _Logging.Info(_Header + "deleted origin server " + existing.Identifier);
                 await SendNoContent(ctx).ConfigureAwait(false);
+            }
+            catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
+        }
+
+        private async Task GetOriginsHealthAsync(HttpContextBase ctx)
+        {
+            try
+            {
+                if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+
+                List<OriginServerHealthStatus> statuses = new List<OriginServerHealthStatus>();
+                if (_SwitchboardSettings?.Origins != null)
+                {
+                    foreach (OriginServer origin in _SwitchboardSettings.Origins)
+                        statuses.Add(OriginServerHealthStatus.FromOrigin(origin));
+                }
+
+                await SendOk(ctx, statuses).ConfigureAwait(false);
+            }
+            catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
+        }
+
+        private async Task GetOriginHealthAsync(HttpContextBase ctx)
+        {
+            try
+            {
+                if (!AuthenticateRequest(ctx)) { await SendUnauthorized(ctx).ConfigureAwait(false); return; }
+
+                string? guidStr = ctx.Request.Url.Parameters["guid"];
+                if (!Guid.TryParse(guidStr, out Guid guid)) { await SendBadRequest(ctx, "Invalid GUID").ConfigureAwait(false); return; }
+
+                OriginServer? origin = null;
+                if (_SwitchboardSettings?.Origins != null)
+                {
+                    foreach (OriginServer candidate in _SwitchboardSettings.Origins)
+                    {
+                        if (DeterministicGuid.FromString(candidate.Identifier) == guid)
+                        {
+                            origin = candidate;
+                            break;
+                        }
+                    }
+                }
+
+                if (origin == null) { await SendNotFound(ctx, "Origin server not found").ConfigureAwait(false); return; }
+
+                await SendOk(ctx, OriginServerHealthStatus.FromOrigin(origin)).ConfigureAwait(false);
             }
             catch (Exception ex) { await SendError(ctx, ex).ConfigureAwait(false); }
         }

@@ -155,6 +155,13 @@ export class ApiClient {
   getOrigin(guid) {
     return this.get(`/origins/${guid}`);
   }
+  // Live health for all origins (rolling history, uptime, timestamps, last error).
+  getOriginsHealth() {
+    return this.get('/origins/health');
+  }
+  getOriginHealth(guid) {
+    return this.get(`/origins/${guid}/health`);
+  }
   createOrigin(data) {
     return this.post('/origins', data);
   }

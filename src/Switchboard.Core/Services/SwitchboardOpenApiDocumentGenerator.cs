@@ -659,6 +659,44 @@ namespace Switchboard.Core.Services
                         ["RateLimitRequestsThreshold"] = new Dictionary<string, object> { ["type"] = "integer" }
                     }
                 },
+                ["HealthCheckRecord"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["TimestampUtc"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "date-time" },
+                        ["Success"] = new Dictionary<string, object> { ["type"] = "boolean" }
+                    }
+                },
+                ["OriginServerHealthStatus"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["Identifier"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["GUID"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
+                        ["Name"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["Hostname"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["Port"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["IsHealthy"] = new Dictionary<string, object> { ["type"] = "boolean" },
+                        ["FirstCheckUtc"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "date-time", ["nullable"] = true },
+                        ["LastCheckUtc"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "date-time", ["nullable"] = true },
+                        ["LastHealthyUtc"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "date-time", ["nullable"] = true },
+                        ["LastUnhealthyUtc"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "date-time", ["nullable"] = true },
+                        ["LastStateChangeUtc"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "date-time", ["nullable"] = true },
+                        ["TotalUptimeMs"] = new Dictionary<string, object> { ["type"] = "integer", ["format"] = "int64" },
+                        ["TotalDowntimeMs"] = new Dictionary<string, object> { ["type"] = "integer", ["format"] = "int64" },
+                        ["UptimePercentage"] = new Dictionary<string, object> { ["type"] = "number", ["format"] = "double" },
+                        ["ConsecutiveSuccesses"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["ConsecutiveFailures"] = new Dictionary<string, object> { ["type"] = "integer" },
+                        ["LastError"] = new Dictionary<string, object> { ["type"] = "string", ["nullable"] = true },
+                        ["History"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "array",
+                            ["items"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/HealthCheckRecord" }
+                        }
+                    }
+                },
                 ["ApiEndpointConfig"] = new Dictionary<string, object>
                 {
                     ["type"] = "object",
@@ -802,6 +840,14 @@ namespace Switchboard.Core.Services
 
             // Origins
             AddCrudPaths(paths, basePath, "/origins", "Origins", "OriginServerConfig", "Origin server", "guid");
+            paths[basePath + "/origins/health"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildOriginsHealthListOperation()
+            };
+            paths[basePath + "/origins/{guid}/health"] = new Dictionary<string, object>
+            {
+                ["get"] = BuildOriginHealthGetOperation()
+            };
 
             // Endpoints
             AddCrudPaths(paths, basePath, "/endpoints", "Endpoints", "ApiEndpointConfig", "API endpoint", "guid");
@@ -1438,6 +1484,74 @@ namespace Switchboard.Core.Services
                         }
                     },
                     ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildOriginsHealthListOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "Origins" },
+                ["summary"] = "List origin server health",
+                ["description"] = "Get the current health status of every origin server, including uptime, rolling check history, and last error.",
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Successful response",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object>
+                                {
+                                    ["type"] = "array",
+                                    ["items"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/OriginServerHealthStatus" }
+                                }
+                            }
+                        }
+                    },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
+                }
+            };
+        }
+
+        private Dictionary<string, object> BuildOriginHealthGetOperation()
+        {
+            return new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "Origins" },
+                ["summary"] = "Get origin server health by GUID",
+                ["description"] = "Get the current health status of a single origin server, including uptime, rolling check history, and last error.",
+                ["security"] = new List<object> { new Dictionary<string, List<string>> { ["bearerAuth"] = new List<string>() } },
+                ["parameters"] = new List<object>
+                {
+                    new Dictionary<string, object>
+                    {
+                        ["name"] = "guid",
+                        ["in"] = "path",
+                        ["required"] = true,
+                        ["schema"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" }
+                    }
+                },
+                ["responses"] = new Dictionary<string, object>
+                {
+                    ["200"] = new Dictionary<string, object>
+                    {
+                        ["description"] = "Successful response",
+                        ["content"] = new Dictionary<string, object>
+                        {
+                            ["application/json"] = new Dictionary<string, object>
+                            {
+                                ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/OriginServerHealthStatus" }
+                            }
+                        }
+                    },
+                    ["400"] = new Dictionary<string, object> { ["description"] = "Bad request (invalid GUID)", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } },
+                    ["401"] = new Dictionary<string, object> { ["description"] = "Unauthorized", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } },
+                    ["404"] = new Dictionary<string, object> { ["description"] = "Origin server not found", ["content"] = new Dictionary<string, object> { ["application/json"] = new Dictionary<string, object> { ["schema"] = new Dictionary<string, object> { ["$ref"] = "#/components/schemas/ApiErrorResponse" } } } }
                 }
             };
         }

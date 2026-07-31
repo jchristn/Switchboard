@@ -576,6 +576,23 @@
     "empty": "No hay reescrituras de URL configuradas",
     "emptyHint": "Agrega una reescritura para transformar las URL de las solicitudes."
   },
+  "health": {
+    "titleFor": "Estado: {{name}}",
+    "details": "Ver detalles de estado",
+    "status": "Estado",
+    "uptime": "Tiempo activo",
+    "historySpan": "Período del historial",
+    "consecutiveOk": "Éxitos consecutivos",
+    "consecutiveFail": "Fallos consecutivos",
+    "lastError": "Último error",
+    "healthHistory": "Historial de estado",
+    "firstCheck": "Primera comprobación",
+    "lastCheck": "Última comprobación",
+    "lastHealthy": "Último estado correcto",
+    "lastUnhealthy": "Último estado incorrecto",
+    "noData": "Sin datos",
+    "notAvailable": "N/D"
+  },
   "status": {
     "healthy": "Correcto",
     "unhealthy": "Incorrecto",

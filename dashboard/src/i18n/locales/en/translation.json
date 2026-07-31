@@ -369,7 +369,7 @@
   },
   "origins": {
     "title": "Origin Servers",
-    "subtitle": "Backend servers Switchboard proxies to.",
+    "subtitle": "Backend servers to which Switchboard proxies traffic.",
     "add": "Add Origin",
     "identifier": "Identifier",
     "name": "Name",
@@ -575,6 +575,23 @@
     "deleteError": "Failed to delete rewrite",
     "empty": "No URL rewrites configured",
     "emptyHint": "Add a rewrite to transform request URLs."
+  },
+  "health": {
+    "titleFor": "Health: {{name}}",
+    "details": "View health details",
+    "status": "Status",
+    "uptime": "Uptime",
+    "historySpan": "History Span",
+    "consecutiveOk": "Consecutive OK",
+    "consecutiveFail": "Consecutive Fail",
+    "lastError": "Last Error",
+    "healthHistory": "Health History",
+    "firstCheck": "First check",
+    "lastCheck": "Last check",
+    "lastHealthy": "Last healthy",
+    "lastUnhealthy": "Last unhealthy",
+    "noData": "No data",
+    "notAvailable": "N/A"
   },
   "status": {
     "healthy": "Healthy",

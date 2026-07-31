@@ -576,6 +576,23 @@
     "empty": "هیچ بازنویسی URL پیکربندی نشده است",
     "emptyHint": "یک بازنویسی اضافه کنید تا URL درخواست‌ها تبدیل شود."
   },
+  "health": {
+    "titleFor": "سلامت: {{name}}",
+    "details": "مشاهده جزئیات سلامت",
+    "status": "وضعیت",
+    "uptime": "زمان در دسترس بودن",
+    "historySpan": "بازه تاریخچه",
+    "consecutiveOk": "موفقیت‌های متوالی",
+    "consecutiveFail": "خطاهای متوالی",
+    "lastError": "آخرین خطا",
+    "healthHistory": "تاریخچه سلامت",
+    "firstCheck": "اولین بررسی",
+    "lastCheck": "آخرین بررسی",
+    "lastHealthy": "آخرین بار سالم",
+    "lastUnhealthy": "آخرین بار ناسالم",
+    "noData": "داده‌ای نیست",
+    "notAvailable": "نامشخص"
+  },
   "status": {
     "healthy": "سالم",
     "unhealthy": "ناسالم",

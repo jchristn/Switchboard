@@ -68,6 +68,41 @@
           }
         },
         {
+          "name": "List origin health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/origins/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "origins",
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get origin health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/origins/{{guid}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "origins",
+                "{{guid}}",
+                "health"
+              ]
+            }
+          }
+        },
+        {
           "name": "Create origin",
           "request": {
             "method": "POST",

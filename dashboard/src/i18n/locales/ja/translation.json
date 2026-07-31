@@ -576,6 +576,23 @@
     "empty": "URLリライトが構成されていません",
     "emptyHint": "リクエスト URL を変換するリライトを追加してください。"
   },
+  "health": {
+    "titleFor": "ヘルス: {{name}}",
+    "details": "ヘルスの詳細を表示",
+    "status": "ステータス",
+    "uptime": "稼働率",
+    "historySpan": "履歴の期間",
+    "consecutiveOk": "連続成功",
+    "consecutiveFail": "連続失敗",
+    "lastError": "最新のエラー",
+    "healthHistory": "ヘルス履歴",
+    "firstCheck": "初回チェック",
+    "lastCheck": "最新チェック",
+    "lastHealthy": "最後に正常",
+    "lastUnhealthy": "最後に異常",
+    "noData": "データなし",
+    "notAvailable": "該当なし"
+  },
   "status": {
     "healthy": "正常",
     "unhealthy": "異常",

@@ -1,0 +1,169 @@
+/* Compact bar histogram of recent origin health checks. Bar tone maps to the shared
+   success / warning / danger design tokens so it reads correctly in light and dark themes. */
+.sb-hh {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.sb-hh-bar {
+  border-radius: 1px;
+  flex: 0 0 auto;
+}
+
+.sb-hh-bar--ok {
+  background: var(--color-success);
+}
+
+.sb-hh-bar--fail {
+  background: var(--color-danger);
+}
+
+.sb-hh-bar--mixed {
+  background: var(--color-warning);
+}
+
+.sb-hh-empty {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+}
+
+/* A clickable table cell that opens the health detail modal. */
+.sb-health-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  cursor: pointer;
+}
+
+/* Detail modal */
+.sb-health-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+.sb-health-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--spacing-3);
+}
+
+@media (max-width: 640px) {
+  .sb-health-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.sb-health-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-2);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.sb-health-stat__label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--color-text-muted);
+}
+
+.sb-health-stat__value {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.sb-health-stat__value--ok {
+  color: var(--color-success);
+}
+
+.sb-health-stat__value--fail {
+  color: var(--color-danger);
+}
+
+.sb-health-error {
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 22%, transparent);
+}
+
+.sb-health-error__label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--color-danger);
+  margin-bottom: var(--spacing-1);
+}
+
+.sb-health-error__message {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  word-break: break-word;
+}
+
+.sb-health-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.sb-health-section__label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--color-text-muted);
+}
+
+.sb-health-histogram-box {
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.sb-health-timestamps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-2) var(--spacing-6);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 640px) {
+  .sb-health-timestamps {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sb-health-timestamp {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.sb-health-timestamp__label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.sb-health-timestamp__value {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  text-align: right;
+}

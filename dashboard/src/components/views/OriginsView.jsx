@@ -13,6 +13,8 @@ import {
   ConfirmModal,
   JsonViewerModal,
   HealthBadge,
+  HealthHistogram,
+  HealthDetailModal,
   Badge,
   CopyableId,
   Icons,
@@ -74,6 +76,10 @@ export default function OriginsView() {
   const [deleteRow, setDeleteRow] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Live per-origin health keyed by GUID, refreshed on an interval separate from the config load.
+  const [health, setHealth] = useState({});
+  const [healthDetail, setHealthDetail] = useState(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -87,9 +93,35 @@ export default function OriginsView() {
     }
   }, [apiClient, t]);
 
+  const loadHealth = useCallback(async () => {
+    try {
+      const data = await apiClient.getOriginsHealth();
+      const map = {};
+      (Array.isArray(data) ? data : []).forEach((h) => {
+        if (h && h.guid) map[h.guid] = h;
+      });
+      setHealth(map);
+    } catch {
+      // Health is best-effort telemetry; leave the last known map in place on a transient failure.
+    }
+  }, [apiClient]);
+
   useEffect(() => {
     load();
   }, [load]);
+
+  // Poll health every 15s, matching the sibling dashboards.
+  useEffect(() => {
+    loadHealth();
+    const id = setInterval(loadHealth, 15000);
+    return () => clearInterval(id);
+  }, [loadHealth]);
+
+  // Keep the open detail modal's data fresh as health polls in.
+  useEffect(() => {
+    if (healthDetail && health[healthDetail.guid]) setHealthDetail(health[healthDetail.guid]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [health]);
 
   const openCreate = () => {
     setEditing(null);
@@ -167,9 +199,42 @@ export default function OriginsView() {
       key: 'health',
       label: t('origins.health'),
       sortable: true,
-      sortValue: (r) => (r.healthy == null ? -1 : r.healthy ? 1 : 0),
-      render: (r) =>
-        r.healthy == null ? <Badge tone="neutral">{t('common.unknown')}</Badge> : <HealthBadge healthy={r.healthy} />,
+      sortValue: (r) => {
+        const h = health[r.guid];
+        const val = h ? h.isHealthy : r.healthy;
+        return val == null ? -1 : val ? 1 : 0;
+      },
+      render: (r) => {
+        const h = health[r.guid];
+        if (!h) {
+          return r.healthy == null ? (
+            <Badge tone="neutral">{t('common.unknown')}</Badge>
+          ) : (
+            <HealthBadge healthy={r.healthy} />
+          );
+        }
+        const openDetail = (e) => {
+          e.stopPropagation();
+          setHealthDetail(h);
+        };
+        return (
+          <span
+            className="sb-health-cell"
+            role="button"
+            tabIndex={0}
+            title={t('health.details')}
+            onClick={openDetail}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') openDetail(e);
+            }}
+          >
+            <HealthBadge healthy={!!h.isHealthy} />
+            {h.history && h.history.length > 0 && (
+              <HealthHistogram history={h.history} width={80} height={18} />
+            )}
+          </span>
+        );
+      },
     },
     { key: 'maxParallelRequests', label: t('origins.maxParallel'), align: 'end', sortable: true },
     {
@@ -394,12 +459,25 @@ export default function OriginsView() {
             <DetailItem label={t('origins.hostname')} mono>{viewRow.hostname}</DetailItem>
             <DetailItem label={t('origins.port')}>{viewRow.port}</DetailItem>
             <DetailItem label={t('origins.ssl')}>{viewRow.ssl ? t('common.yes') : t('common.no')}</DetailItem>
-            <DetailItem label={t('origins.health')}>
-              {viewRow.healthy == null ? (
-                <Badge tone="neutral">{t('common.unknown')}</Badge>
-              ) : (
-                <HealthBadge healthy={viewRow.healthy} />
-              )}
+            <DetailItem label={t('origins.health')} full>
+              {(() => {
+                const h = health[viewRow.guid];
+                if (!h) {
+                  return viewRow.healthy == null ? (
+                    <Badge tone="neutral">{t('common.unknown')}</Badge>
+                  ) : (
+                    <HealthBadge healthy={viewRow.healthy} />
+                  );
+                }
+                return (
+                  <span className="sb-health-cell" onClick={() => setHealthDetail(h)} role="button" tabIndex={0}>
+                    <HealthBadge healthy={!!h.isHealthy} />
+                    {h.history && h.history.length > 0 && (
+                      <HealthHistogram history={h.history} width={120} height={18} />
+                    )}
+                  </span>
+                );
+              })()}
             </DetailItem>
             <DetailItem label={t('origins.healthCheckMethod')}>{viewRow.healthCheckMethod || '—'}</DetailItem>
             <DetailItem label={t('origins.healthCheckUrl')} mono>{viewRow.healthCheckUrl || '—'}</DetailItem>
@@ -411,6 +489,8 @@ export default function OriginsView() {
           </div>
         )}
       </Modal>
+
+      <HealthDetailModal open={!!healthDetail} onClose={() => setHealthDetail(null)} health={healthDetail} />
 
       <JsonViewerModal
         open={!!jsonRow}

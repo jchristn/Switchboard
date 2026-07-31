@@ -576,6 +576,23 @@
     "empty": "未配置任何 URL 重写",
     "emptyHint": "添加一个重写以转换请求 URL。"
   },
+  "health": {
+    "titleFor": "健康状态：{{name}}",
+    "details": "查看健康详情",
+    "status": "状态",
+    "uptime": "正常运行时间",
+    "historySpan": "历史范围",
+    "consecutiveOk": "连续成功",
+    "consecutiveFail": "连续失败",
+    "lastError": "最近错误",
+    "healthHistory": "健康历史",
+    "firstCheck": "首次检查",
+    "lastCheck": "最近检查",
+    "lastHealthy": "最后正常",
+    "lastUnhealthy": "最后异常",
+    "noData": "无数据",
+    "notAvailable": "无"
+  },
   "status": {
     "healthy": "健康",
     "unhealthy": "不健康",

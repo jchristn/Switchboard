@@ -1,5 +1,24 @@
 # Change Log
 
+## Unreleased
+
+- Exposed origin server health checks through the management API and dashboard. Two new read-only,
+  bearer-authenticated endpoints — `GET /origins/health` (all origins) and `GET /origins/{guid}/health`
+  (single origin) — return live health with uptime percentage, a rolling 24-hour window of individual
+  check results, first/last-check and last-healthy/unhealthy timestamps, consecutive success/failure
+  counts, and the most recent error (`OriginServerHealthStatus` / `HealthCheckRecord` models)
+- The dashboard Origins view now renders a health status badge with a bar histogram of recent checks in
+  the Health column, and a detail modal with uptime, consecutive counts, last error, the full histogram,
+  and check timestamps; health refreshes every 15 seconds. Health telemetry is in-memory only and never
+  persisted
+- Documented the new endpoints and models in `REST_API.md`, the Postman collection, and the generated
+  OpenAPI/Swagger document; added positive and negative integration tests for both endpoints
+- Fixed a bug where editing an existing origin's hostname, port, SSL, or health-check URL/method did not
+  take effect: the background health check now re-reads the target on every iteration, so in-place
+  configuration changes are picked up without a restart. When the target changes, the origin's health
+  telemetry is reset so uptime and history reflect the new target (previously an edited origin kept probing
+  its old address and stayed unhealthy, while a newly created origin worked)
+
 ## Current Version
 
 v4.1.0

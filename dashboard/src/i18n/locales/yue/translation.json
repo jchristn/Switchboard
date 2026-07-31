@@ -576,6 +576,23 @@
     "empty": "未有設定 URL 重寫",
     "emptyHint": "新增一個重寫以轉換請求 URL。"
   },
+  "health": {
+    "titleFor": "健康狀態：{{name}}",
+    "details": "查看健康詳情",
+    "status": "狀態",
+    "uptime": "正常運行時間",
+    "historySpan": "歷史範圍",
+    "consecutiveOk": "連續成功",
+    "consecutiveFail": "連續失敗",
+    "lastError": "最近錯誤",
+    "healthHistory": "健康歷史",
+    "firstCheck": "首次檢查",
+    "lastCheck": "最近檢查",
+    "lastHealthy": "最後正常",
+    "lastUnhealthy": "最後異常",
+    "noData": "冇數據",
+    "notAvailable": "無"
+  },
   "status": {
     "healthy": "正常",
     "unhealthy": "異常",

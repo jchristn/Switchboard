@@ -576,6 +576,23 @@
     "empty": "Não há reescritas de URL configuradas",
     "emptyHint": "Adicione uma reescrita para transformar os URLs dos pedidos."
   },
+  "health": {
+    "titleFor": "Saúde: {{name}}",
+    "details": "Ver detalhes de saúde",
+    "status": "Estado",
+    "uptime": "Tempo ativo",
+    "historySpan": "Período do histórico",
+    "consecutiveOk": "Sucessos consecutivos",
+    "consecutiveFail": "Falhas consecutivas",
+    "lastError": "Último erro",
+    "healthHistory": "Histórico de saúde",
+    "firstCheck": "Primeira verificação",
+    "lastCheck": "Última verificação",
+    "lastHealthy": "Última vez saudável",
+    "lastUnhealthy": "Última vez não saudável",
+    "noData": "Sem dados",
+    "notAvailable": "N/D"
+  },
   "status": {
     "healthy": "Saudável",
     "unhealthy": "Não saudável",
