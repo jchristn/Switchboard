@@ -55,8 +55,10 @@ docker compose up -d
 ```
 
 That starts the proxy on `http://localhost:8000` and the dashboard on `http://localhost:3000`, along
-with the observability stack — Grafana on `http://localhost:3001` (a Switchboard overview dashboard is
-pre-provisioned) and Prometheus on `http://localhost:9090`. Open the dashboard, connect with your server
+with the observability stack — Grafana on `http://localhost:3001` and Prometheus on
+`http://localhost:9090`. Grafana needs no login (anonymous Admin access); open it and find the
+pre-provisioned board under **Dashboards → Switchboard Overview** (panels fill once traffic flows through
+the proxy). Open the dashboard, connect with your server
 URL and an admin bearer token (`sbadmin` on a fresh install), and the setup wizard will walk you through
 your first origin server and API endpoint.
 

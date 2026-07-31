@@ -356,16 +356,31 @@ docker compose up -d
 ```
 
 This starts Switchboard alongside the OpenTelemetry Collector, Prometheus, Tempo, Loki, and Grafana.
-Drive some traffic through the proxy, then open the UIs:
+Give the containers a few seconds to come up, then:
 
 | Service | URL | Notes |
 |---|---|---|
-| Grafana | http://localhost:3001 | Anonymous admin; the **Switchboard Overview** dashboard is pre-provisioned |
-| Prometheus | http://localhost:9090 | The `otel-collector` target should read **UP** |
+| Grafana | http://localhost:3001 | No login required (anonymous access, Admin role) |
+| Prometheus | http://localhost:9090 | Under *Status → Targets*, the `otel-collector` job should read **UP** |
 | Switchboard dashboard | http://localhost:3000 | The **Observability** view shows live telemetry status |
 
-The dashboard's **Observability** view (under *Operate*) reports the enabled signals, OTLP endpoint,
-sampling ratio, and links out to Grafana and Prometheus. Configuration lives under
+**Getting into Grafana:**
+
+1. Open **http://localhost:3001**. You are **not** prompted to log in — the stack enables anonymous
+   access with the Admin role, so there are no credentials to enter. (If you later disable anonymous
+   access, Grafana's default login is `admin` / `admin`.)
+2. The Prometheus, Tempo, and Loki data sources are already wired up — nothing to configure.
+3. Open the pre-provisioned dashboard: left sidebar → **Dashboards** → **Switchboard Overview**.
+4. **Panels start empty.** They fill once traffic flows through the proxy and the first export/scrape
+   interval elapses (~15 s). Generate some traffic, e.g. `curl http://localhost:8000/` a few times (or
+   run the `LoadGenerator` project), then refresh — request rate, latency percentiles, and per-origin
+   health/load should appear.
+5. For traces and logs, use **Explore** (compass icon): pick the **Tempo** data source to find spans
+   (search by service `switchboard`), or **Loki** to query logs (`{service_name="switchboard"}`). From a
+   Tempo span you can jump to its correlated logs, and from a Loki line back to its trace.
+
+The Switchboard dashboard's **Observability** view (under *Operate*) reports the enabled signals, OTLP
+endpoint, sampling ratio, and links straight out to Grafana and Prometheus. Configuration lives under
 **Settings → Telemetry & Observability**.
 
 **Enabling telemetry in a standalone deployment** — set the `Telemetry` block in `sb.json` (or via the

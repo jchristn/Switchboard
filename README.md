@@ -515,9 +515,25 @@ docker compose -f compose.sqlite.yaml up -d
 docker compose up -d
 ```
 
-This starts:
-- **Switchboard Server** at `http://localhost:8000`
-- **Web Dashboard** at `http://localhost:3000`
+This starts every service in the stack. Default URLs and credentials:
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| **Switchboard Server** (proxy + management API) | `http://localhost:8000` | Admin bearer token `sbadmin` (management API under `/_sb/v1.0/`) |
+| **Web Dashboard** | `http://localhost:3000` | Sign in with the server URL and admin token `sbadmin` |
+| **Grafana** | `http://localhost:3001` | No login — anonymous Admin access (if you disable it, Grafana defaults to `admin` / `admin`) |
+| **Prometheus** | `http://localhost:9090` | None |
+| **OpenTelemetry Collector** | OTLP `:4317` (gRPC) / `:4318` (HTTP), Prometheus exporter `:8889` | None (no UI) |
+| **Tempo** (traces) | internal only — view via Grafana | None |
+| **Loki** (logs) | internal only — view via Grafana | None |
+
+> Change the admin token before exposing Switchboard beyond localhost: set `Management.AdminToken` in
+> `sb.json` (or via **Settings** in the dashboard). In Grafana, `Dashboards → Switchboard Overview` is
+> pre-provisioned; panels fill once traffic flows through the proxy. See **[TELEMETRY.md](TELEMETRY.md)**
+> for the observability details.
+
+The database-specific compose files additionally start their database container with the credentials
+defined in that file (for example MySQL: user `switchboard` / password `switchboard123`).
 
 Stop the services:
 
@@ -543,6 +559,7 @@ Each compose file includes:
 - The database service (except SQLite which uses a file)
 - Switchboard server with appropriate configuration
 - Web dashboard
+- The observability stack (OpenTelemetry Collector, Prometheus, Tempo, Loki, and Grafana) — same URLs and credentials as the table above
 
 #### Configuration
 
