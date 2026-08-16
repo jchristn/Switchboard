@@ -12,7 +12,7 @@ namespace Switchboard.Core
         /// <summary>
         /// Current software version.
         /// </summary>
-        public const string SoftwareVersion = "5.0.0";
+        public const string SoftwareVersion = "5.1.0";
 
         #endregion
 
@@ -131,6 +131,11 @@ namespace Switchboard.Core
         #endregion
 
         #region Headers
+
+        /// <summary>
+        /// Authorization header.
+        /// </summary>
+        public static string AuthorizationHeader = "Authorization";
 
         /// <summary>
         /// Forwarded for header, generally x-forwarded-for.

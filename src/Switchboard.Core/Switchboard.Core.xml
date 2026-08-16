@@ -2024,6 +2024,11 @@
             Default GUID.
             </summary>
         </member>
+        <member name="F:Switchboard.Core.Constants.AuthorizationHeader">
+            <summary>
+            Authorization header.
+            </summary>
+        </member>
         <member name="F:Switchboard.Core.Constants.ForwardedForHeader">
             <summary>
             Forwarded for header, generally x-forwarded-for.

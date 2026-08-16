@@ -132,6 +132,62 @@ namespace Test.Shared
                         Check.Equal(1, await db.Client.BlockedHeaders.CountAsync(), "blocked header count");
                         await db.Client.BlockedHeaders.DeleteByNameAsync("x-secret-header");
                         Check.False(await db.Client.BlockedHeaders.IsBlockedAsync("x-secret-header"), "unblocked after delete");
+                    }),
+
+                    Case("UsersMissing", "User lookups/deletes against absent rows and invalid input", async db =>
+                    {
+                        // SELECT/EXISTS returning empty must yield null/false, not throw, on the SQLite driver.
+                        Check.True(await db.Client.Users.GetByGuidAsync(Guid.NewGuid()) == null, "missing user by GUID is null");
+                        Check.True(await db.Client.Users.GetByUsernameAsync("ghost") == null, "missing user by username is null");
+                        Check.False(await db.Client.Users.ExistsByUsernameAsync("ghost"), "missing user does not exist by username");
+                        Check.False(await db.Client.Users.ExistsByGuidAsync(Guid.NewGuid()), "missing user does not exist by GUID");
+
+                        // Deleting an absent row is a guarded no-op.
+                        await db.Client.Users.DeleteByGuidAsync(Guid.NewGuid());
+                        await db.Client.Users.DeleteByUsernameAsync("ghost");
+                        Check.Equal(0, await db.Client.Users.CountAsync(), "count unchanged after no-op deletes");
+
+                        // Guard clauses reject invalid input.
+                        await Check.ThrowsAsync<ArgumentNullException>(() => db.Client.Users.CreateAsync(null!), "create null user throws");
+                        await Check.ThrowsAsync<ArgumentException>(() => db.Client.Users.CreateAsync(new UserMaster("   ")), "create whitespace-username user throws");
+                        await Check.ThrowsAsync<ArgumentNullException>(() => db.Client.Users.GetByUsernameAsync(""), "get by empty username throws");
+                    }),
+
+                    Case("CredentialsInvalid", "Credential validation rejects bad tokens and missing GUIDs", async db =>
+                    {
+                        // Unknown / empty tokens validate to null rather than throwing.
+                        Check.True(await db.Client.Credentials.ValidateBearerTokenAsync("not-a-real-token") == null, "unknown token does not validate");
+                        Check.True(await db.Client.Credentials.ValidateBearerTokenAsync("") == null, "empty token does not validate");
+                        Check.True(await db.Client.Credentials.GetUserByBearerTokenAsync("not-a-real-token") == null, "unknown token resolves to no user");
+
+                        // Regenerating a token for an absent credential is a hard error.
+                        await Check.ThrowsAsync<KeyNotFoundException>(() => db.Client.Credentials.RegenerateBearerTokenAsync(Guid.NewGuid()), "regenerate missing credential throws");
+
+                        // A credential with no owning user is rejected up front.
+                        await Check.ThrowsAsync<ArgumentException>(() => db.Client.Credentials.CreateAsync(new Credential(Guid.Empty)), "create credential without user GUID throws");
+                    }),
+
+                    Case("OriginsAndEndpointsMissing", "Origin/endpoint lookups and deletes against absent identifiers", async db =>
+                    {
+                        Check.True(await db.Client.OriginServers.GetByIdentifierAsync("no-such-origin") == null, "missing origin is null");
+                        Check.False(await db.Client.OriginServers.ExistsByIdentifierAsync("no-such-origin"), "missing origin does not exist");
+                        await db.Client.OriginServers.DeleteByIdentifierAsync("no-such-origin");
+                        Check.Equal(0, await db.Client.OriginServers.CountAsync(), "origin count still zero after no-op delete");
+
+                        Check.True(await db.Client.ApiEndpoints.GetByIdentifierAsync("no-such-endpoint") == null, "missing endpoint is null");
+                        Check.False(await db.Client.ApiEndpoints.ExistsByIdentifierAsync("no-such-endpoint"), "missing endpoint does not exist");
+                        await db.Client.ApiEndpoints.DeleteByIdentifierAsync("no-such-endpoint");
+                        Check.Equal(0, await db.Client.ApiEndpoints.CountAsync(), "endpoint count still zero after no-op delete");
+                    }),
+
+                    Case("EmptyHistoryQueries", "Request-history aggregates over an empty table", async db =>
+                    {
+                        Check.Equal(0L, await db.Client.RequestHistory.CountAsync(), "empty history count");
+                        Check.Equal(0L, await db.Client.RequestHistory.CountFailedAsync(), "empty failed count");
+                        List<RequestHistory> recent = await db.Client.RequestHistory.GetRecentAsync(10);
+                        Check.True(recent.Count == 0, "no recent rows on empty history");
+                        Check.False(await db.Client.BlockedHeaders.IsBlockedAsync("x-absent"), "absent header is not blocked");
+                        Check.False(await db.Client.BlockedHeaders.IsBlockedAsync(""), "empty header name is not blocked");
                     })
                 });
         }

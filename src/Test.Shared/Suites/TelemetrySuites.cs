@@ -128,8 +128,11 @@ namespace Test.Shared
                                     await WaitForAsync(() => collector.Sum("switchboard_origin_requests_total") >= 10, ct).ConfigureAwait(false);
                                     Check.True(collector.Sum("switchboard_origin_requests_total") >= 10, "origin_requests_total counted the proxied requests");
 
-                                    // Health probes fire on the 1s interval; wait for at least one within the window.
-                                    await WaitForAsync(() => collector.Count("switchboard_origin_health_checks_total") >= 1, ct, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+                                    // Health probes fire on the 1s interval. Wait for a *successful* probe specifically
+                                    // (not merely any probe): on a heavily loaded host the first probe can time out and be
+                                    // counted as a failure before a success lands, so waiting on the success condition with
+                                    // a generous window keeps the assertion from being starved.
+                                    await WaitForAsync(() => collector.Where("switchboard_origin_health_checks_total").Any(s => s.Tag("result") == "success"), ct, TimeSpan.FromSeconds(20)).ConfigureAwait(false);
                                     Check.True(collector.Where("switchboard_origin_health_checks_total").Any(s => s.Tag("result") == "success"), "a successful health-check probe was counted");
                                 }
                             }

@@ -230,8 +230,27 @@ namespace Test.Shared
                             using (RestResponse resp = await req.SendAsync())
                             {
                                 Check.Equal(200, resp.StatusCode, "secure status");
-                                Check.Contains(resp.DataAsString, "Authorization", "auth header echoed");
+                                // HTTP header names are case-insensitive (RFC 7230); the origin echoes the header under
+                                // whatever casing it receives, so match the name case-insensitively. The token value,
+                                // which is the meaningful guarantee that auth is forwarded, is asserted verbatim below.
+                                Check.Contains(resp.DataAsString.ToLowerInvariant(), "authorization", "auth header echoed");
                                 Check.Contains(resp.DataAsString, "Bearer test-token-12345", "auth token echoed");
+                            }
+                        }
+                    }),
+
+                    IntegrationSupport.SharedCase("ProxyCore", "AuthHeaderNonBearerForwarded", "Non-Bearer Authorization scheme is forwarded verbatim", async (h, ct) =>
+                    {
+                        using (RestRequest req = new RestRequest(h.Url("/api/secure")))
+                        {
+                            // A custom, non-Bearer scheme must survive proxying unchanged. The gateway forwards the
+                            // Authorization header via RestWrapper's Authorization.Raw, which preserves the exact value
+                            // rather than assuming Bearer or Basic; this guards that path against future regressions.
+                            req.Authorization.Raw = "Basic dXNlcjpwYXNzd29yZA==";
+                            using (RestResponse resp = await req.SendAsync())
+                            {
+                                Check.Equal(200, resp.StatusCode, "secure status");
+                                Check.Contains(resp.DataAsString, "Basic dXNlcjpwYXNzd29yZA==", "custom auth scheme echoed verbatim");
                             }
                         }
                     })

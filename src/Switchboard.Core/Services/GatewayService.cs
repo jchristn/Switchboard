@@ -982,7 +982,19 @@
                                 if (!req.Headers.AllKeys.Contains(key))
                                 {
                                     string val = ctx.Request.Headers.Get(key);
-                                    req.Headers.Add(key, val);
+
+                                    if (key.Equals(Constants.AuthorizationHeader, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        // RestWrapper applies the Authorization header from the typed Authorization
+                                        // property and intentionally ignores a raw "Authorization" entry in Headers.
+                                        // Route it through Authorization.Raw so the client's credentials are forwarded
+                                        // to the origin verbatim, preserving any scheme (Bearer, Basic, or custom).
+                                        req.Authorization.Raw = val;
+                                    }
+                                    else
+                                    {
+                                        req.Headers.Add(key, val);
+                                    }
                                 }
                             }
                         }

@@ -2,10 +2,10 @@
 
 	<PropertyGroup>
 		<Title>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Title>
-		<Version>5.0.0</Version>
+		<Version>5.1.0</Version>
 		<Description>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Description>
 		<Copyright>(c)2026 Joel Christner</Copyright>
-		<PackageReleaseNotes>v5.0.0: Intelligent routing and load balancing — least-connections, power-of-two-choices, weighted, and latency-aware modes; passive health checks with outlier ejection; automatic retries/failover; sticky sessions; slow start; and per-endpoint weighted canary with header routing. Observability via OpenTelemetry — metrics and traces exported over OTLP, with a turnkey Prometheus/Tempo/Loki/Grafana Docker stack</PackageReleaseNotes>
+		<PackageReleaseNotes>v5.1.0: Dependency refresh across the stack (Npgsql 10, Microsoft.Data.Sqlite 10, Microsoft.Data.SqlClient 7, MySqlConnector 2.6, Watson 7.1, RestWrapper 3.2, SyslogLogging 2.2). Fixes forwarding of the client Authorization header to origin servers: RestWrapper 3.2 applies Authorization via a typed property and ignores it in the raw header collection, so the gateway now forwards it through Authorization.Raw, preserving any scheme (Bearer, Basic, or custom).</PackageReleaseNotes>
 
 		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -51,16 +51,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
-		<PackageReference Include="MySqlConnector" Version="2.4.0" />
-		<PackageReference Include="Npgsql" Version="9.0.2" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
+		<PackageReference Include="MySqlConnector" Version="2.6.2" />
+		<PackageReference Include="Npgsql" Version="10.0.3" />
 		<PackageReference Include="OpenTelemetry" Version="1.17.0" />
 		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
-		<PackageReference Include="RestWrapper" Version="3.1.8" />
+		<PackageReference Include="RestWrapper" Version="3.2.0" />
 		<PackageReference Include="SerializationHelper" Version="2.0.3" />
-		<PackageReference Include="SyslogLogging" Version="2.0.12" />
-		<PackageReference Include="Watson" Version="7.0.14" />
+		<PackageReference Include="SyslogLogging" Version="2.2.1" />
+		<PackageReference Include="Watson" Version="7.1.0" />
 	</ItemGroup>
 
 </Project>
