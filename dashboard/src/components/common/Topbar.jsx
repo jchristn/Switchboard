@@ -9,6 +9,7 @@ import { metaForPath } from './navConfig';
 import './Topbar.css';
 
 const GITHUB_URL = 'https://github.com/jchristn/switchboard';
+const DISCORD_URL = 'https://discord.gg/tRAN8HgvK5';
 
 function Topbar() {
   const { t } = useTranslation();
@@ -93,6 +94,17 @@ function Topbar() {
           title={t('topbar.github')}
         >
           <Icons.Github size={18} />
+        </a>
+
+        <a
+          className="sb-icon-btn"
+          href={DISCORD_URL}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={t('topbar.discord')}
+          title={t('topbar.discord')}
+        >
+          <Icons.Discord size={18} />
         </a>
 
         <LanguageSelector compact />

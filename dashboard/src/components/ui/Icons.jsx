@@ -66,6 +66,14 @@ export function Github({ size = 18, ...props }) {
   );
 }
 
+export function Discord({ size = 18, ...props }) {
+  return (
+    <Svg size={size} fill="currentColor" stroke="none" {...props}>
+      <path d="M20.317 4.369A19.79 19.79 0 0 0 15.432 3c-.21.375-.454.88-.622 1.28a18.27 18.27 0 0 0-5.62 0A12.6 12.6 0 0 0 8.56 3a19.74 19.74 0 0 0-4.885 1.37C.617 8.98-.213 13.475.196 17.906a19.9 19.9 0 0 0 6.036 3.058c.487-.665.922-1.372 1.296-2.114a12.9 12.9 0 0 1-2.04-.978c.171-.126.338-.257.5-.392 3.927 1.835 8.18 1.835 12.06 0 .164.14.331.271.5.392-.652.386-1.336.714-2.043.98.375.74.81 1.447 1.297 2.112a19.84 19.84 0 0 0 6.038-3.058c.48-5.135-.82-9.59-3.446-13.537ZM8.02 15.18c-1.183 0-2.156-1.086-2.156-2.42 0-1.334.95-2.42 2.156-2.42 1.21 0 2.18 1.096 2.157 2.42 0 1.334-.95 2.42-2.157 2.42Zm7.96 0c-1.183 0-2.156-1.086-2.156-2.42 0-1.334.95-2.42 2.156-2.42 1.21 0 2.18 1.096 2.157 2.42 0 1.334-.946 2.42-2.157 2.42Z" />
+    </Svg>
+  );
+}
+
 export function Sun({ size = 18, ...props }) {
   return (
     <Svg size={size} {...props}>
@@ -349,6 +357,7 @@ Kebab.propTypes = iconPropTypes;
 Copy.propTypes = iconPropTypes;
 Check.propTypes = iconPropTypes;
 Github.propTypes = iconPropTypes;
+Discord.propTypes = iconPropTypes;
 Sun.propTypes = iconPropTypes;
 Moon.propTypes = iconPropTypes;
 Logout.propTypes = iconPropTypes;

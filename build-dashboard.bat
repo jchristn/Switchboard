@@ -28,5 +28,20 @@ if errorlevel 1 (
     exit /b %errorlevel%
 )
 
+rem The cloud builder pushes the multi-arch image to Docker Hub but does not populate the local
+rem image store. Pull the just-pushed tags so they are available locally too. Pulling reads from
+rem Docker Hub, so the cloud builder is still only invoked once.
+echo Pulling jchristn77/switchboard-ui:%VERSION_TAG% into the local image store...
+docker pull jchristn77/switchboard-ui:%VERSION_TAG%
+if errorlevel 1 (
+    echo Failed to pull jchristn77/switchboard-ui:%VERSION_TAG% into the local image store.
+    exit /b %errorlevel%
+)
+docker pull jchristn77/switchboard-ui:latest
+if errorlevel 1 (
+    echo Failed to pull jchristn77/switchboard-ui:latest into the local image store.
+    exit /b %errorlevel%
+)
+
 echo Done.
 exit /b 0
