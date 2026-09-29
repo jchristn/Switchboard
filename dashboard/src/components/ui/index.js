@@ -27,6 +27,7 @@ export { default as PageHeader } from './PageHeader';
 export {
   default as ActivityChart,
   TIME_RANGES,
+  rangeWindow,
   generateBuckets,
   mergeBuckets,
 } from './ActivityChart';

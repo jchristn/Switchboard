@@ -2,7 +2,29 @@
 
 ## Current Version
 
-v5.2.1
+v5.2.2
+
+### Changes in v5.2.2
+
+A dashboard release: the activity charts and the KPI tiles next to them now tell the same story. The library
+and server are unchanged apart from the version number.
+
+- The Request Activity chart shows a loading spinner over the plot while data loads (first load, range
+  change, or refresh) on both Overview and Request History; Overview's 30-second background poll refreshes
+  quietly without the overlay
+- Request History and Overview KPI tiles (requests, failures, success rate, average duration) now describe
+  the chart's selected range, so they agree with the bars; all-time totals appear as notes under each tile.
+  Previously the tiles showed all-time totals and average duration came from only the rows on the current
+  table page, so "Last hour" could show a single green bar next to an 82% success rate
+- Overview and Request History activity charts now agree. Overview requested "now minus the window" with an
+  unaligned start, so the server's buckets straddled the chart's and counts shifted or the oldest bucket was
+  dropped. Both pages now query the same bucket-aligned window (`rangeWindow`) and draw exactly the window
+  they fetched, and the KPI tiles are computed from those same buckets
+- Overview's origin tile read "0 of 3 healthy" for healthy origins because it counted health from
+  `/origins`, which carries no health state; it now uses `/origins/health`, which also makes unhealthy
+  origins appear under Attention again
+
+## Previous Versions
 
 ### Changes in v5.2.1
 
@@ -46,8 +68,6 @@ for anyone using the Grafana dashboards or the latency and uptime metrics, which
   the stack with `--pull always`
 - **Tests:** new unit cases for the Watson subscription, histogram buckets, and the uptime gauge (console
   runner 267 to 272), and 15 new dashboard unit tests (persistent page size and the status filter parser)
-
-## Previous Versions
 
 ### Changes in v5.2.0
 

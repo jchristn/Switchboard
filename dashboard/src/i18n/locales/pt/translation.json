@@ -671,5 +671,9 @@
     "open": "Abrir",
     "exploreInGrafana": "Explorar no Grafana",
     "openTip": "Abrir {{name}} em uma nova aba."
+  },
+  "kpi": {
+    "allTimeCount": "{{count}} retidas no total",
+    "allTimeRate": "{{rate}} em todas as retidas"
   }
 }

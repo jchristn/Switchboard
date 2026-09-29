@@ -671,5 +671,9 @@
     "open": "開啟",
     "exploreInGrafana": "喺 Grafana 睇",
     "openTip": "喺新分頁開啟 {{name}}。"
+  },
+  "kpi": {
+    "allTimeCount": "總共保留 {{count}} 個",
+    "allTimeRate": "全部保留請求係 {{rate}}"
   }
 }

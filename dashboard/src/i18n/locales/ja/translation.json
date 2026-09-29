@@ -671,5 +671,9 @@
     "open": "開く",
     "exploreInGrafana": "Grafana で表示",
     "openTip": "{{name}} を新しいタブで開きます。"
+  },
+  "kpi": {
+    "allTimeCount": "保持済み合計 {{count}} 件",
+    "allTimeRate": "保持済み全体では {{rate}}"
   }
 }

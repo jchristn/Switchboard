@@ -21,7 +21,7 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
 ## Table of Contents
 
 - [What is Switchboard?](#what-is-switchboard)
-- [What's New in v5.2.1](#whats-new-in-v521)
+- [What's New in v5.2.2](#whats-new-in-v522)
 - [Key Features](#key-features)
 - [Who is it for?](#who-is-it-for)
 - [When to Use Switchboard](#when-to-use-switchboard)
@@ -101,9 +101,16 @@ Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers 
 
 ---
 
-## What's New in v5.2.1
+## What's New in v5.2.2
 
-**Current version: `v5.2.1`.** See the [change log](CHANGELOG.md) for the complete history.
+**Current version: `v5.2.2`.** See the [change log](CHANGELOG.md) for the complete history.
+
+v5.2.2 is a dashboard release. The KPI tiles on Overview and Request History now describe the time range
+selected on the activity chart (all-time totals appear as notes), both charts query the same bucket-aligned
+window so they always agree, the chart shows a loading spinner while data loads, and Overview's origin tile
+reports real health again.
+
+### Highlights from v5.2.1
 
 v5.2.1 makes the observability story trustworthy. Latency percentiles were computed from millisecond-sized
 histogram buckets while requests were recorded in seconds, so p95 and p99 were effectively guesses; they

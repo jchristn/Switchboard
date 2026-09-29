@@ -671,5 +671,9 @@
     "open": "باز کردن",
     "exploreInGrafana": "بررسی در Grafana",
     "openTip": "{{name}} را در زبانه جدید باز کنید."
+  },
+  "kpi": {
+    "allTimeCount": "در مجموع {{count}} نگهداری شده",
+    "allTimeRate": "{{rate}} در کل درخواست‌های نگهداری‌شده"
   }
 }

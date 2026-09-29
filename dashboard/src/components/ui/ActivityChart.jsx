@@ -14,6 +14,22 @@ export const TIME_RANGES = {
   month: { labelKey: 'chart.rangeMonth', windowMs: 2592000000, bucketMs: 21600000, buckets: 120 },
 };
 
+// The exact /history/timeseries window for a range, aligned to the chart's bucket grid so every server
+// bucket maps 1:1 onto a chart bucket. Every view that shows the activity chart (or numbers that must
+// agree with it) must query with this window and pass the same nowMs to the chart.
+export function rangeWindow(rangeId, nowMs = Date.now()) {
+  const range = TIME_RANGES[rangeId] || TIME_RANGES.hour;
+  const endStart = Math.floor(nowMs / range.bucketMs) * range.bucketMs;
+  const startMs = endStart - (range.buckets - 1) * range.bucketMs;
+  return {
+    startMs,
+    endMs: nowMs,
+    start: new Date(startMs).toISOString(),
+    end: new Date(nowMs).toISOString(),
+    intervalMinutes: Math.max(1, Math.round(range.bucketMs / 60000)),
+  };
+}
+
 // A zero-filled skeleton of buckets aligned to the range's grid, ending at nowMs.
 export function generateBuckets(rangeId, nowMs = Date.now()) {
   const range = TIME_RANGES[rangeId] || TIME_RANGES.hour;
@@ -204,7 +220,7 @@ export default function ActivityChart({
         </div>
       </div>
 
-      <div className="sb-chart__plot">
+      <div className="sb-chart__plot" aria-busy={loading}>
         <svg
           ref={svgRef}
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
@@ -320,6 +336,13 @@ export default function ActivityChart({
 
         {allZero && !loading && (
           <div className="sb-chart__nodata">{t('chart.noData')}</div>
+        )}
+
+        {loading && (
+          <div className="sb-chart__loading" role="status" aria-live="polite">
+            <span className="sb-chart__spinner" aria-hidden="true" />
+            <span>{t('common.loading')}</span>
+          </div>
         )}
       </div>
 

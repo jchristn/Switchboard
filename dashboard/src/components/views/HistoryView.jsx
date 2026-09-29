@@ -14,6 +14,7 @@ import {
   ConfirmModal,
   ActivityChart,
   TIME_RANGES,
+  rangeWindow,
   Metric,
   MethodBadge,
   StatusBadge,
@@ -26,6 +27,7 @@ import RequestDetailsModal from './RequestDetailsModal';
 import './HistoryView.css';
 import { usePersistentPageSize } from '../../hooks/usePersistentPageSize';
 import { parseStatusFilter, NON_2XX_FILTER } from '../../utils/statusFilter';
+import { summarizeBuckets } from '../../utils/timeseries';
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
@@ -70,7 +72,9 @@ function HistoryView() {
   // Chart state.
   const [rangeId, setRangeId] = useState('hour');
   const [timeseries, setTimeseries] = useState([]);
-  const [chartLoading, setChartLoading] = useState(false);
+  const [chartLoading, setChartLoading] = useState(true);
+  // The "now" the loaded series was fetched for; the chart draws exactly that window.
+  const [seriesNowMs, setSeriesNowMs] = useState(null);
 
   // KPI stats.
   const [stats, setStats] = useState(null);
@@ -141,26 +145,18 @@ function HistoryView() {
 
   // ---- Timeseries (chart) ----
   const loadTimeseries = useCallback(async () => {
-    const range = TIME_RANGES[rangeId] || TIME_RANGES.hour;
-    // Align the requested window to the same bucket grid the chart renders on. Sending a raw "now"
-    // (with seconds/millis) would make the server's buckets start on a fractional-bucket offset, and
-    // the client would then floor them back onto its clean grid — shifting every bar by up to one
-    // bucket relative to the request times shown in the table. Flooring the end to the bucket grid
-    // and stepping back a whole number of buckets keeps server and chart buckets aligned 1:1.
-    const endMs = Date.now();
-    const endStart = Math.floor(endMs / range.bucketMs) * range.bucketMs;
-    const startMs = endStart - (range.buckets - 1) * range.bucketMs;
-    const end = new Date(endMs);
-    const start = new Date(startMs);
+    // Same aligned window as Overview (rangeWindow), so both charts and the KPI tiles agree.
+    const win = rangeWindow(rangeId);
     setChartLoading(true);
     try {
       const data = await apiClient.getHistoryTimeseries({
-        start: start.toISOString(),
-        end: end.toISOString(),
-        intervalMinutes: Math.max(1, Math.round(range.bucketMs / 60000)),
+        start: win.start,
+        end: win.end,
+        intervalMinutes: win.intervalMinutes,
       });
       // The endpoint returns { startUtc, endUtc, intervalMinutes, buckets: [...] }; the chart wants the buckets.
       setTimeseries(Array.isArray(data?.buckets) ? data.buckets : Array.isArray(data) ? data : []);
+      setSeriesNowMs(win.endMs);
     } catch {
       // New endpoint may not exist yet (404) — render the chart empty rather than error.
       setTimeseries([]);
@@ -287,18 +283,10 @@ function HistoryView() {
   };
 
   // ---- KPIs ----
-  const avgDurationMs = useMemo(() => {
-    if (!rows.length) return null;
-    const withDuration = rows.filter((r) => typeof r.durationMs === 'number');
-    if (!withDuration.length) return null;
-    return withDuration.reduce((sum, r) => sum + r.durationMs, 0) / withDuration.length;
-  }, [rows]);
-
-  const successRateText = useMemo(() => {
-    if (!stats || stats.successRate == null) return '—';
-    // The server reports successRate on a 0-100 scale, which is what fmt.percent expects.
-    return fmt.percent(stats.successRate, 1);
-  }, [stats, fmt]);
+  // The tiles describe the same window as the activity chart above them (the selected range), so the
+  // chart and the numbers always agree. All-time totals from /history/stats are shown as notes.
+  const rangeSummary = useMemo(() => summarizeBuckets(timeseries), [timeseries]);
+  const rangeReady = !chartLoading || timeseries.length > 0;
 
   const total = useMemo(() => {
     if (clientTotal != null) return clientTotal;
@@ -396,24 +384,32 @@ function HistoryView() {
         onBucketClick={handleBucketClick}
         onRefresh={loadTimeseries}
         loading={chartLoading}
+        nowMs={seriesNowMs || undefined}
       />
 
       <div className="history-kpis">
         <Metric
           label={<span title={t('history.kpiAllTip')}>{t('history.kpiRetained')}</span>}
-          value={fmt.number(stats?.totalRequests ?? rows.length)}
+          value={rangeReady ? fmt.number(rangeSummary.total) : '—'}
+          note={stats ? t('kpi.allTimeCount', { count: fmt.number(stats.totalRequests ?? 0) }) : null}
           onClick={clearFilters}
         />
         <Metric
           label={<span title={t('history.kpiFailuresTip')}>{t('history.kpiFailures')}</span>}
-          value={fmt.number(stats?.failedRequests ?? 0)}
-          tone={stats?.failedRequests ? 'danger' : 'neutral'}
+          value={rangeReady ? fmt.number(rangeSummary.failure) : '—'}
+          note={stats ? t('kpi.allTimeCount', { count: fmt.number(stats.failedRequests ?? 0) }) : null}
+          tone={rangeSummary.failure > 0 ? 'danger' : 'neutral'}
           onClick={showNon2xx}
         />
-        <Metric label={t('history.kpiSuccessRate')} value={successRateText} tone="success" />
+        <Metric
+          label={t('history.kpiSuccessRate')}
+          value={rangeReady && rangeSummary.successRate != null ? fmt.percent(rangeSummary.successRate, 1) : '—'}
+          note={stats?.successRate != null ? t('kpi.allTimeRate', { rate: fmt.percent(stats.successRate, 1) }) : null}
+          tone="success"
+        />
         <Metric
           label={t('history.kpiAvgDuration')}
-          value={avgDurationMs != null ? fmt.duration(avgDurationMs) : '—'}
+          value={rangeReady && rangeSummary.avgDurationMs != null ? fmt.duration(rangeSummary.avgDurationMs) : '—'}
         />
       </div>
 

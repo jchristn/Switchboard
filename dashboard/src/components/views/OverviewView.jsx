@@ -7,11 +7,12 @@ import {
   PageHeader,
   Metric,
   ActivityChart,
-  TIME_RANGES,
+  rangeWindow,
   EmptyState,
   Icons,
 } from '../ui';
 import './OverviewView.css';
+import { summarizeBuckets } from '../../utils/timeseries';
 
 const POLL_MS = 30000;
 
@@ -39,12 +40,14 @@ function OverviewView() {
   const [chartLoading, setChartLoading] = useState(false);
   const [lastLoaded, setLastLoaded] = useState(null);
   const [timeseries, setTimeseries] = useState([]);
+  const [seriesNowMs, setSeriesNowMs] = useState(null);
   const [data, setData] = useState({
     origins: null,
     endpoints: null,
     stats: null,
     credentials: null,
     blockedHeaders: null,
+    originHealth: null,
   });
 
   // Keep a mounted flag so async completions after unmount don't set state.
@@ -57,15 +60,14 @@ function OverviewView() {
   }, []);
 
   const loadData = useCallback(
-    async (range) => {
-      setChartLoading(true);
-      const rangeCfg = TIME_RANGES[range] || TIME_RANGES.hour;
-      const now = Date.now();
-      const timeseriesArgs = {
-        start: new Date(now - rangeCfg.windowMs).toISOString(),
-        end: new Date(now).toISOString(),
-        intervalMinutes: Math.max(1, Math.round(rangeCfg.bucketMs / 60000)),
-      };
+    async (range, background = false) => {
+      // Explicit loads (first load, range change, refresh) show the chart's loading overlay; the
+      // 30-second background poll refreshes quietly so the chart does not flash.
+      if (!background) setChartLoading(true);
+      // Aligned to the chart's bucket grid (same window as Request History); an unaligned
+      // "now minus the window" start made server buckets straddle chart buckets.
+      const win = rangeWindow(range);
+      const timeseriesArgs = { start: win.start, end: win.end, intervalMinutes: win.intervalMinutes };
 
       const results = await Promise.allSettled([
         apiClient.getOrigins(),
@@ -74,11 +76,12 @@ function OverviewView() {
         apiClient.getCredentials(),
         apiClient.getBlockedHeaders(),
         apiClient.getHistoryTimeseries(timeseriesArgs),
+        apiClient.getOriginsHealth(),
       ]);
 
       if (!mountedRef.current) return;
 
-      const [origins, endpoints, stats, credentials, blockedHeaders, series] = results;
+      const [origins, endpoints, stats, credentials, blockedHeaders, series, originHealth] = results;
 
       setData((prev) => ({
         origins: settled(origins) ?? prev.origins,
@@ -86,12 +89,14 @@ function OverviewView() {
         stats: settled(stats) ?? prev.stats,
         credentials: settled(credentials) ?? prev.credentials,
         blockedHeaders: settled(blockedHeaders) ?? prev.blockedHeaders,
+        originHealth: settled(originHealth) ?? prev.originHealth,
       }));
 
       // Timeseries endpoint is new; if it 404s (rejected) show the chart empty
       // rather than surfacing an error on the page.
       // The endpoint returns { startUtc, endUtc, intervalMinutes, buckets: [...] }; the chart wants the buckets.
       const seriesValue = settled(series);
+      setSeriesNowMs(win.endMs);
       setTimeseries(
         Array.isArray(seriesValue?.buckets)
           ? seriesValue.buckets
@@ -111,7 +116,7 @@ function OverviewView() {
   // range resets the interval and triggers an immediate reload for that window.
   useEffect(() => {
     loadData(rangeId);
-    const interval = setInterval(() => loadData(rangeId), POLL_MS);
+    const interval = setInterval(() => loadData(rangeId, true), POLL_MS);
     return () => clearInterval(interval);
   }, [rangeId, loadData]);
 
@@ -121,18 +126,24 @@ function OverviewView() {
     stats,
     credentials,
     blockedHeaders,
+    originHealth,
   } = data;
 
   const originCount = origins ? origins.length : null;
-  const healthyOrigins = origins ? origins.filter((o) => o.healthy === true).length : 0;
+  // Health comes from /origins/health; /origins returns configuration only (no health state).
+  const healthList = Array.isArray(originHealth) ? originHealth : [];
+  const healthyOrigins = healthList.filter((h) => h.isHealthy === true).length;
   const unhealthyOrigins = useMemo(
-    () => (origins ? origins.filter((o) => o.healthy === false) : []),
-    [origins]
+    () => (Array.isArray(originHealth) ? originHealth.filter((h) => h.isHealthy === false) : []),
+    [originHealth]
   );
   const endpointCount = endpoints ? endpoints.length : null;
-  const totalRequests = stats ? stats.totalRequests ?? 0 : null;
-  const failedRequests = stats ? stats.failedRequests ?? 0 : null;
-  const successRate = stats ? stats.successRate ?? null : null;
+  // Request tiles describe the chart's selected range so the numbers and the bars agree; all-time
+  // totals from /history/stats appear as notes.
+  const rangeSummary = useMemo(() => summarizeBuckets(timeseries), [timeseries]);
+  const totalRequests = rangeSummary.total;
+  const failedRequests = rangeSummary.failure;
+  const successRate = rangeSummary.successRate;
   const credentialCount = credentials ? credentials.length : null;
   const blockedHeaderCount = blockedHeaders ? blockedHeaders.length : null;
 
@@ -228,12 +239,14 @@ function OverviewView() {
         <Metric
           label={t('overview.kpiRequests')}
           value={num(totalRequests)}
+          note={stats ? t('kpi.allTimeCount', { count: num(stats.totalRequests ?? 0) }) : null}
           icon={<Icons.History size={18} />}
           onClick={() => navigate('/dashboard/history')}
         />
         <Metric
           label={t('overview.kpiFailures')}
           value={num(failedRequests)}
+          note={stats ? t('kpi.allTimeCount', { count: num(stats.failedRequests ?? 0) }) : null}
           tone={failedRequests > 0 ? 'danger' : 'neutral'}
           icon={<Icons.Warning size={18} />}
           onClick={() => navigate('/dashboard/history?failed=1')}
@@ -241,6 +254,7 @@ function OverviewView() {
         <Metric
           label={t('overview.kpiSuccessRate')}
           value={successRate != null ? fmt.percent(successRate) : '—'}
+          note={stats?.successRate != null ? t('kpi.allTimeRate', { rate: fmt.percent(stats.successRate) }) : null}
           tone={rateTone(successRate)}
           icon={<Icons.Gauge size={18} />}
         />
@@ -324,6 +338,7 @@ function OverviewView() {
           onBucketClick={() => navigate('/dashboard/history')}
           onRefresh={() => loadData(rangeId)}
           loading={chartLoading}
+          nowMs={seriesNowMs || undefined}
           title={t('chart.title')}
         />
         {lastLoaded && (

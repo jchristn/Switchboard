@@ -671,5 +671,9 @@
     "open": "Abrir",
     "exploreInGrafana": "Explorar en Grafana",
     "openTip": "Abrir {{name}} en una pestaña nueva."
+  },
+  "kpi": {
+    "allTimeCount": "{{count}} conservadas en total",
+    "allTimeRate": "{{rate}} en todas las conservadas"
   }
 }

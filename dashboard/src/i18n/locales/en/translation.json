@@ -858,5 +858,9 @@
     "legendCatchAllDesc": "Matches /api and everything below it, e.g. /api/users/42/orders. Must be the whole last segment, and only one per pattern.",
     "legendPrecedence": "Routes without a catch-all always win. Among catch-alls, the longest fixed prefix wins, so /api/v2/{*rest} beats /api/{*rest}.",
     "legendQuery": "The query string is ignored when matching and is still forwarded to the origin."
+  },
+  "kpi": {
+    "allTimeCount": "{{count}} retained in total",
+    "allTimeRate": "{{rate}} across all retained"
   }
 }

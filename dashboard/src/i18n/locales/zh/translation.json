@@ -671,5 +671,9 @@
     "open": "打开",
     "exploreInGrafana": "在 Grafana 中查看",
     "openTip": "在新标签页中打开 {{name}}。"
+  },
+  "kpi": {
+    "allTimeCount": "共保留 {{count}} 个",
+    "allTimeRate": "全部保留请求为 {{rate}}"
   }
 }

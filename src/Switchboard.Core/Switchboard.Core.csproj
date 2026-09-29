@@ -2,10 +2,10 @@
 
 	<PropertyGroup>
 		<Title>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Title>
-		<Version>5.2.1</Version>
+		<Version>5.2.2</Version>
 		<Description>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Description>
 		<Copyright>(c)2026 Joel Christner</Copyright>
-		<PackageReleaseNotes>v5.2.1: Accurate telemetry. Latency histograms (switchboard_request_duration_seconds and Watson http.server.request.duration) now use seconds-scale buckets (1 ms to 60 s) instead of the millisecond-scaled defaults that made p50/p95/p99 meaningless; body-size histograms use 64 B to 64 MiB (configurable via SwitchboardTelemetry.DurationBucketBoundariesSeconds and SizeBucketBoundariesBytes). switchboard_origin_uptime_ratio now includes the current health period (it reported 0% for origins healthy since startup) via the shared OriginServer.ComputeUptime. The telemetry service also collects Watson's built-in HTTP server metrics and spans. Includes v5.2.0 catch-all routing ({*name}).</PackageReleaseNotes>
+		<PackageReleaseNotes>v5.2.2: Dashboard-only release; the library is unchanged from v5.2.1 apart from the version number. v5.2.1: Accurate telemetry. Latency histograms (switchboard_request_duration_seconds and Watson http.server.request.duration) now use seconds-scale buckets (1 ms to 60 s) instead of the millisecond-scaled defaults that made p50/p95/p99 meaningless; body-size histograms use 64 B to 64 MiB (configurable via SwitchboardTelemetry.DurationBucketBoundariesSeconds and SizeBucketBoundariesBytes). switchboard_origin_uptime_ratio now includes the current health period (it reported 0% for origins healthy since startup) via the shared OriginServer.ComputeUptime. The telemetry service also collects Watson's built-in HTTP server metrics and spans. Includes v5.2.0 catch-all routing ({*name}).</PackageReleaseNotes>
 
 		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>

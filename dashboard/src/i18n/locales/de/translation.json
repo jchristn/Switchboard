@@ -671,5 +671,9 @@
     "open": "Öffnen",
     "exploreInGrafana": "In Grafana untersuchen",
     "openTip": "{{name}} in einem neuen Tab öffnen."
+  },
+  "kpi": {
+    "allTimeCount": "{{count}} insgesamt gespeichert",
+    "allTimeRate": "{{rate}} über alle gespeicherten"
   }
 }
