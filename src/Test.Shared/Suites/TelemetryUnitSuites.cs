@@ -140,22 +140,27 @@ namespace Test.Shared
 
                     Case("CounterCatalog", "Recording methods emit the documented metric names and labels", () =>
                     {
+                        // The meter is process-wide and harnesses from integration suites keep running health
+                        // checks in the background, so record under unique names and keep only those samples.
+                        string ep = "ep-" + Guid.NewGuid().ToString("N");
+                        string origin = "origin-" + Guid.NewGuid().ToString("N");
                         List<Sample> samples = Capture(false, () =>
                         {
-                            SwitchboardTelemetry.RecordRequest("ep1", "GET", 200);
+                            SwitchboardTelemetry.RecordRequest(ep, "GET", 200);
                             SwitchboardTelemetry.RecordRejection(429);
-                            SwitchboardTelemetry.RecordOriginRequest("origin1", 503);
-                            SwitchboardTelemetry.RecordDuration("ep1", "origin1", 0.125);
-                            SwitchboardTelemetry.RecordBodySizes("ep1", 1024, 2048);
-                            SwitchboardTelemetry.RecordHealthCheck("origin1", true);
-                            SwitchboardTelemetry.RecordEjection("origin1");
-                            SwitchboardTelemetry.RecordSelection("ep1", "origin1");
-                            SwitchboardTelemetry.RecordRetry("ep1");
-                            SwitchboardTelemetry.RecordFailover("ep1");
-                        });
+                            SwitchboardTelemetry.RecordOriginRequest(origin, 503);
+                            SwitchboardTelemetry.RecordDuration(ep, origin, 0.125);
+                            SwitchboardTelemetry.RecordBodySizes(ep, 1024, 2048);
+                            SwitchboardTelemetry.RecordHealthCheck(origin, true);
+                            SwitchboardTelemetry.RecordEjection(origin);
+                            SwitchboardTelemetry.RecordSelection(ep, origin);
+                            SwitchboardTelemetry.RecordRetry(ep);
+                            SwitchboardTelemetry.RecordFailover(ep);
+                        }).Where(x => x.Tag("endpoint") == ep || x.Tag("origin") == origin
+                                      || (x.Name == "switchboard_gateway_rejections_total" && x.Tag("reason") == "429")).ToList();
 
                         Sample req = Single(samples, "switchboard_requests_total");
-                        Check.Equal("ep1", req.Tag("endpoint"), "request endpoint label");
+                        Check.Equal(ep, req.Tag("endpoint"), "request endpoint label");
                         Check.Equal("GET", req.Tag("method"), "request method label");
                         Check.Equal("200", req.Tag("code"), "request code label");
 

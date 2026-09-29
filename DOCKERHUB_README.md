@@ -46,7 +46,7 @@ Run the server on its own:
 ```bash
 docker run -d --name switchboard -p 8000:8000 \
   -v "$(pwd)/sb.json:/app/sb.json" \
-  jchristn77/switchboard:v5.2.0
+  jchristn77/switchboard:v5.2.1
 ```
 
 Or run the server and dashboard together with Compose (from the repository's `Docker/` directory):
@@ -88,7 +88,7 @@ one or more origin servers, and endpoints that map routes to those origins:
 
 ## Tags
 
-- `v5.2.0`: current release
+- `v5.2.1`: current release
 - `latest`: most recent build
 
 ## Links

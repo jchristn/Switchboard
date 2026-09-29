@@ -21,7 +21,7 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
 ## Table of Contents
 
 - [What is Switchboard?](#what-is-switchboard)
-- [What's New in v5.2.0](#whats-new-in-v520)
+- [What's New in v5.2.1](#whats-new-in-v521)
 - [Key Features](#key-features)
 - [Who is it for?](#who-is-it-for)
 - [When to Use Switchboard](#when-to-use-switchboard)
@@ -101,11 +101,22 @@ Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers 
 
 ---
 
-## What's New in v5.2.0
+## What's New in v5.2.1
 
-**Current version: `v5.2.0`.** See the [change log](CHANGELOG.md) for the complete history.
+**Current version: `v5.2.1`.** See the [change log](CHANGELOG.md) for the complete history.
 
-The headline of this release is **catch-all routing**. A route pattern ending in `{*name}` now matches its prefix and every path below it, so `/api/{*rest}` serves `/api`, `/api/users`, and `/api/users/42/orders` alike, and a single `/{*path}` route can act as a fallback for everything else. Before this release a pattern could only match a fixed number of segments, which meant every path shape had to be registered by hand.
+v5.2.1 makes the observability story trustworthy. Latency percentiles were computed from millisecond-sized
+histogram buckets while requests were recorded in seconds, so p95 and p99 were effectively guesses; they
+are now accurate. Origin uptime no longer reports 0% for healthy origins, Watson's HTTP-layer metrics are
+collected, and Grafana ships seven dashboards split by domain, including an **Origins** view designed for
+fleets of hundreds of backends. The management dashboard remembers rows-per-page, adds an *Edit routes*
+action and a URL-pattern legend, fixes the Request History success rate, and gains a much richer Status
+filter (`200,400-429`, `4xx`, `>=200,<=299`, `!2xx`). See [Observability](#observability) and the
+[change log](CHANGELOG.md).
+
+### Highlights from v5.2.0
+
+The headline of v5.2.0 is **catch-all routing**. A route pattern ending in `{*name}` now matches its prefix and every path below it, so `/api/{*rest}` serves `/api`, `/api/users`, and `/api/users/42/orders` alike, and a single `/{*path}` route can act as a fallback for everything else. Before this release a pattern could only match a fixed number of segments, which meant every path shape had to be registered by hand.
 
 - **Catch-all routes** – `{*name}` as the entire last segment matches zero or more remaining segments and captures the raw remainder (repeated and trailing slashes kept, not URL-decoded, query string excluded). See [Route Patterns and Catch-All Routes](#route-patterns-and-catch-all-routes).
 - **Predictable precedence** – A route without a catch-all always beats a catch-all, no matter which endpoint or order it was configured in. Among catch-alls the most specific wins (longest literal prefix, then most fixed segments, then configuration order).

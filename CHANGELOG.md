@@ -2,12 +2,12 @@
 
 ## Current Version
 
-v5.2.0
+v5.2.1
 
-### Unreleased
+### Changes in v5.2.1
 
-Changes on `main` since the v5.2.0 packages and images were published. The version number has not been
-changed for these yet.
+A telemetry-accuracy and dashboard release on top of v5.2.0's catch-all routing. Upgrading is recommended
+for anyone using the Grafana dashboards or the latency and uptime metrics, which were misleading in v5.2.0.
 
 - **Accurate latency quantiles.** Latency histograms (`switchboard_request_duration_seconds` and Watson's
   `http.server.request.duration`) recorded seconds but used OpenTelemetry's default bucket boundaries
@@ -46,6 +46,8 @@ changed for these yet.
   the stack with `--pull always`
 - **Tests:** new unit cases for the Watson subscription, histogram buckets, and the uptime gauge (console
   runner 267 to 272), and 15 new dashboard unit tests (persistent page size and the status filter parser)
+
+## Previous Versions
 
 ### Changes in v5.2.0
 
@@ -93,8 +95,6 @@ changed for these yet.
   now forwards it through `Authorization.Raw`, preserving any scheme (Bearer, Basic, or custom)
 - Removed the SQLite CVE (GHSA-2m69-gcr7-jv3q) audit suppression; Microsoft.Data.Sqlite 10.x bundles a
   patched SQLite
-
-## Previous Versions
 
 ### Changes in v5.0.0
 

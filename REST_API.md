@@ -213,7 +213,7 @@ Returns the health status of the Switchboard instance. Response fields are **cam
 {
   "status": "healthy",
   "timestamp": "2026-07-29T10:30:00.0000000Z",
-  "version": "5.2.0"
+  "version": "5.2.1"
 }
 ```
 

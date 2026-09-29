@@ -6,7 +6,7 @@
 # For standalone builds, use dashboard/Dockerfile instead.
 #
 # Build from repository root:
-#   docker build -f Docker/dashboard/Dockerfile -t jchristn77/switchboard-ui:v5.2.0 .
+#   docker build -f Docker/dashboard/Dockerfile -t jchristn77/switchboard-ui:v5.2.1 .
 #
 
 #

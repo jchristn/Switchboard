@@ -1,8 +1,8 @@
 {
   "info": {
     "name": "Switchboard Management API",
-    "description": "Management API for Switchboard (v5.2.0). Set the `baseUrl` and `token` collection variables. All requests use bearer auth inherited from the collection. Path variables like {{guid}} / {{id}} / {{userGuid}} are collection variables you can fill in.",
-    "version": "5.2.0",
+    "description": "Management API for Switchboard (v5.2.1). Set the `baseUrl` and `token` collection variables. All requests use bearer auth inherited from the collection. Path variables like {{guid}} / {{id}} / {{userGuid}} are collection variables you can fill in.",
+    "version": "5.2.1",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
