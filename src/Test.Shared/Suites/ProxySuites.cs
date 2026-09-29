@@ -395,7 +395,9 @@ namespace Test.Shared
                         h.Settings.Endpoints[0].LoadBalancing = LoadBalancingMode.Random;
                         try
                         {
-                            HashSet<string> servers = await CollectServersAsync(h, 24);
+                            // Random selection can miss an origin in any fixed-size sample (24 requests missed one
+                            // ~0.4% of the time), so keep sending until all four are seen, capped at 200.
+                            HashSet<string> servers = await CollectServersAsync(h, 200, 4);
                             Check.True(servers.Count >= 4, "all four origins received requests (saw " + servers.Count + ")");
                         }
                         finally
@@ -406,10 +408,10 @@ namespace Test.Shared
                 });
         }
 
-        private static async Task<HashSet<string>> CollectServersAsync(ProxyHarness h, int requests)
+        private static async Task<HashSet<string>> CollectServersAsync(ProxyHarness h, int requests, int stopWhenDistinct = int.MaxValue)
         {
             HashSet<string> servers = new HashSet<string>();
-            for (int i = 0; i < requests; i++)
+            for (int i = 0; i < requests && servers.Count < stopWhenDistinct; i++)
             {
                 using (RestRequest req = new RestRequest(h.Url("/unauthenticated")))
                 using (RestResponse resp = await req.SendAsync())
