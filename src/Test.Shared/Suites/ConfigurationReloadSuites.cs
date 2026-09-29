@@ -143,6 +143,51 @@ namespace Test.Shared
                         }
                     }),
 
+                    Case("CatchAllRouteProjectedAndMatched", "A database catch-all route is projected and resolved behind a more specific route", async ctx =>
+                    {
+                        ApiEndpointConfig files = await ctx.Client.ApiEndpoints.CreateAsync(
+                            new ApiEndpointConfig { Identifier = "files-endpoint", Name = "Files", LoadBalancingMode = "RoundRobin" });
+                        ApiEndpointConfig special = await ctx.Client.ApiEndpoints.CreateAsync(
+                            new ApiEndpointConfig { Identifier = "special-endpoint", Name = "Special", LoadBalancingMode = "RoundRobin" });
+
+                        await ctx.Client.EndpointRoutes.CreateAsync(
+                            new EndpointRoute("files-endpoint", "GET", "/files/{*path}", requiresAuthentication: false) { EndpointGUID = files.GUID });
+                        await ctx.Client.EndpointRoutes.CreateAsync(
+                            new EndpointRoute("special-endpoint", "GET", "/files/special", requiresAuthentication: false) { EndpointGUID = special.GUID });
+
+                        SwitchboardSettings settings = new SwitchboardSettings();
+                        using (ConfigurationReloadService svc = new ConfigurationReloadService(settings, ctx.Client, _Logging))
+                        {
+                            Check.True(await svc.ReloadAsync(), "reload reported a change");
+
+                            ApiEndpoint? ep = settings.Endpoints.FirstOrDefault(e => e.Identifier == "files-endpoint");
+                            Check.True(ep != null && ep.Unauthenticated.ParameterizedUrls["GET"].Contains("/files/{*path}"), "catch-all projected verbatim");
+
+                            MatchingApiEndpoint? deep = RouteMatcher.FindEndpoint(settings.Endpoints, "GET", "/files/a/b.txt");
+                            Check.Equal("files-endpoint", deep?.Endpoint.Identifier, "catch-all serves a deep path");
+                            Check.Equal("a/b.txt", deep?.Parameters["path"], "remainder captured");
+
+                            MatchingApiEndpoint? exact = RouteMatcher.FindEndpoint(settings.Endpoints, "GET", "/files/special");
+                            Check.Equal("special-endpoint", exact?.Endpoint.Identifier, "specific route wins");
+                        }
+                    }),
+
+                    Case("InvalidDatabasePatternNeverMatches", "A database route with an invalid pattern is projected but never matches or throws", async ctx =>
+                    {
+                        ApiEndpointConfig bad = await ctx.Client.ApiEndpoints.CreateAsync(
+                            new ApiEndpointConfig { Identifier = "bad-endpoint", Name = "Bad", LoadBalancingMode = "RoundRobin" });
+                        await ctx.Client.EndpointRoutes.CreateAsync(
+                            new EndpointRoute("bad-endpoint", "GET", "/bad/{*rest}/tail", requiresAuthentication: false) { EndpointGUID = bad.GUID });
+
+                        SwitchboardSettings settings = new SwitchboardSettings();
+                        using (ConfigurationReloadService svc = new ConfigurationReloadService(settings, ctx.Client, _Logging))
+                        {
+                            Check.True(await svc.ReloadAsync(), "reload succeeded despite the invalid pattern");
+                            Check.True(RouteMatcher.FindEndpoint(settings.Endpoints, "GET", "/bad/x/tail") == null, "invalid pattern never matches");
+                            Check.Equal(1, RouteMatcher.FindInvalidPatterns(settings.Endpoints).Count, "invalid pattern reported");
+                        }
+                    }),
+
                     Case("BaselineEndpointsPreservedAndMerged", "Baseline endpoints are preserved and database-only endpoints are merged", async ctx =>
                     {
                         // A database-only endpoint (as if created via the dashboard).

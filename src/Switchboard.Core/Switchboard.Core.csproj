@@ -2,10 +2,10 @@
 
 	<PropertyGroup>
 		<Title>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Title>
-		<Version>5.1.0</Version>
+		<Version>5.2.0</Version>
 		<Description>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Description>
 		<Copyright>(c)2026 Joel Christner</Copyright>
-		<PackageReleaseNotes>v5.1.0: Dependency refresh across the stack (Npgsql 10, Microsoft.Data.Sqlite 10, Microsoft.Data.SqlClient 7, MySqlConnector 2.6, Watson 7.1, RestWrapper 3.2, SyslogLogging 2.2). Fixes forwarding of the client Authorization header to origin servers: RestWrapper 3.2 applies Authorization via a typed property and ignores it in the raw header collection, so the gateway now forwards it through Authorization.Raw, preserving any scheme (Bearer, Basic, or custom).</PackageReleaseNotes>
+		<PackageReleaseNotes>v5.2.0: Catch-all routes. A route or rewrite pattern ending in {*name} (for example /api/{*rest}) matches zero or more remaining path segments and captures the raw remainder. Routes without a catch-all always take precedence; among catch-alls the most specific wins (longest literal prefix). Invalid patterns are rejected by the management API with 400, flagged by /config/validate, skipped with a warning on import, and never match. New public RouteMatcher class. Watson 7.2.1 (UrlMatcher 3.1.0).</PackageReleaseNotes>
 
 		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -60,7 +60,7 @@
 		<PackageReference Include="RestWrapper" Version="3.2.0" />
 		<PackageReference Include="SerializationHelper" Version="2.0.3" />
 		<PackageReference Include="SyslogLogging" Version="2.2.1" />
-		<PackageReference Include="Watson" Version="7.1.0" />
+		<PackageReference Include="Watson" Version="7.2.1" />
 	</ItemGroup>
 
 </Project>

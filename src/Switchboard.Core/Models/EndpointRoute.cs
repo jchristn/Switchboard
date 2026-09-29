@@ -44,7 +44,10 @@ namespace Switchboard.Core.Models
         }
 
         /// <summary>
-        /// URL pattern (parameterized URL, e.g., /api/users/{id}).
+        /// URL pattern, for example /api/users/{id}. {name} matches exactly one segment. {*name} as the
+        /// entire last segment is a catch-all that matches zero or more remaining segments, for example
+        /// /api/{*rest}. Routes without a catch-all take precedence over catch-all routes; see
+        /// <see cref="RouteMatcher"/>. Patterns are validated by the management API, not by this setter.
         /// </summary>
         public string UrlPattern
         {

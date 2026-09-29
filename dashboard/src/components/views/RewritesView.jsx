@@ -16,6 +16,7 @@ import {
   CopyableId,
   Icons,
 } from '../ui';
+import { routePatternError } from '../../utils/routePattern';
 import './ResourceViews.css';
 
 const METHODS = ['', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
@@ -110,6 +111,11 @@ export default function RewritesView() {
 
   const submit = async (e) => {
     e.preventDefault();
+    const patternError = routePatternError(t, form.sourcePattern);
+    if (patternError) {
+      showError(patternError);
+      return;
+    }
     setSaving(true);
     try {
       if (editing) {

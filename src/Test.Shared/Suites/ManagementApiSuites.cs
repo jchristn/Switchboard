@@ -281,6 +281,36 @@ namespace Test.Shared
                         }
                     }),
 
+                    Case("ValidateFlagsInvalidRoutePattern", "POST /config/validate reports an invalid route pattern and accepts a valid catch-all", async (h, ct) =>
+                    {
+                        ConfigValidationRequest request = new ConfigValidationRequest
+                        {
+                            Origins = new List<OriginServerConfig> { new OriginServerConfig("o1") { Hostname = "localhost", Port = 1 } },
+                            Endpoints = new List<ApiEndpointConfig> { new ApiEndpointConfig("e1") },
+                            Routes = new List<EndpointRoute>
+                            {
+                                new EndpointRoute("e1", "GET", "/ok/{*rest}"),
+                                new EndpointRoute("e1", "GET", "/x/{*rest}/y")
+                            },
+                            Mappings = new List<EndpointOriginMapping> { new EndpointOriginMapping("e1", "o1") }
+                        };
+
+                        using (RestRequest req = new RestRequest(h.Url("/_sb/v1.0/config/validate"), HttpMethod.Post))
+                        {
+                            req.Authorization.BearerToken = AdminToken;
+                            req.ContentType = "application/json";
+                            using (RestResponse resp = await req.SendAsync(JsonSerializer.Serialize(request)))
+                            {
+                                Check.Equal(200, resp.StatusCode, "validate status");
+                                ConfigValidationResult result = JsonSerializer.Deserialize<ConfigValidationResult>(resp.DataAsString, _Json)!;
+                                Check.False(result.Valid, "config invalid");
+                                Check.Contains(resp.DataAsString, "InvalidRoutePattern", "invalid pattern error code");
+                                Check.Contains(resp.DataAsString, "/x/{*rest}/y", "invalid pattern named");
+                                Check.False(resp.DataAsString.Contains("'/ok/{*rest}' is invalid"), "valid catch-all not flagged");
+                            }
+                        }
+                    }),
+
                     // ---- Health / current user / OpenAPI ----
                     Case("HealthEndpoint", "GET /health returns 200", async (h, ct) =>
                     {
@@ -535,6 +565,88 @@ namespace Test.Shared
                         (int ds, _) = await Send(h, HttpMethod.Delete, "/rewrites/" + rwid);
                         Check.Equal(204, ds, "delete rewrite");
 
+                        await Send(h, HttpMethod.Delete, "/endpoints/" + eguid);
+                    }),
+
+                    // ---- Catch-all route and rewrite patterns ----
+                    Case("RouteCatchAllAccepted", "A route with a trailing {*name} catch-all is created and returned unchanged", async (h, ct) =>
+                    {
+                        (_, string eb) = await Send(h, HttpMethod.Post, "/endpoints",
+                            new { Identifier = "catchall-ep", Name = "Catch-all EP", LoadBalancingMode = "RoundRobin" });
+                        string eguid = GuidOf(eb);
+
+                        (int cs, string cb) = await Send(h, HttpMethod.Post, "/routes",
+                            new { EndpointIdentifier = "catchall-ep", EndpointGUID = eguid, HttpMethod = "GET", UrlPattern = "/ca/{*rest}", RequiresAuthentication = false });
+                        Check.Equal(201, cs, "create catch-all route");
+                        Check.Contains(cb, "/ca/{*rest}", "pattern stored verbatim");
+                        int rid = await FindId<EndpointRoute>(h, "/routes", x => x.UrlPattern, x => x.Id, "/ca/{*rest}");
+
+                        (int us, _) = await Send(h, HttpMethod.Put, "/routes/" + rid,
+                            new { EndpointIdentifier = "catchall-ep", EndpointGUID = eguid, HttpMethod = "GET", UrlPattern = "/ca/v2/{*rest}", RequiresAuthentication = false, SortOrder = 0 });
+                        Check.Equal(200, us, "update to another catch-all");
+
+                        await Send(h, HttpMethod.Delete, "/routes/" + rid);
+                        await Send(h, HttpMethod.Delete, "/endpoints/" + eguid);
+                    }),
+
+                    Case("RouteInvalidPatternRejected", "Creating or updating a route with an invalid catch-all returns 400 and stores nothing", async (h, ct) =>
+                    {
+                        (_, string eb) = await Send(h, HttpMethod.Post, "/endpoints",
+                            new { Identifier = "badroute-ep", Name = "Bad Route EP", LoadBalancingMode = "RoundRobin" });
+                        string eguid = GuidOf(eb);
+
+                        (int notLast, string notLastBody) = await Send(h, HttpMethod.Post, "/routes",
+                            new { EndpointIdentifier = "badroute-ep", EndpointGUID = eguid, HttpMethod = "GET", UrlPattern = "/bad/{*rest}/tail", RequiresAuthentication = false });
+                        Check.Equal(400, notLast, "catch-all not last");
+                        Check.Contains(notLastBody, "last segment", "error explains the rule");
+
+                        (int twice, _) = await Send(h, HttpMethod.Post, "/routes",
+                            new { EndpointIdentifier = "badroute-ep", EndpointGUID = eguid, HttpMethod = "GET", UrlPattern = "/{*a}/{*b}", RequiresAuthentication = false });
+                        Check.Equal(400, twice, "two catch-alls");
+
+                        (int partial, _) = await Send(h, HttpMethod.Post, "/routes",
+                            new { EndpointIdentifier = "badroute-ep", EndpointGUID = eguid, HttpMethod = "GET", UrlPattern = "/files/v{*rest}", RequiresAuthentication = false });
+                        Check.Equal(400, partial, "partial-segment catch-all");
+
+                        (_, string list) = await Send(h, HttpMethod.Get, "/routes");
+                        Check.False(list.Contains("/bad/{*rest}/tail") || list.Contains("/files/v{*rest}"), "no invalid route stored");
+
+                        (int cs, _) = await Send(h, HttpMethod.Post, "/routes",
+                            new { EndpointIdentifier = "badroute-ep", EndpointGUID = eguid, HttpMethod = "GET", UrlPattern = "/good/{id}", RequiresAuthentication = false });
+                        Check.Equal(201, cs, "valid route still created");
+                        int rid = await FindId<EndpointRoute>(h, "/routes", x => x.UrlPattern, x => x.Id, "/good/{id}");
+
+                        (int us, _) = await Send(h, HttpMethod.Put, "/routes/" + rid,
+                            new { EndpointIdentifier = "badroute-ep", EndpointGUID = eguid, HttpMethod = "GET", UrlPattern = "/good/{*rest}/x", RequiresAuthentication = false, SortOrder = 0 });
+                        Check.Equal(400, us, "update to an invalid pattern rejected");
+                        (_, string after) = await Send(h, HttpMethod.Get, "/routes/" + rid);
+                        Check.Contains(after, "/good/{id}", "original pattern unchanged");
+
+                        await Send(h, HttpMethod.Delete, "/routes/" + rid);
+                        await Send(h, HttpMethod.Delete, "/endpoints/" + eguid);
+                    }),
+
+                    Case("RewriteCatchAllAcceptedAndInvalidRejected", "A catch-all rewrite source is accepted; an invalid one returns 400", async (h, ct) =>
+                    {
+                        (_, string eb) = await Send(h, HttpMethod.Post, "/endpoints",
+                            new { Identifier = "rw-catchall-ep", Name = "RW Catch-all", LoadBalancingMode = "RoundRobin" });
+                        string eguid = GuidOf(eb);
+
+                        (int ok, _) = await Send(h, HttpMethod.Post, "/rewrites",
+                            new { EndpointIdentifier = "rw-catchall-ep", HttpMethod = "", SourcePattern = "/legacy/{*rest}", TargetPattern = "/v2/{rest}", SortOrder = 0 });
+                        Check.Equal(201, ok, "catch-all rewrite created");
+                        int rwid = await FindId<UrlRewrite>(h, "/rewrites", x => x.SourcePattern, x => x.Id, "/legacy/{*rest}");
+
+                        (int bad, string badBody) = await Send(h, HttpMethod.Post, "/rewrites",
+                            new { EndpointIdentifier = "rw-catchall-ep", HttpMethod = "GET", SourcePattern = "/a/{*x}/{*y}", TargetPattern = "/b", SortOrder = 0 });
+                        Check.Equal(400, bad, "invalid source rejected on create");
+                        Check.Contains(badBody, "Invalid source pattern", "error names the field");
+
+                        (int badUpdate, _) = await Send(h, HttpMethod.Put, "/rewrites/" + rwid,
+                            new { EndpointIdentifier = "rw-catchall-ep", HttpMethod = "", SourcePattern = "/legacy/{*rest}/x", TargetPattern = "/v2/{rest}", SortOrder = 0 });
+                        Check.Equal(400, badUpdate, "invalid source rejected on update");
+
+                        await Send(h, HttpMethod.Delete, "/rewrites/" + rwid);
                         await Send(h, HttpMethod.Delete, "/endpoints/" + eguid);
                     }),
 

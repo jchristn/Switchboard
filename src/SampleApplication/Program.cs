@@ -161,6 +161,13 @@ namespace SampleApplication
             };
             settings.Endpoints.Add(rewriteEndpoint);
 
+            // GET /files/{*path} -> catch-all demo, node 3 only. The {*path} segment matches /files
+            // and everything below it (/files/a, /files/a/b/c.txt, ...), and the full path is forwarded
+            // unchanged. A catch-all is only used when no other route matches, so it never shadows
+            // the more specific routes above.
+            settings.Endpoints.Add(BuildEndpoint("files-catchall", "Files (catch-all demo)",
+                SingleGetRoute("/files/{*path}"), new List<string> { "node3" }));
+
             return settings;
         }
 
@@ -241,6 +248,7 @@ namespace SampleApplication
             Console.WriteLine("    curl " + baseUrl + "/route3      # node 1 or 3");
             Console.WriteLine("    curl -X POST -d 'hi' " + baseUrl + "/echo   # any node, echoes body");
             Console.WriteLine("    curl " + baseUrl + "/api/users/42   # URL rewrite: origin receives /internal/v2/users/42");
+            Console.WriteLine("    curl " + baseUrl + "/files/docs/readme.md   # catch-all /files/{*path}: node 3, any depth");
             Console.WriteLine();
             Console.WriteLine("  Repeat a request to see load balancing rotate between eligible nodes.");
             Console.WriteLine("  Press Ctrl+C to stop.");

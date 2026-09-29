@@ -147,6 +147,51 @@ namespace Test.Shared
                         Check.Equal(1000, existing!.TimeoutMs, "existing timeout preserved");
                     }),
 
+                    Case("CatchAllRoutesImported", "Catch-all routes and rewrites import unchanged", async ctx =>
+                    {
+                        ApiEndpoint ep = new ApiEndpoint { Identifier = "catchall-api" };
+                        ep.Unauthenticated.ParameterizedUrls["GET"] = new List<string> { "/api/{*rest}", "/{*path}" };
+                        ep.Authenticated.ParameterizedUrls["POST"] = new List<string> { "/secure/{*rest}" };
+                        ep.RewriteUrls["GET"] = new Dictionary<string, string> { { "/legacy/{*rest}", "/v2/{rest}" } };
+                        ctx.Settings.Endpoints.Add(ep);
+
+                        SettingsImportService svc = new SettingsImportService(ctx.Settings, ctx.Client, _Logging);
+                        ImportResult result = await svc.ImportAsync();
+                        Check.Equal(3, result.RoutesImported, "RoutesImported");
+                        Check.Equal(1, result.RewritesImported, "RewritesImported");
+                        Check.Equal(0, result.InvalidPatternsSkipped, "InvalidPatternsSkipped");
+
+                        List<EndpointRoute> routes = (await ctx.Client.EndpointRoutes.GetAllAsync()).Where(r => r.EndpointIdentifier == "catchall-api").ToList();
+                        Check.True(routes.Any(r => r.UrlPattern == "/api/{*rest}" && !r.RequiresAuthentication), "unauthenticated catch-all stored");
+                        Check.True(routes.Any(r => r.UrlPattern == "/secure/{*rest}" && r.RequiresAuthentication), "authenticated catch-all stored");
+                        List<UrlRewrite> rewrites = (await ctx.Client.UrlRewrites.GetAllAsync()).Where(r => r.EndpointIdentifier == "catchall-api").ToList();
+                        Check.True(rewrites.Any(r => r.SourcePattern == "/legacy/{*rest}" && r.TargetPattern == "/v2/{rest}"), "catch-all rewrite stored");
+                    }),
+
+                    Case("InvalidPatternsSkippedOnImport", "Routes and rewrites with invalid patterns are skipped and counted; valid ones import", async ctx =>
+                    {
+                        ApiEndpoint ep = new ApiEndpoint { Identifier = "mixed-api" };
+                        ep.Unauthenticated.ParameterizedUrls["GET"] = new List<string> { "/ok/{id}", "/{*rest}/edit", "/{*a}/{*b}" };
+                        ep.Authenticated.ParameterizedUrls["PUT"] = new List<string> { "/files/v{*rest}", "/files/{*rest}" };
+                        ep.RewriteUrls[""] = new Dictionary<string, string>
+                        {
+                            { "/legacy/{*rest}/x", "/v2/{rest}" },
+                            { "/legacy/{*rest}", "/v2/{rest}" }
+                        };
+                        ctx.Settings.Endpoints.Add(ep);
+
+                        SettingsImportService svc = new SettingsImportService(ctx.Settings, ctx.Client, _Logging);
+                        ImportResult result = await svc.ImportAsync();
+                        Check.Equal(1, result.EndpointsImported, "endpoint still imported");
+                        Check.Equal(2, result.RoutesImported, "valid routes imported");
+                        Check.Equal(1, result.RewritesImported, "valid rewrite imported");
+                        Check.Equal(4, result.InvalidPatternsSkipped, "invalid patterns skipped");
+
+                        List<EndpointRoute> routes = (await ctx.Client.EndpointRoutes.GetAllAsync()).Where(r => r.EndpointIdentifier == "mixed-api").ToList();
+                        Check.Equal(2, routes.Count, "db route count");
+                        Check.False(routes.Any(r => r.UrlPattern.Contains("/edit") || r.UrlPattern.Contains("{*b}") || r.UrlPattern.Contains("v{*")), "no invalid route stored");
+                    }),
+
                     Case("UnauthenticatedRoutes", "Unauthenticated routes import with auth flag false", async ctx =>
                     {
                         ctx.Settings.Endpoints.Add(new ApiEndpoint

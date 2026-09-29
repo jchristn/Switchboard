@@ -25,6 +25,9 @@
 
         /// <summary>
         /// Rewrite a URL based on URL rewrite rules from an API endpoint.
+        /// Method-specific rules take precedence over any-method rules (empty method key). Within each set,
+        /// rules without a catch-all are tried first in order, then the most specific matching catch-all.
+        /// Values captured from the URL replace {name} (or {*name}) placeholders in the target.
         /// </summary>
         /// <param name="method">HTTP method.</param>
         /// <param name="url">Original URL.</param>
@@ -42,17 +45,10 @@
             foreach (string key in new string[] { method, String.Empty })
             {
                 if (!endpoint.RewriteUrls.TryGetValue(key, out Dictionary<string, string> rules)) continue;
-                if (rules == null || rules.Count == 0) continue;
 
-                foreach (KeyValuePair<string, string> kvpInner in rules)
+                if (RouteMatcher.TrySelectRewrite(matcher, rules, out string target, out NameValueCollection nvc))
                 {
-                    if (String.IsNullOrEmpty(kvpInner.Key)) continue;
-                    if (String.IsNullOrEmpty(kvpInner.Value)) continue;
-
-                    if (matcher.Match(kvpInner.Key, out NameValueCollection nvc))
-                    {
-                        return ReplaceParameters(kvpInner.Value, nvc);
-                    }
+                    return ReplaceParameters(target, nvc);
                 }
             }
 
@@ -73,6 +69,11 @@
                 if (url.Contains("{" + key + "}"))
                 {
                     url = url.Replace("{" + key + "}", nvc[key]);
+                }
+
+                if (url.Contains("{*" + key + "}"))
+                {
+                    url = url.Replace("{*" + key + "}", nvc[key]);
                 }
             }
 

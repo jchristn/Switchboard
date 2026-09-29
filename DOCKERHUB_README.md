@@ -22,7 +22,8 @@ binary, or as these containers.
 
 ## What's inside
 
-- Reverse proxy with parameterized URL matching (`/users/{id}`) and per-method route groups
+- Reverse proxy with parameterized URL matching (`/users/{id}`), catch-all routes (`/api/{*rest}`) that
+  serve a whole path prefix, and per-method route groups
 - Round-robin, random, least-connections, power-of-two-choices, weighted, and latency-based load
   balancing over health-checked origin servers, with retries/failover, sticky sessions, and weighted canary
 - OpenTelemetry metrics and traces (OTLP); Compose bundles a turnkey Prometheus + Tempo + Loki + Grafana
@@ -45,7 +46,7 @@ Run the server on its own:
 ```bash
 docker run -d --name switchboard -p 8000:8000 \
   -v "$(pwd)/sb.json:/app/sb.json" \
-  jchristn77/switchboard:v5.0.0
+  jchristn77/switchboard:v5.2.0
 ```
 
 Or run the server and dashboard together with Compose (from the repository's `Docker/` directory):
@@ -87,8 +88,8 @@ one or more origin servers, and endpoints that map routes to those origins:
 
 ## Tags
 
-- `v5.0.0` — current release
-- `latest` — most recent build
+- `v5.2.0`: current release
+- `latest`: most recent build
 
 ## Links
 

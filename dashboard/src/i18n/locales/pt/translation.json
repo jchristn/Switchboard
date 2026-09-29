@@ -632,5 +632,12 @@
     "generic": "Ocorreu um erro.",
     "network": "Sem resposta do servidor.",
     "unauthorized": "A sua sessão expirou. Por favor, ligue-se novamente."
+  },
+  "routePattern": {
+    "catchAll": "Curinga",
+    "catchAllTip": "Este padrão termina em um curinga ({*name}) e corresponde a qualquer caminho abaixo do seu prefixo. Só é usado quando nenhuma rota sem curinga corresponde; vence o curinga mais específico.",
+    "catchAllPartial": "O curinga {{segment}} deve ser um segmento de caminho inteiro, por exemplo /api/{*rest}",
+    "catchAllNotLast": "O curinga {{segment}} deve ser o último segmento do padrão",
+    "catchAllMultiple": "Um padrão pode conter apenas um curinga ({{segment}} é um segundo)"
   }
 }

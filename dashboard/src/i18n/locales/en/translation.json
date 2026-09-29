@@ -622,7 +622,7 @@
     "retryOn5xxTip": "Treat a 5xx response from an origin as a failure and retry on another origin (up to Max retries), instead of returning the error to the client.",
     "searchTip": "Filter the endpoint list by identifier or name; matching runs as you type and resets to the first page.",
     "httpMethodTip": "HTTP method this route matches (GET, POST, etc.). Requests using a different method won't match this route.",
-    "urlPatternTip": "Path pattern to match, with {curly} placeholders for variable segments (e.g. /api/resource/{id}). Requests whose path fits the pattern are routed to this endpoint.",
+    "urlPatternTip": "Path pattern to match. {name} matches one segment (e.g. /api/resource/{id}); {*name} as the last segment is a catch-all matching that prefix and everything below it (e.g. /api/{*rest}). Routes without a catch-all always win; catch-alls are a fallback, most specific first.",
     "requiresAuthTip": "When on, callers must present valid credentials to use this route; unauthenticated requests are rejected. When off, the route is publicly accessible.",
     "selectOriginTip": "Choose a backend origin to attach to this endpoint. Only origins not already mapped here are listed; each shows its host:port.",
     "weightTip": "Relative share of traffic this origin receives in weight-aware load-balancing modes - higher means more requests. Set to 0 to drain the origin (stop sending it new traffic).",
@@ -756,8 +756,8 @@
     "emptyHint": "Add a rewrite to transform request URLs.",
     "endpointTip": "The endpoint this rule applies to. Only requests routed to this endpoint are considered for rewriting.",
     "methodTip": "Restrict the rule to a single HTTP method, or choose Any method to match requests regardless of the verb.",
-    "sourcePatternTip": "Incoming URL pattern to match (supports {params}); matched requests are rewritten to the target before forwarding.",
-    "targetPatternTip": "The URL the request is rewritten to before it is forwarded upstream; reuse {params} captured from the source pattern.",
+    "sourcePatternTip": "Incoming URL pattern to match. Supports {name} parameters and a final {*name} catch-all (e.g. /legacy/{*rest}); matched requests are rewritten to the target before forwarding.",
+    "targetPatternTip": "The URL the request is rewritten to before it is forwarded upstream; reuse values captured by the source pattern with {name} (e.g. /v2/{rest}).",
     "sortOrderTip": "Evaluation order when several rules could match the same request; lower numbers are applied first.",
     "idTip": "System-generated unique identifier for this rewrite rule."
   },
@@ -822,5 +822,12 @@
     "openGrafanaTip": "Open the bundled Grafana dashboards in a new tab.",
     "openPrometheus": "Open Prometheus",
     "openPrometheusTip": "Open the Prometheus query UI in a new tab."
+  },
+  "routePattern": {
+    "catchAll": "Catch-all",
+    "catchAllTip": "This pattern ends in a catch-all ({*name}) and matches every path below its prefix. It is used only when no route without a catch-all matches; the most specific catch-all wins.",
+    "catchAllPartial": "The catch-all {{segment}} must be an entire path segment, for example /api/{*rest}",
+    "catchAllNotLast": "The catch-all {{segment}} must be the last segment of the pattern",
+    "catchAllMultiple": "A pattern can contain only one catch-all ({{segment}} is a second one)"
   }
 }

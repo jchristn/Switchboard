@@ -28,10 +28,10 @@ dotnet test Test.Xunit
 dotnet test Test.Nunit
 ```
 
-Integration suites bind real localhost TCP ports (9200-9204 for the shared proxy/origins, plus
-9230-9254 for health/rate-limit scenarios), so runner parallelization is disabled. The `--unit`
-flag runs only the model, settings, URL-rewrite, error-response, auth-context, and settings-import
-suites, which bind no ports.
+Integration suites bind real loopback TCP ports (each harness allocates random free ports for the
+proxy and its origins), and runner parallelization is disabled. The `--unit` flag runs only the
+network-free suites (models, settings, routing and route matching, telemetry units, settings import,
+configuration reload, client CRUD, and request-history capture).
 
 ### Run Switchboard Server (Standalone)
 ```bash
@@ -86,6 +86,7 @@ Switchboard is a lightweight application proxy that combines reverse proxy and A
 - **ApiEndpoint**: Defines API routes with authentication requirements and URL rewriting rules
 - **OriginServer**: Backend server configuration with health checking and rate limiting
 - **GatewayService**: Handles request routing and load balancing
+- **RouteMatcher**: Parses route/rewrite patterns (cached `UrlPattern`s from UrlMatcher) and picks the endpoint for a request, including catch-all (`{*name}`) precedence
 - **HealthCheckService**: Monitors origin server availability
 
 ### Configuration
@@ -127,11 +128,11 @@ Flexible callback-based system allowing custom authentication and authorization 
 ### Request Flow
 
 1. **Request Reception**: Watson webserver receives HTTP request
-2. **Endpoint Matching**: `GatewayService.FindApiEndpoint()` matches request to API endpoint using URL pattern matching
+2. **Endpoint Matching**: `GatewayService.FindApiEndpoint()` delegates to `RouteMatcher.FindEndpoint()`. Routes without a catch-all win in configuration order; catch-all routes (`/api/{*rest}`) are a fallback, most specific first (longest literal prefix, then most fixed segments, then configuration order). Invalid patterns never match
 3. **Authentication Check**: If endpoint requires auth, `AuthenticateAndAuthorize` callback is invoked
 4. **Origin Selection**: `GatewayService.FindOriginServer()` selects healthy origin using load balancing algorithm
 5. **Rate Limiting Check**: Verifies request count against origin's `RateLimitRequestsThreshold`
-6. **URL Rewriting**: `UrlTools.RewriteUrl()` applies any configured URL transformations
+6. **URL Rewriting**: `UrlTools.RewriteUrl()` applies any configured URL transformations (method-specific rules before any-method rules; within each, non-catch-all before the most specific catch-all)
 7. **Proxy Request**: `GatewayService.ProxyRequest()` forwards to origin server using RestWrapper
 8. **Response Handling**: Response (including chunked transfer and SSE) is forwarded back to client
 
@@ -288,7 +289,7 @@ Configuration files follow this structure:
 
 ### Error Responses
 Switchboard returns structured error responses using `ApiErrorResponse`:
-- **400 Bad Request**: No matching API endpoint found
+- **400 Bad Request**: No matching API endpoint found (the management API also returns 400 for an invalid route or rewrite pattern)
 - **401 Unauthorized**: Authentication/authorization failed
 - **429 Too Many Requests**: Rate limit exceeded for origin server
 - **502 Bad Gateway**: No healthy origin servers available

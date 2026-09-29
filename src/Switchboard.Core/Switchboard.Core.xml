@@ -135,6 +135,8 @@
             <summary>
             Key is the upper-case HTTP method.
             Value is a dictionary where the key is the original URL and the value is the URL to which the request should be directed.
+            An empty key applies to any method. Source patterns support {name} parameters and a final {*name} catch-all; values
+            they capture replace {name} or {*name} placeholders in the target, for example /legacy/{*rest} to /v2/{rest}.
             </summary>
         </member>
         <member name="P:Switchboard.Core.ApiEndpoint.OpenApiDocumentation">
@@ -193,6 +195,8 @@
             <summary>
             Key is the upper-case HTTP method.
             Value is a list of parameterized URLs to match, e.g. /{version}/foo/bar/{id}.
+            A final {*name} segment is a catch-all matching zero or more remaining segments, e.g. /api/{*rest}.
+            Routes without a catch-all take precedence over catch-all routes; see <see cref="T:Switchboard.Core.RouteMatcher"/>.
             </summary>
         </member>
         <member name="M:Switchboard.Core.ApiEndpointGroup.#ctor">
@@ -3384,7 +3388,10 @@
         </member>
         <member name="P:Switchboard.Core.Models.EndpointRoute.UrlPattern">
             <summary>
-            URL pattern (parameterized URL, e.g., /api/users/{id}).
+            URL pattern, for example /api/users/{id}. {name} matches exactly one segment. {*name} as the
+            entire last segment is a catch-all that matches zero or more remaining segments, for example
+            /api/{*rest}. Routes without a catch-all take precedence over catch-all routes; see
+            <see cref="T:Switchboard.Core.RouteMatcher"/>. Patterns are validated by the management API, not by this setter.
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.EndpointRoute.RequiresAuthentication">
@@ -4178,12 +4185,14 @@
         </member>
         <member name="P:Switchboard.Core.Models.UrlRewrite.SourcePattern">
             <summary>
-            Source URL pattern to match.
+            Source URL pattern to match. Supports {name} parameters and a final {*name} catch-all, for
+            example /legacy/{*rest}.
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.UrlRewrite.TargetPattern">
             <summary>
-            Target URL pattern to rewrite to.
+            Target URL pattern to rewrite to. {name} or {*name} placeholders are replaced with values
+            captured by the source pattern, for example /v2/{rest}.
             </summary>
         </member>
         <member name="P:Switchboard.Core.Models.UrlRewrite.SortOrder">
@@ -4647,6 +4656,63 @@
             <summary>
             URL.
             </summary>
+        </member>
+        <member name="T:Switchboard.Core.RouteMatcher">
+            <summary>
+            Parses route and rewrite patterns and matches requests to API endpoints.
+            Patterns use {name} for a single-segment parameter and {*name} as the entire final segment for a
+            catch-all that matches zero or more remaining segments, for example /api/{*rest}.
+            When several routes match a request, a route without a catch-all always wins, in configuration
+            order. Catch-all routes are considered only when no other route matches, and the most specific
+            one wins: the longest literal prefix, then the most fixed segments, then configuration order.
+            Invalid patterns never match. All members are thread-safe.
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.RouteMatcher.MaxCachedPatterns">
+            <summary>
+            Maximum number of parsed patterns kept in the process-wide cache before it is cleared and
+            rebuilt on demand. Default is 10000. Minimum is 1. Values below 1 are raised to 1.
+            </summary>
+        </member>
+        <member name="M:Switchboard.Core.RouteMatcher.TryParsePattern(System.String,UrlMatcher.UrlPattern@,System.String@)">
+            <summary>
+            Parse a route or rewrite pattern, using a process-wide cache so each distinct pattern is
+            parsed once.
+            </summary>
+            <param name="pattern">Pattern, for example /users/{id} or /api/{*rest}.</param>
+            <param name="parsed">Parsed pattern, or null when the pattern is invalid.</param>
+            <param name="error">Reason the pattern is invalid, or null when it is valid.</param>
+            <returns>True if the pattern is valid.</returns>
+        </member>
+        <member name="M:Switchboard.Core.RouteMatcher.FindEndpoint(System.Collections.Generic.IEnumerable{Switchboard.Core.ApiEndpoint},System.String,System.String)">
+            <summary>
+            Find the API endpoint and route that should serve a request.
+            </summary>
+            <param name="endpoints">Configured API endpoints, in configuration order. May be null.</param>
+            <param name="method">Upper-case HTTP method, for example GET.</param>
+            <param name="url">Request path, with or without a query string.</param>
+            <returns>The matching endpoint and route, or null when nothing matches.</returns>
+        </member>
+        <member name="M:Switchboard.Core.RouteMatcher.TrySelectRewrite(UrlMatcher.Matcher,System.Collections.Generic.IDictionary{System.String,System.String},System.String@,System.Collections.Specialized.NameValueCollection@)">
+            <summary>
+            Select the rewrite rule that applies to a URL from a set of source-to-target rules. Rules
+            without a catch-all are tried first in order, then the most specific matching catch-all.
+            Invalid source patterns are ignored.
+            </summary>
+            <param name="matcher">Matcher built from the request URL.</param>
+            <param name="rules">Rewrite rules, source pattern to target pattern. May be null.</param>
+            <param name="target">Target pattern of the selected rule, or null when none matches.</param>
+            <param name="values">Values captured from the URL by the selected rule. Never null.</param>
+            <returns>True if a rule matched.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when matcher is null.</exception>
+        </member>
+        <member name="M:Switchboard.Core.RouteMatcher.FindInvalidPatterns(System.Collections.Generic.IEnumerable{Switchboard.Core.ApiEndpoint})">
+            <summary>
+            List every invalid route and rewrite source pattern in a set of endpoints. Invalid patterns
+            never match, so this is used to warn operators when configuration is loaded.
+            </summary>
+            <param name="endpoints">API endpoints. May be null.</param>
+            <returns>One human-readable message per invalid pattern. Never null.</returns>
         </member>
         <member name="T:Switchboard.Core.Services.ConfigurationReloadService">
             <summary>
@@ -5224,6 +5290,12 @@
         <member name="P:Switchboard.Core.Services.ImportResult.OriginsSkipped">
             <summary>
             Number of origins skipped (already exist).
+            </summary>
+        </member>
+        <member name="P:Switchboard.Core.Services.ImportResult.InvalidPatternsSkipped">
+            <summary>
+            Number of routes and URL rewrites skipped because their pattern is invalid, for example a
+            catch-all ({*name}) that is not the last segment. Each skip is logged as a warning.
             </summary>
         </member>
         <member name="T:Switchboard.Core.Services.SettingsImportService">
@@ -6221,6 +6293,9 @@
         <member name="M:Switchboard.Core.UrlTools.RewriteUrl(System.String,System.String,Switchboard.Core.ApiEndpoint)">
             <summary>
             Rewrite a URL based on URL rewrite rules from an API endpoint.
+            Method-specific rules take precedence over any-method rules (empty method key). Within each set,
+            rules without a catch-all are tried first in order, then the most specific matching catch-all.
+            Values captured from the URL replace {name} (or {*name}) placeholders in the target.
             </summary>
             <param name="method">HTTP method.</param>
             <param name="url">Original URL.</param>

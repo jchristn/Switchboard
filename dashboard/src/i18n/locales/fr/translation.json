@@ -632,5 +632,12 @@
     "generic": "Une erreur s'est produite.",
     "network": "Aucune réponse du serveur.",
     "unauthorized": "Votre session a expiré. Veuillez vous reconnecter."
+  },
+  "routePattern": {
+    "catchAll": "Générique",
+    "catchAllTip": "Ce motif se termine par un segment générique ({*name}) et correspond à tout chemin sous son préfixe. Il n'est utilisé que si aucune route sans segment générique ne correspond ; le plus spécifique l'emporte.",
+    "catchAllPartial": "Le segment générique {{segment}} doit occuper un segment de chemin entier, par exemple /api/{*rest}",
+    "catchAllNotLast": "Le segment générique {{segment}} doit être le dernier segment du motif",
+    "catchAllMultiple": "Un motif ne peut contenir qu'un seul segment générique ({{segment}} en est un deuxième)"
   }
 }

@@ -14,6 +14,8 @@
         /// <summary>
         /// Key is the upper-case HTTP method.
         /// Value is a list of parameterized URLs to match, e.g. /{version}/foo/bar/{id}.
+        /// A final {*name} segment is a catch-all matching zero or more remaining segments, e.g. /api/{*rest}.
+        /// Routes without a catch-all take precedence over catch-all routes; see <see cref="RouteMatcher"/>.
         /// </summary>
         public Dictionary<string, List<string>> ParameterizedUrls
         {

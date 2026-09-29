@@ -21,6 +21,7 @@ namespace Test.Shared
                 List<TestSuiteDescriptor> suites = new List<TestSuiteDescriptor>();
                 suites.AddRange(UnitSuites.All);
                 suites.AddRange(RoutingUnitSuites.All);
+                suites.AddRange(RouteMatcherSuites.All);
                 suites.AddRange(SettingsImportSuites.All);
                 suites.AddRange(ConfigurationReloadSuites.All);
                 suites.AddRange(ClientCrudSuites.All);
@@ -31,6 +32,7 @@ namespace Test.Shared
                 suites.AddRange(ManagementApiSuites.All);
                 suites.AddRange(HealthSuites.All);
                 suites.AddRange(ProxyRoutingSuites.All);
+                suites.AddRange(CatchAllRoutingSuites.All);
                 suites.AddRange(LoadBalancingSuites.All);
                 suites.AddRange(TelemetryUnitSuites.All);
                 suites.AddRange(TelemetrySuites.All);
@@ -48,6 +50,7 @@ namespace Test.Shared
             {
                 return UnitSuites.All
                     .Concat(RoutingUnitSuites.All)
+                    .Concat(RouteMatcherSuites.All)
                     .Concat(TelemetryUnitSuites.All)
                     .Concat(SettingsImportSuites.All)
                     .Concat(ConfigurationReloadSuites.All)

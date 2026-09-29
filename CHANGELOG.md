@@ -2,7 +2,56 @@
 
 ## Current Version
 
-v5.0.0
+v5.2.0
+
+### Changes in v5.2.0
+
+- **Catch-all routes.** A route pattern whose last segment is `{*name}` matches that prefix and zero or more
+  remaining segments, so `/api/{*rest}` serves `/api`, `/api/users`, and `/api/users/42/orders`, and
+  `/{*path}` works as a fallback for everything else. The captured value is the raw remainder of the path:
+  repeated and trailing slashes are kept, nothing is URL-decoded, and the query string is excluded (it is
+  still forwarded). See [Route Patterns and Catch-All Routes](README.md#route-patterns-and-catch-all-routes)
+- **Route precedence.** A route without a catch-all always wins, in configuration order, exactly as before.
+  Catch-all routes are consulted only when nothing else matches, and the most specific one wins: longest
+  literal prefix, then most fixed segments, then configuration order. A fallback can therefore be declared
+  before the routes it must not shadow
+- **Catch-all URL rewrites.** Rewrite sources accept `{*name}`, and captured values fill `{name}` or `{*name}`
+  placeholders in the target, so `/legacy/{*rest}` to `/v2/{rest}` moves a whole subtree. Within each method
+  set, rewrites without a catch-all are tried first, then the most specific catch-all
+- **Pattern validation.** A catch-all that is not the entire last segment, or a second catch-all, makes a
+  pattern invalid. The management API rejects such routes and rewrites with `400` on create and update;
+  `POST /config/validate` reports them as `InvalidRoutePattern`; `sb.json` import skips them with a warning
+  and counts them in the new `ImportResult.InvalidPatternsSkipped`; configuration reloads log a warning for
+  each one; and an invalid pattern never matches a request
+- **New public `RouteMatcher` class** in `Switchboard.Core` with `TryParsePattern`, `FindEndpoint`,
+  `TrySelectRewrite`, and `FindInvalidPatterns`. Patterns are parsed once and cached (`MaxCachedPatterns`,
+  default 10000) instead of being re-split on every request
+- **OpenAPI.** The generated gateway document lists a catch-all route such as `/files/{*path}` as
+  `/files/{path}` with a `path` parameter, and leaves invalid patterns out
+- **Dashboard.** Routes ending in a catch-all show a *Catch-all* badge; the route and rewrite forms validate
+  patterns before saving, with messages in all nine languages; route and rewrite tooltips describe the syntax
+- **Dependencies.** Watson 7.2.1, which brings UrlMatcher 3.1.0 (catch-all segments and pre-parsed patterns)
+- **Compatibility.** `{*name}` used to be an ordinary one-segment parameter named `*name`; it is now a
+  catch-all. `{*}` is now literal text, like `{}`. No other pattern changes meaning
+- **Docs.** README, REST_API.md, the dashboard guide, the Docker Hub README, and the Postman collection
+  describe the pattern syntax and precedence rules. The dashboard guide previously advertised a `/api/*`
+  wildcard that never worked; it now documents `{*name}`
+- **Tests.** 61 new cases (console runner 206 to 267): network-free `RouteMatcher` coverage of parsing,
+  precedence, captured values, rewrites, invalid patterns, and OpenAPI output; an end-to-end catch-all
+  routing scenario against live origins; management API, config validation, settings import, and
+  configuration reload cases; and dashboard unit tests for the client-side validator
+
+### Changes in v5.1.0
+
+- Dependency refresh across the stack (Npgsql 10, Microsoft.Data.Sqlite 10, Microsoft.Data.SqlClient 7,
+  MySqlConnector 2.6, Watson 7.1, RestWrapper 3.2, SyslogLogging 2.2)
+- Fix forwarding of the client `Authorization` header to origin servers. RestWrapper 3.2 applies
+  Authorization through a typed property and ignores a raw entry in the header collection, so the gateway
+  now forwards it through `Authorization.Raw`, preserving any scheme (Bearer, Basic, or custom)
+- Removed the SQLite CVE (GHSA-2m69-gcr7-jv3q) audit suppression; Microsoft.Data.Sqlite 10.x bundles a
+  patched SQLite
+
+## Previous Versions
 
 ### Changes in v5.0.0
 
@@ -76,8 +125,6 @@ v5.0.0
 - Added contextual hover tooltips to every form control across the dashboard — every label, dropdown,
   checkbox, and text/number input (and read-only detail values) in every view and modal now explains what
   the field does, its effect, and valid values, rather than just repeating the label
-
-## Previous Versions
 
 ### Changes in v4.1.0
 

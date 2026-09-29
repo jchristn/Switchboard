@@ -632,5 +632,12 @@
     "generic": "出现了一些问题。",
     "network": "服务器无响应。",
     "unauthorized": "您的会话已过期。请重新连接。"
+  },
+  "routePattern": {
+    "catchAll": "通配",
+    "catchAllTip": "此模式以通配段 ({*name}) 结尾，匹配其前缀下的所有路径。仅当没有非通配路由匹配时才使用；最具体的通配路由优先。",
+    "catchAllPartial": "通配段 {{segment}} 必须是完整的路径段，例如 /api/{*rest}",
+    "catchAllNotLast": "通配段 {{segment}} 必须是模式的最后一个段",
+    "catchAllMultiple": "一个模式只能包含一个通配段（{{segment}} 是第二个）"
   }
 }

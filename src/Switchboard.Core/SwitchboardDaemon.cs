@@ -285,6 +285,11 @@
                 _Logging.Debug(_Header + "skipped existing: " + result.EndpointsSkipped + " endpoints, "
                     + result.OriginsSkipped + " origins");
             }
+
+            if (result.InvalidPatternsSkipped > 0)
+            {
+                _Logging.Warn(_Header + "skipped " + result.InvalidPatternsSkipped + " route(s) or rewrite(s) with invalid URL patterns");
+            }
         }
 
         private void InitializeGlobals()

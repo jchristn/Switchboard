@@ -40,7 +40,8 @@ namespace Switchboard.Core.Models
         }
 
         /// <summary>
-        /// Source URL pattern to match.
+        /// Source URL pattern to match. Supports {name} parameters and a final {*name} catch-all, for
+        /// example /legacy/{*rest}.
         /// </summary>
         public string SourcePattern
         {
@@ -53,7 +54,8 @@ namespace Switchboard.Core.Models
         }
 
         /// <summary>
-        /// Target URL pattern to rewrite to.
+        /// Target URL pattern to rewrite to. {name} or {*name} placeholders are replaced with values
+        /// captured by the source pattern, for example /v2/{rest}.
         /// </summary>
         public string TargetPattern
         {

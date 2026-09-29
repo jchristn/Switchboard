@@ -1,8 +1,8 @@
 {
   "info": {
     "name": "Switchboard Management API",
-    "description": "Management API for Switchboard (v5.0.0). Set the `baseUrl` and `token` collection variables. All requests use bearer auth inherited from the collection. Path variables like {{guid}} / {{id}} / {{userGuid}} are collection variables you can fill in.",
-    "version": "5.0.0",
+    "description": "Management API for Switchboard (v5.2.0). Set the `baseUrl` and `token` collection variables. All requests use bearer auth inherited from the collection. Path variables like {{guid}} / {{id}} / {{userGuid}} are collection variables you can fill in.",
+    "version": "5.2.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -365,6 +365,37 @@
           }
         },
         {
+          "name": "Create catch-all route",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpointIdentifier\": \"user-api\",\n  \"httpMethod\": \"GET\",\n  \"urlPattern\": \"/files/{*path}\",\n  \"requiresAuthentication\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a catch-all route. Every GET under /files (including /files itself) is sent to the endpoint, unless a more specific route such as GET /files/{id} matches first. The captured remainder is available as `path`."
+          }
+        },
+        {
           "name": "Get route",
           "request": {
             "method": "GET",
@@ -429,7 +460,8 @@
             }
           }
         }
-      ]
+      ],
+      "description": "Routes bind an HTTP method and URL pattern to an endpoint. `{name}` matches one path segment. `{*name}` as the entire last segment is a catch-all that matches zero or more remaining segments, for example `/api/{*rest}` matches `/api`, `/api/users`, and `/api/users/42/orders`. Routes without a catch-all always win; among catch-alls the longest literal prefix wins. Create and update return 400 for an invalid pattern, such as a catch-all that is not the last segment (`/api/{*rest}/edit`)."
     },
     {
       "name": "Origin Mappings",
@@ -566,6 +598,37 @@
           }
         },
         {
+          "name": "Create catch-all rewrite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rewrites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rewrites"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpointIdentifier\": \"user-api\",\n  \"httpMethod\": \"\",\n  \"sourcePattern\": \"/legacy/{*rest}\",\n  \"targetPattern\": \"/v2/{rest}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Forward an entire subtree to a new location: /legacy/users/5/ is sent to the origin as /v2/users/5/ (the raw remainder, trailing slash included)."
+          }
+        },
+        {
           "name": "Get rewrite",
           "request": {
             "method": "GET",
@@ -630,7 +693,8 @@
             }
           }
         }
-      ]
+      ],
+      "description": "Rewrites change the path sent to the origin. `sourcePattern` supports `{name}` and a final `{*name}` catch-all; captured values replace `{name}` or `{*name}` placeholders in `targetPattern`. An empty `httpMethod` applies to any method. Create and update return 400 for an invalid source pattern."
     },
     {
       "name": "Blocked Headers",
@@ -1212,7 +1276,8 @@
                 "config",
                 "validate"
               ]
-            }
+            },
+            "description": "Errors include `InvalidRoutePattern` for a route whose pattern is invalid, for example a catch-all ({*name}) that is not the last segment."
           }
         },
         {

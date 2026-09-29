@@ -765,6 +765,11 @@ namespace Switchboard.Core.Services
 
                 EndpointRoute? route = await ReadBody<EndpointRoute>(ctx).ConfigureAwait(false);
                 if (route == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
+                if (!RouteMatcher.TryParsePattern(route.UrlPattern, out _, out string patternError))
+                {
+                    await SendBadRequest(ctx, "Invalid URL pattern '" + route.UrlPattern + "': " + patternError).ConfigureAwait(false);
+                    return;
+                }
 
                 EndpointRoute created = await _Client.EndpointRoutes.CreateAsync(route, ctx.Token).ConfigureAwait(false);
                 _Logging.Info(_Header + "created route " + created.Id);
@@ -802,6 +807,11 @@ namespace Switchboard.Core.Services
 
                 EndpointRoute? route = await ReadBody<EndpointRoute>(ctx).ConfigureAwait(false);
                 if (route == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
+                if (!RouteMatcher.TryParsePattern(route.UrlPattern, out _, out string patternError))
+                {
+                    await SendBadRequest(ctx, "Invalid URL pattern '" + route.UrlPattern + "': " + patternError).ConfigureAwait(false);
+                    return;
+                }
 
                 route.Id = id;
                 EndpointRoute updated = await _Client.EndpointRoutes.UpdateAsync(route, ctx.Token).ConfigureAwait(false);
@@ -932,6 +942,11 @@ namespace Switchboard.Core.Services
 
                 UrlRewrite? rewrite = await ReadBody<UrlRewrite>(ctx).ConfigureAwait(false);
                 if (rewrite == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
+                if (!RouteMatcher.TryParsePattern(rewrite.SourcePattern, out _, out string patternError))
+                {
+                    await SendBadRequest(ctx, "Invalid source pattern '" + rewrite.SourcePattern + "': " + patternError).ConfigureAwait(false);
+                    return;
+                }
 
                 UrlRewrite created = await _Client.UrlRewrites.CreateAsync(rewrite, ctx.Token).ConfigureAwait(false);
                 _Logging.Info(_Header + "created rewrite " + created.Id);
@@ -969,6 +984,11 @@ namespace Switchboard.Core.Services
 
                 UrlRewrite? rewrite = await ReadBody<UrlRewrite>(ctx).ConfigureAwait(false);
                 if (rewrite == null) { await SendBadRequest(ctx, "Invalid request body").ConfigureAwait(false); return; }
+                if (!RouteMatcher.TryParsePattern(rewrite.SourcePattern, out _, out string patternError))
+                {
+                    await SendBadRequest(ctx, "Invalid source pattern '" + rewrite.SourcePattern + "': " + patternError).ConfigureAwait(false);
+                    return;
+                }
 
                 rewrite.Id = id;
                 UrlRewrite updated = await _Client.UrlRewrites.UpdateAsync(rewrite, ctx.Token).ConfigureAwait(false);
@@ -1869,6 +1889,23 @@ namespace Switchboard.Core.Services
                                 + mapping.OriginIdentifier + "' which does not exist.",
                             endpoint = mapping.EndpointIdentifier,
                             origin = mapping.OriginIdentifier
+                        });
+                    }
+                }
+
+                // Every route pattern must parse; an invalid pattern (for example a catch-all that is
+                // not the last segment) never matches a request.
+                foreach (EndpointRoute route in routes)
+                {
+                    if (!RouteMatcher.TryParsePattern(route.UrlPattern, out _, out string patternError))
+                    {
+                        errors.Add(new
+                        {
+                            code = "InvalidRoutePattern",
+                            message = "Endpoint '" + route.EndpointIdentifier + "' route " + route.HttpMethod + " '"
+                                + route.UrlPattern + "' is invalid: " + patternError,
+                            endpoint = route.EndpointIdentifier,
+                            pattern = route.UrlPattern
                         });
                     }
                 }

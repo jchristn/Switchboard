@@ -54,6 +54,12 @@ namespace Switchboard.Core.Services
         /// Number of origins skipped (already exist).
         /// </summary>
         public int OriginsSkipped { get; set; } = 0;
+
+        /// <summary>
+        /// Number of routes and URL rewrites skipped because their pattern is invalid, for example a
+        /// catch-all ({*name}) that is not the last segment. Each skip is logged as a warning.
+        /// </summary>
+        public int InvalidPatternsSkipped { get; set; } = 0;
     }
 
     /// <summary>
@@ -215,6 +221,14 @@ namespace Switchboard.Core.Services
                     string httpMethod = methodRoutes.Key;
                     foreach (string urlPattern in methodRoutes.Value)
                     {
+                        if (!RouteMatcher.TryParsePattern(urlPattern, out _, out string patternError))
+                        {
+                            _Logging.Warn(_Header + "endpoint '" + endpoint.Identifier + "' route " + httpMethod
+                                + " '" + urlPattern + "' has an invalid pattern, skipping: " + patternError);
+                            result.InvalidPatternsSkipped++;
+                            continue;
+                        }
+
                         EndpointRoute route = new EndpointRoute(
                             endpoint.Identifier,
                             httpMethod,
@@ -237,6 +251,14 @@ namespace Switchboard.Core.Services
                     string httpMethod = methodRoutes.Key;
                     foreach (string urlPattern in methodRoutes.Value)
                     {
+                        if (!RouteMatcher.TryParsePattern(urlPattern, out _, out string patternError))
+                        {
+                            _Logging.Warn(_Header + "endpoint '" + endpoint.Identifier + "' route " + httpMethod
+                                + " '" + urlPattern + "' has an invalid pattern, skipping: " + patternError);
+                            result.InvalidPatternsSkipped++;
+                            continue;
+                        }
+
                         EndpointRoute route = new EndpointRoute(
                             endpoint.Identifier,
                             httpMethod,
@@ -259,6 +281,14 @@ namespace Switchboard.Core.Services
                     string httpMethod = methodRewrites.Key;
                     foreach (KeyValuePair<string, string> rewrite in methodRewrites.Value)
                     {
+                        if (!RouteMatcher.TryParsePattern(rewrite.Key, out _, out string rewriteError))
+                        {
+                            _Logging.Warn(_Header + "endpoint '" + endpoint.Identifier + "' rewrite source '"
+                                + rewrite.Key + "' has an invalid pattern, skipping: " + rewriteError);
+                            result.InvalidPatternsSkipped++;
+                            continue;
+                        }
+
                         UrlRewrite urlRewrite = new UrlRewrite(
                             endpoint.Identifier,
                             httpMethod,

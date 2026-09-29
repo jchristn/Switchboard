@@ -213,7 +213,7 @@ Returns the health status of the Switchboard instance. Response fields are **cam
 {
   "status": "healthy",
   "timestamp": "2026-07-29T10:30:00.0000000Z",
-  "version": "5.0.0"
+  "version": "5.2.0"
 }
 ```
 
@@ -369,6 +369,25 @@ DELETE /_sb/v1.0/routes/{id}
 **Body / Response:** [EndpointRoute](#endpointroute). The `{id}` is the integer primary key. Set
 `EndpointGUID` on create (it is required).
 
+`UrlPattern` uses `{name}` for a single segment and `{*name}` as the entire last segment for a
+catch-all that matches zero or more remaining segments (for example `/api/{*rest}` matches `/api`,
+`/api/users`, and `/api/users/42/orders`). Routes without a catch-all always take precedence over
+catch-all routes; among catch-alls the longest literal prefix wins. See
+[Route Patterns and Catch-All Routes](README.md#route-patterns-and-catch-all-routes) for the full rules.
+
+`POST` and `PUT` return `400 Bad Request` for an invalid pattern and store nothing. A pattern is invalid
+when it is empty, when a catch-all is not the last segment, when it has more than one catch-all, or when
+a catch-all is only part of a segment:
+
+```json
+{
+  "Error": "BadRequest",
+  "Message": "We were unable to discern your request.  Please check your URL, query, and request body.",
+  "StatusCode": 400,
+  "Description": "Invalid URL pattern '/api/{*rest}/edit': Pattern '/api/{*rest}/edit' has catch-all segment '{*rest}' that is not the last segment; a catch-all must be the last segment."
+}
+```
+
 ---
 
 ### Endpoint-Origin Mappings
@@ -400,6 +419,12 @@ DELETE /_sb/v1.0/rewrites/{id}
 ```
 
 **Body / Response:** [UrlRewrite](#urlrewrite).
+
+`SourcePattern` accepts the same syntax as a route `UrlPattern`, including a final `{*name}` catch-all.
+Values it captures replace `{name}` (or `{*name}`) placeholders in `TargetPattern`, so
+`/legacy/{*rest}` with target `/v2/{rest}` forwards `/legacy/users/5` as `/v2/users/5`. A catch-all
+carries the raw remainder, including a trailing slash. `POST` and `PUT` return `400 Bad Request` for an
+invalid `SourcePattern` (message prefix `Invalid source pattern`).
 
 ---
 
@@ -625,6 +650,13 @@ Validates the current configuration, or a proposed one supplied in the request b
 }
 ```
 
+| Code | Kind | Meaning |
+|------|------|---------|
+| `OriginNotFound` | error | A mapping references an origin that does not exist |
+| `NoRoutes` | error | An endpoint has no routes |
+| `InvalidRoutePattern` | error | A route's `UrlPattern` is invalid (for example a catch-all that is not the last segment); the entry also carries `endpoint` and `pattern` |
+| `DuplicateOriginAddress` | warning | Two origin identifiers share the same hostname and port |
+
 ---
 
 ## Data Models
@@ -779,9 +811,9 @@ A single health check result within the rolling history window.
 | `EndpointIdentifier` | string | Yes | - | Parent endpoint identifier |
 | `EndpointGUID` | string (GUID) | Yes | - | Parent endpoint GUID (required on create) |
 | `HttpMethod` | string | Yes | `"GET"` | HTTP method |
-| `UrlPattern` | string | Yes | `"/"` | URL pattern with parameters |
+| `UrlPattern` | string | Yes | `"/"` | URL pattern. `{name}` matches one segment; `{*name}` as the last segment is a catch-all matching zero or more remaining segments |
 | `RequiresAuthentication` | boolean | No | false | Require authentication |
-| `SortOrder` | integer | No | 0 | Matching priority (lower = first) |
+| `SortOrder` | integer | No | 0 | Matching priority (lower = first). Catch-all routes are always tried after routes without a catch-all |
 | `CreatedUtc` | datetime | No | Current time | Creation timestamp |
 
 **HTTP Methods:** `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`
@@ -849,8 +881,8 @@ another). See [LOAD_BALANCING.md](LOAD_BALANCING.md).
 | `EndpointIdentifier` | string | Yes | - | Parent endpoint identifier |
 | `EndpointGUID` | string (GUID) | No | - | Parent endpoint GUID |
 | `HttpMethod` | string | No | `""` | HTTP method this rewrite applies to; an empty value applies to any method |
-| `SourcePattern` | string | Yes | - | URL pattern to match |
-| `TargetPattern` | string | Yes | - | URL pattern to rewrite to |
+| `SourcePattern` | string | Yes | - | URL pattern to match; supports `{name}` and a final `{*name}` catch-all |
+| `TargetPattern` | string | Yes | - | URL pattern to rewrite to; `{name}` or `{*name}` placeholders take values captured by the source |
 | `SortOrder` | integer | No | 0 | Priority (lower = first) |
 | `CreatedUtc` | datetime | No | Current time | Creation timestamp |
 
@@ -1060,6 +1092,18 @@ curl -X POST http://localhost:8000/_sb/v1.0/routes \
     "EndpointGUID": "<endpoint-guid>",
     "HttpMethod": "GET",
     "UrlPattern": "/api/users/{id}",
+    "RequiresAuthentication": true
+  }'
+
+# A catch-all route: everything under /api/files is sent to this endpoint
+curl -X POST http://localhost:8000/_sb/v1.0/routes \
+  -H "Authorization: Bearer sbadmin" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "EndpointIdentifier": "my-api",
+    "EndpointGUID": "<endpoint-guid>",
+    "HttpMethod": "GET",
+    "UrlPattern": "/api/files/{*path}",
     "RequiresAuthentication": true
   }'
 ```

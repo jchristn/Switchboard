@@ -204,6 +204,10 @@ namespace Switchboard.Core.Services
                 _Settings.BlockedHeaders = newBlockedHeaders;
                 _LastSignature = signature;
 
+                // Invalid route and rewrite patterns never match; surface them once per configuration change.
+                foreach (string invalid in RouteMatcher.FindInvalidPatterns(newEndpoints))
+                    _Logging?.Warn(_Header + invalid);
+
                 _Logging?.Debug(_Header + "reloaded configuration: "
                     + newOrigins.Count + " origin(s), "
                     + newEndpoints.Count + " endpoint(s), "

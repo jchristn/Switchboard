@@ -170,6 +170,19 @@ namespace SampleApplication
                 return;
             }
 
+            // Catch-all demonstration. Switchboard routes every GET under /files to this origin through
+            // the /files/{*path} route and forwards the path unchanged, however many segments it has.
+            if (method == HttpMethod.GET && (path == "/files" || path.StartsWith("/files/", StringComparison.Ordinal)))
+            {
+                string remainder = path.Length > "/files/".Length ? path.Substring("/files/".Length) : String.Empty;
+                ctx.Response.StatusCode = 200;
+                await ctx.Response.Send(
+                    "Hello from the catch-all demo, served by node " + _NodeNumber + "." + Environment.NewLine +
+                    "  Path received: " + path + Environment.NewLine +
+                    "  Matched by /files/{*path} with path = \"" + remainder + "\"").ConfigureAwait(false);
+                return;
+            }
+
             if (method == HttpMethod.POST && path == "/echo")
             {
                 string body = ctx.Request.DataAsString ?? String.Empty;

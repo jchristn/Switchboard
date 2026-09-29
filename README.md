@@ -21,7 +21,7 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
 ## Table of Contents
 
 - [What is Switchboard?](#what-is-switchboard)
-- [What's New in v5.0.0](#whats-new-in-v500)
+- [What's New in v5.2.0](#whats-new-in-v520)
 - [Key Features](#key-features)
 - [Who is it for?](#who-is-it-for)
 - [When to Use Switchboard](#when-to-use-switchboard)
@@ -35,6 +35,7 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
   - [Docker](#docker)
 - [Configuration](#configuration)
 - [Advanced Features](#advanced-features)
+  - [Route Patterns and Catch-All Routes](#route-patterns-and-catch-all-routes)
   - [URL Rewriting](#url-rewriting)
   - [Authentication Context Forwarding](#authentication-context-forwarding)
   - [Server-Sent Events](#server-sent-events-sse)
@@ -100,11 +101,22 @@ Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers 
 
 ---
 
-## What's New in v5.0.0
+## What's New in v5.2.0
 
-**Current version: `v5.0.0`.** See the [change log](CHANGELOG.md) for the complete history.
+**Current version: `v5.2.0`.** See the [change log](CHANGELOG.md) for the complete history.
 
-Highlights in this release:
+The headline of this release is **catch-all routing**. A route pattern ending in `{*name}` now matches its prefix and every path below it, so `/api/{*rest}` serves `/api`, `/api/users`, and `/api/users/42/orders` alike, and a single `/{*path}` route can act as a fallback for everything else. Before this release a pattern could only match a fixed number of segments, which meant every path shape had to be registered by hand.
+
+- **Catch-all routes** – `{*name}` as the entire last segment matches zero or more remaining segments and captures the raw remainder (repeated and trailing slashes kept, not URL-decoded, query string excluded). See [Route Patterns and Catch-All Routes](#route-patterns-and-catch-all-routes).
+- **Predictable precedence** – A route without a catch-all always beats a catch-all, no matter which endpoint or order it was configured in. Among catch-alls the most specific wins (longest literal prefix, then most fixed segments, then configuration order).
+- **Catch-all rewrites** – A rewrite such as `/legacy/{*rest}` to `/v2/{rest}` forwards the whole remainder to the origin.
+- **Pattern validation everywhere** – A misplaced catch-all (for example `/{*rest}/edit`) is rejected by the management API with `400`, reported by `POST /config/validate` as `InvalidRoutePattern`, skipped with a warning during `sb.json` import, flagged by the dashboard before it is saved, and logged at startup. An invalid pattern never matches a request.
+- **Dashboard support** – Routes ending in a catch-all show a *Catch-all* badge, and route and rewrite forms validate patterns in all nine languages.
+- **Library** – New public `RouteMatcher` class (`TryParsePattern`, `FindEndpoint`, `TrySelectRewrite`, `FindInvalidPatterns`) for applications embedding Switchboard. Built on Watson 7.2.1 and UrlMatcher 3.1.0.
+
+v5.1.0 refreshed dependencies across the stack and fixed forwarding of the client `Authorization` header to origins.
+
+### Highlights from v5.0.0
 
 - **Observability with OpenTelemetry** – Metrics and traces export over OTLP: request rate/latency/body sizes, per-origin load/health/ejections, load-balancer selections, and retries/failovers, plus one span per proxied request with `traceparent` propagated downstream. `docker compose up` brings up a turnkey Prometheus + Tempo + Loki + Grafana stack (Grafana on `:3001`, pre-provisioned dashboard). See the [Observability](#observability) section.
 - **Intelligent routing and load balancing** – Four new load-balancing modes (least-connections, power-of-two-choices, weighted, and latency-based) plus passive health checks with outlier ejection, automatic retries/failover, sticky sessions, slow start, and per-endpoint weighted canary with header routing. See **[LOAD_BALANCING.md](LOAD_BALANCING.md)** for the full picture.
@@ -128,7 +140,7 @@ Highlights in this release:
 - ✅ **Custom Authentication** – Callback-based auth/authz with context forwarding
 - ✅ **URL Rewriting** – Transform URLs before proxying to backends
 - ✅ **Protocol Support** – HTTP/1.1, chunked transfer encoding, server-sent events
-- ✅ **Smart Routing** – Parameterized URLs with wildcard matching (`/users/{id}`)
+- ✅ **Smart Routing** – Parameterized URLs (`/users/{id}`) and catch-all routes (`/api/{*rest}`) with predictable precedence ([details](#route-patterns-and-catch-all-routes))
 - ✅ **Header Management** – Automatic proxy headers and configurable blocking
 - ✅ **Logging** – Built-in syslog integration with multiple severity levels
 - ✅ **Docker Ready** – Server and Dashboard available on Docker Hub ([switchboard](https://hub.docker.com/r/jchristn77/switchboard), [switchboard-ui](https://hub.docker.com/r/jchristn77/switchboard-ui))
@@ -686,6 +698,51 @@ Refer to the `Test` project for a comprehensive configuration example.
 
 ## Advanced Features
 
+### Route Patterns and Catch-All Routes
+
+Every route is an HTTP method plus a URL pattern. Patterns are split on `/` and compared segment by segment:
+
+| Segment | Meaning | Example pattern | Matches | Captures |
+|---|---|---|---|---|
+| `users` | Literal, case-sensitive | `/api/users` | `/api/users` | nothing |
+| `{name}` | Exactly one segment | `/api/users/{id}` | `/api/users/42` | `id` = `42` |
+| `{*name}` | Catch-all: zero or more remaining segments. Must be the entire last segment. | `/api/{*rest}` | `/api`, `/api/users`, `/api/users/42/orders` | `rest` = empty, `users`, `users/42/orders` |
+
+A catch-all captures the raw remainder of the path, so `/api/a//b/` captures `a//b/` and `/api/a%2Fb` captures `a%2Fb`. The query string is never part of the capture, and it is still forwarded to the origin. The request path itself is forwarded unchanged unless a [URL rewrite](#url-rewriting) says otherwise.
+
+```json
+"Unauthenticated": {
+  "ParameterizedUrls": {
+    "GET": ["/api/users/{id}", "/api/{*rest}", "/{*path}"]
+  }
+}
+```
+
+**Precedence.** When more than one route matches a request, Switchboard picks one with these rules, across all endpoints:
+
+1. A route without a catch-all always wins. Among those, the first match in configuration order wins, exactly as in earlier releases.
+2. Catch-all routes are considered only when no other route matches. The most specific one wins: the longest literal prefix first (`/api/v2/{*r}` beats `/api/{*r}`, which beats `/{*r}`), then the most fixed segments, then configuration order.
+
+With the configuration above, `GET /api/users/42` goes to `/api/users/{id}`, `GET /api/orders/7` goes to `/api/{*rest}`, and `GET /anything/else` falls through to `/{*path}`. Configuration order does not matter for these outcomes, so a fallback route can be declared first without shadowing anything.
+
+A few things are worth knowing before you add a root fallback like `/{*path}`:
+
+- It also matches `GET /` and `HEAD /`, so the request is proxied instead of Switchboard serving its built-in homepage. `/favicon.ico` is always served by Switchboard.
+- Routes are per method. A `GET` catch-all does not serve `POST`; add one route per method you want covered.
+- A catch-all in the `Authenticated` group requires credentials for every path it covers.
+
+**Invalid patterns.** `{*name}` must be the entire last segment, and a pattern may contain only one. `/{*rest}/edit`, `/{*a}/{*b}`, and `/files/v{*rest}` are invalid. The management API rejects them with `400`, `POST /config/validate` reports them as `InvalidRoutePattern`, `sb.json` import skips them with a warning (counted in `ImportResult.InvalidPatternsSkipped`), and the server logs a warning at startup for any that remain in configuration. An invalid pattern never matches a request. `{*}`, `{}`, `*`, and `**` are treated as literal text.
+
+Applications embedding Switchboard can use the same logic directly through `RouteMatcher`:
+
+```csharp
+if (!RouteMatcher.TryParsePattern("/api/{*rest}", out UrlPattern pattern, out string error))
+    Console.WriteLine(error);
+
+MatchingApiEndpoint match = RouteMatcher.FindEndpoint(settings.Endpoints, "GET", "/api/users/42");
+string remainder = match?.Parameters["rest"];
+```
+
 ### URL Rewriting
 
 Transform URLs before proxying to backends:
@@ -697,11 +754,14 @@ RewriteUrls = new Dictionary<string, Dictionary<string, string>>
         "GET", new Dictionary<string, string>
         {
             { "/v2/users/{userId}", "/v1/users/{userId}" }, // API versioning
-            { "/api/data", "/legacy/data" }                 // Path migration
+            { "/api/data", "/legacy/data" },                // Path migration
+            { "/legacy/{*rest}", "/v2/{rest}" }             // Move a whole subtree
         }
     }
 }
 ```
+
+Values captured by the source pattern replace `{name}` placeholders in the target (`{*name}` works too). A catch-all source carries the raw remainder, so `/legacy/users/5/` is forwarded as `/v2/users/5/`. Method-specific rules are tried before any-method rules (an empty method key). Within each set, rules without a catch-all are tried first, then the most specific catch-all.
 
 ### Authentication Context Forwarding
 
@@ -865,7 +925,7 @@ Routes without explicit `OpenApiDocumentation` are automatically documented with
 
 - **Summary:** Generated from HTTP method and path (e.g., "GET /api/users/{id}")
 - **Tags:** Uses the endpoint's `Name` or `Identifier`
-- **Path Parameters:** Automatically extracted from URL patterns like `{id}`
+- **Path Parameters:** Automatically extracted from URL patterns like `{id}`. A catch-all such as `/files/{*path}` is documented as the path `/files/{path}` with a `path` parameter, because OpenAPI has no multi-segment parameter syntax. Invalid patterns are left out of the document.
 - **Security:** Automatically added for routes in `Authenticated` groups
 
 #### Accessing Documentation

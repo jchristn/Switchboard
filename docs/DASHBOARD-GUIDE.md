@@ -155,14 +155,20 @@ Routes define which URL patterns this endpoint handles.
 2. In the **Routes** section, click **Add Route**
 3. Configure:
    - **HTTP Method** - GET, POST, PUT, DELETE, etc.
-   - **URL Pattern** - Pattern with optional parameters (e.g., `/api/users/{id}`)
+   - **URL Pattern** - Pattern with optional parameters (e.g., `/api/users/{id}`) or a catch-all (e.g., `/api/{*rest}`)
    - **Requires Authentication** - Check if auth is required
 4. Click **Add**
 
 **URL Pattern Syntax:**
-- Literal paths: `/api/users`
-- Parameters: `/api/users/{id}` (matches `/api/users/123`)
-- Wildcards: `/api/*` (matches anything under `/api/`)
+- Literal paths: `/api/users` (case-sensitive)
+- Parameters: `/api/users/{id}` (matches exactly one segment, e.g. `/api/users/123`)
+- Catch-all: `/api/{*rest}` (matches `/api` and anything under it, e.g. `/api/users/123/orders`). The catch-all must be the whole last segment, and a pattern can have only one.
+
+A bare `*` is literal text, not a wildcard. Routes whose pattern ends in a catch-all show a **Catch-all** badge in the routes table.
+
+When several routes match a request, a route without a catch-all always wins, whichever endpoint it belongs to. Catch-all routes are a fallback: the one with the longest literal prefix wins, so `/api/v2/{*rest}` beats `/api/{*rest}`, which beats `/{*path}`. A `/{*path}` route therefore catches everything no other route handles, including `GET /`.
+
+The dashboard checks the pattern before saving and explains what is wrong, for example when a catch-all is not the last segment (`/api/{*rest}/edit`). The server applies the same check and rejects invalid patterns.
 
 #### Managing Origin Mappings
 
@@ -192,6 +198,12 @@ Transform URLs before forwarding to origins.
 - Target: `/users/{id}`
 
 Requests to `/api/v2/users/123` are forwarded as `/users/123`.
+
+**Catch-all example:**
+- Source: `/legacy/{*rest}`
+- Target: `/v2/{rest}`
+
+Requests to `/legacy/users/123/orders` are forwarded as `/v2/users/123/orders`. The captured remainder is passed through exactly, including a trailing slash. When a request matches both a catch-all rewrite and one without a catch-all, the one without the catch-all is used.
 
 ### Request History
 

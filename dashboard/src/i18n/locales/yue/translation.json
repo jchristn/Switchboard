@@ -632,5 +632,12 @@
     "generic": "發生錯誤。",
     "network": "伺服器冇回應。",
     "unauthorized": "你嘅工作階段已過期。請重新連接。"
+  },
+  "routePattern": {
+    "catchAll": "通配",
+    "catchAllTip": "呢個模式以通配段 ({*name}) 結尾，會配對佢前綴之下嘅所有路徑。只有喺冇非通配路由配對到嗰陣先會用；最具體嘅通配路由優先。",
+    "catchAllPartial": "通配段 {{segment}} 一定要係完整嘅路徑段，例如 /api/{*rest}",
+    "catchAllNotLast": "通配段 {{segment}} 一定要係模式嘅最後一段",
+    "catchAllMultiple": "一個模式只可以有一個通配段（{{segment}} 係第二個）"
   }
 }

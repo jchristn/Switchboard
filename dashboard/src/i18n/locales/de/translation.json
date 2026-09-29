@@ -632,5 +632,12 @@
     "generic": "Etwas ist schiefgelaufen.",
     "network": "Keine Antwort vom Server.",
     "unauthorized": "Ihre Sitzung ist abgelaufen. Bitte verbinden Sie sich erneut."
+  },
+  "routePattern": {
+    "catchAll": "Catch-all",
+    "catchAllTip": "Dieses Muster endet mit einem Catch-all ({*name}) und passt auf jeden Pfad unterhalb seines Präfixes. Es wird nur verwendet, wenn keine Route ohne Catch-all passt; das spezifischste Catch-all gewinnt.",
+    "catchAllPartial": "Das Catch-all {{segment}} muss ein vollständiges Pfadsegment sein, zum Beispiel /api/{*rest}",
+    "catchAllNotLast": "Das Catch-all {{segment}} muss das letzte Segment des Musters sein",
+    "catchAllMultiple": "Ein Muster darf nur ein Catch-all enthalten ({{segment}} ist ein zweites)"
   }
 }

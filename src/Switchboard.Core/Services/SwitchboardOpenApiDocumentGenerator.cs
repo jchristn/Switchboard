@@ -262,6 +262,9 @@ namespace Switchboard.Core.Services
                         string httpMethod = methodUrls.Key.ToLowerInvariant();
                         foreach (string urlPattern in methodUrls.Value)
                         {
+                            // invalid patterns never match a request, so they are not documented
+                            if (!RouteMatcher.TryParsePattern(urlPattern, out _, out _)) continue;
+
                             string path = NormalizePath(urlPattern);
                             List<string> pathParams = ExtractPathParameters(urlPattern);
 
@@ -282,6 +285,9 @@ namespace Switchboard.Core.Services
                         string httpMethod = methodUrls.Key.ToLowerInvariant();
                         foreach (string urlPattern in methodUrls.Value)
                         {
+                            // invalid patterns never match a request, so they are not documented
+                            if (!RouteMatcher.TryParsePattern(urlPattern, out _, out _)) continue;
+
                             string path = NormalizePath(urlPattern);
                             List<string> pathParams = ExtractPathParameters(urlPattern);
 
@@ -584,6 +590,10 @@ namespace Switchboard.Core.Services
             if (!path.StartsWith("/"))
                 path = "/" + path;
 
+            // OpenAPI has no multi-segment parameter syntax, so a catch-all {*name} is documented as an
+            // ordinary path parameter {name}.
+            path = path.Replace("{*", "{");
+
             return path;
         }
 
@@ -594,7 +604,7 @@ namespace Switchboard.Core.Services
             foreach (Match match in matches)
             {
                 if (match.Groups.Count > 1)
-                    parameters.Add(match.Groups[1].Value);
+                    parameters.Add(match.Groups[1].Value.TrimStart('*'));
             }
             return parameters;
         }
@@ -726,7 +736,7 @@ namespace Switchboard.Core.Services
                         ["Id"] = new Dictionary<string, object> { ["type"] = "integer" },
                         ["EndpointGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
                         ["HttpMethod"] = new Dictionary<string, object> { ["type"] = "string" },
-                        ["UrlPattern"] = new Dictionary<string, object> { ["type"] = "string" },
+                        ["UrlPattern"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "URL pattern. {name} matches one segment; {*name} as the entire last segment is a catch-all matching zero or more remaining segments. Routes without a catch-all take precedence over catch-all routes." },
                         ["RequiresAuthentication"] = new Dictionary<string, object> { ["type"] = "boolean" }
                     }
                 },
@@ -755,8 +765,8 @@ namespace Switchboard.Core.Services
                         ["Id"] = new Dictionary<string, object> { ["type"] = "integer" },
                         ["EndpointGuid"] = new Dictionary<string, object> { ["type"] = "string", ["format"] = "uuid" },
                         ["HttpMethod"] = new Dictionary<string, object> { ["type"] = "string" },
-                        ["SourcePattern"] = new Dictionary<string, object> { ["type"] = "string" },
-                        ["TargetPattern"] = new Dictionary<string, object> { ["type"] = "string" }
+                        ["SourcePattern"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "Pattern matched against the request path. Supports {name} parameters and a final {*name} catch-all." },
+                        ["TargetPattern"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "Path sent to the origin. {name} or {*name} placeholders are replaced with values captured by the source pattern." }
                     }
                 },
                 ["BlockedHeader"] = new Dictionary<string, object>

@@ -236,6 +236,8 @@
         /// <summary>
         /// Key is the upper-case HTTP method.
         /// Value is a dictionary where the key is the original URL and the value is the URL to which the request should be directed.
+        /// An empty key applies to any method. Source patterns support {name} parameters and a final {*name} catch-all; values
+        /// they capture replace {name} or {*name} placeholders in the target, for example /legacy/{*rest} to /v2/{rest}.
         /// </summary>
         public Dictionary<string, Dictionary<string, string>> RewriteUrls
         {

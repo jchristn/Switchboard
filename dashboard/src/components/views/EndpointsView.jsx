@@ -20,7 +20,23 @@ import {
   EmptyState,
   Icons,
 } from '../ui';
+import { routePatternError, isCatchAllPattern } from '../../utils/routePattern';
 import './EndpointsView.css';
+
+// Marks a route whose pattern ends in a catch-all ({*name}), which only serves requests no other route matches.
+function CatchAllBadge({ pattern }) {
+  const { t } = useTranslation();
+  if (!isCatchAllPattern(pattern)) return null;
+  return (
+    <Badge tone="info" title={t('routePattern.catchAllTip')}>
+      {t('routePattern.catchAll')}
+    </Badge>
+  );
+}
+
+CatchAllBadge.propTypes = {
+  pattern: PropTypes.string,
+};
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
@@ -288,8 +304,9 @@ function EndpointsView() {
 
   // ---- Detail: routes ----
   const addRoute = async () => {
-    if (!newRoute.urlPattern || newRoute.urlPattern.trim() === '') {
-      showError(t('endpoints.urlPatternRequired'));
+    const patternError = routePatternError(t, newRoute.urlPattern);
+    if (patternError) {
+      showError(patternError);
       return;
     }
     try {
@@ -310,8 +327,9 @@ function EndpointsView() {
 
   const saveRouteEdit = async () => {
     if (!editingRoute) return;
-    if (!editingRoute.urlPattern || editingRoute.urlPattern.trim() === '') {
-      showError(t('endpoints.urlPatternRequired'));
+    const patternError = routePatternError(t, editingRoute.urlPattern);
+    if (patternError) {
+      showError(patternError);
       return;
     }
     try {
@@ -408,6 +426,7 @@ function EndpointsView() {
               <div className="ep-route-line" key={r.id}>
                 <MethodBadge method={r.httpMethod} />
                 <code className="ep-code">{r.urlPattern}</code>
+                <CatchAllBadge pattern={r.urlPattern} />
               </div>
             ))}
             {rowRoutes.length > 4 && (
@@ -900,7 +919,10 @@ function RoutesTab({
             title={t('endpoints.urlPatternTip')}
           />
         ) : (
-          <code className="ep-code">{row.urlPattern}</code>
+          <span className="ep-route-line">
+            <code className="ep-code">{row.urlPattern}</code>
+            <CatchAllBadge pattern={row.urlPattern} />
+          </span>
         ),
     },
     {

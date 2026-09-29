@@ -632,5 +632,12 @@
     "generic": "Algo salió mal.",
     "network": "No hay respuesta del servidor.",
     "unauthorized": "Tu sesión ha expirado. Vuelve a conectarte."
+  },
+  "routePattern": {
+    "catchAll": "Comodín",
+    "catchAllTip": "Este patrón termina en un comodín ({*name}) y coincide con cualquier ruta bajo su prefijo. Solo se usa cuando ninguna ruta sin comodín coincide; gana el comodín más específico.",
+    "catchAllPartial": "El comodín {{segment}} debe ser un segmento de ruta completo, por ejemplo /api/{*rest}",
+    "catchAllNotLast": "El comodín {{segment}} debe ser el último segmento del patrón",
+    "catchAllMultiple": "Un patrón solo puede contener un comodín ({{segment}} es un segundo)"
   }
 }

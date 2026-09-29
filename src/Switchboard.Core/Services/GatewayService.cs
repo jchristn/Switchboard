@@ -711,68 +711,9 @@
 
         private MatchingApiEndpoint FindApiEndpoint(HttpContextBase ctx)
         {
-            NameValueCollection nvc = null;
-
-            Matcher matcher = new Matcher(ctx.Request.Url.RawWithoutQuery);
-
-            foreach (ApiEndpoint ep in _Settings.Endpoints)
-            {
-                #region Unauthenticated-Endpoints
-
-                if (ep.Unauthenticated.ParameterizedUrls != null && ep.Unauthenticated.ParameterizedUrls.Count > 0)
-                {
-                    if (ep.Unauthenticated.ParameterizedUrls.Keys.Any(k => k.Equals(ctx.Request.Method.ToString()))
-                        && ep.Unauthenticated.ParameterizedUrls.Values != null
-                        && ep.Unauthenticated.ParameterizedUrls.Values.Count > 0)
-                    {
-                        KeyValuePair<string, List<string>> match = ep.Unauthenticated.ParameterizedUrls.First(k => k.Key.Equals(ctx.Request.Method.ToString()));
-                        foreach (string url in match.Value)
-                        {
-                            if (matcher.Match(url, out nvc))
-                            {
-                                return new MatchingApiEndpoint
-                                {
-                                    AuthRequired = false,
-                                    Endpoint = ep,
-                                    ParameterizedUrl = url,
-                                    Parameters = nvc
-                                };
-                            }
-                        }
-                    }
-                }
-
-                #endregion
-
-                #region Authenticated-Endpoints
-
-                if (ep.Authenticated.ParameterizedUrls != null && ep.Authenticated.ParameterizedUrls.Count > 0)
-                {
-                    if (ep.Authenticated.ParameterizedUrls.Keys.Any(k => k.Equals(ctx.Request.Method.ToString()))
-                        && ep.Authenticated.ParameterizedUrls.Values != null
-                        && ep.Authenticated.ParameterizedUrls.Values.Count > 0)
-                    {
-                        KeyValuePair<string, List<string>> match = ep.Authenticated.ParameterizedUrls.First(k => k.Key.Equals(ctx.Request.Method.ToString()));
-                        foreach (string url in match.Value)
-                        {
-                            if (matcher.Match(url, out nvc))
-                            {
-                                return new MatchingApiEndpoint
-                                {
-                                    AuthRequired = true,
-                                    Endpoint = ep,
-                                    ParameterizedUrl = url,
-                                    Parameters = nvc
-                                };
-                            }
-                        }
-                    }
-                }
-
-                #endregion
-            }
-
-            return null;
+            // Routes without a catch-all win in configuration order; catch-all routes ({*name}) are a
+            // fallback, most specific first. See RouteMatcher for the full precedence rules.
+            return RouteMatcher.FindEndpoint(_Settings.Endpoints, ctx.Request.Method.ToString(), ctx.Request.Url.RawWithoutQuery);
         }
 
         private OriginServer FindOriginServer(ApiEndpoint endpoint, HttpContextBase ctx, ISet<string> exclude)
