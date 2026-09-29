@@ -342,18 +342,11 @@ namespace Test.Shared
                 return endpoint;
             }
 
+            // Ports below the OS ephemeral range, so outbound client sockets cannot claim them before the
+            // server binds (see TestPorts).
             private static int FreeTcpPort()
             {
-                TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
-                listener.Start();
-                try
-                {
-                    return ((IPEndPoint)listener.LocalEndpoint).Port;
-                }
-                finally
-                {
-                    listener.Stop();
-                }
+                return TestPorts.Next();
             }
         }
     }
