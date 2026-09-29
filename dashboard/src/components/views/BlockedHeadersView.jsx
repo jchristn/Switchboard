@@ -13,6 +13,7 @@ import {
   Icons,
 } from '../ui';
 import './ResourceViews.css';
+import { usePersistentPageSize } from '../../hooks/usePersistentPageSize';
 
 export default function BlockedHeadersView() {
   const { t } = useTranslation();
@@ -24,7 +25,7 @@ export default function BlockedHeadersView() {
   const [error, setError] = useState(null);
 
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = usePersistentPageSize('blockedHeaders', 25);
 
   const [headerName, setHeaderName] = useState('');
   const [adding, setAdding] = useState(false);
@@ -145,6 +146,7 @@ export default function BlockedHeadersView() {
         loading={loading}
         error={error}
         onRetry={load}
+        onRowClick={(r) => setJsonRow(r)}
         emptyMessage={t('blockedHeaders.empty')}
         emptyHint={t('blockedHeaders.emptyHint')}
       />

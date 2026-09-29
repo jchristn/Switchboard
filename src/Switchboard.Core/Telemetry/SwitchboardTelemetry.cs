@@ -39,9 +39,66 @@ namespace Switchboard.Core.Telemetry
         /// </summary>
         public static readonly Meter Meter = new Meter(SourceName, Constants.SoftwareVersion);
 
+        /// <summary>
+        /// Histogram bucket boundaries, in seconds, applied to the latency histograms
+        /// (switchboard_request_duration_seconds and Watson's http.server.request.duration).
+        /// The OpenTelemetry default boundaries (0, 5, 10, ... 10000) are sized for milliseconds, so
+        /// without these nearly every request falls into the first bucket and quantiles are meaningless.
+        /// Default spans 1 ms to 60 s. Must be non-empty, positive, and strictly ascending. Set before the
+        /// telemetry service starts; later changes do not affect a running meter provider.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the value is null, empty, non-positive, or not strictly ascending.</exception>
+        public static double[] DurationBucketBoundariesSeconds
+        {
+            get => (double[])_DurationBucketBoundariesSeconds.Clone();
+            set => _DurationBucketBoundariesSeconds = ValidateBoundaries(value, nameof(DurationBucketBoundariesSeconds));
+        }
+
+        /// <summary>
+        /// Histogram bucket boundaries, in bytes, applied to the request and response body-size histograms
+        /// (Switchboard's and Watson's). Default spans 64 B to 64 MiB in powers of four. Must be non-empty,
+        /// positive, and strictly ascending. Set before the telemetry service starts.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the value is null, empty, non-positive, or not strictly ascending.</exception>
+        public static double[] SizeBucketBoundariesBytes
+        {
+            get => (double[])_SizeBucketBoundariesBytes.Clone();
+            set => _SizeBucketBoundariesBytes = ValidateBoundaries(value, nameof(SizeBucketBoundariesBytes));
+        }
+
+        /// <summary>
+        /// Instrument names that receive <see cref="DurationBucketBoundariesSeconds"/>.
+        /// </summary>
+        public static readonly IReadOnlyList<string> DurationHistogramNames = new List<string>
+        {
+            "switchboard_request_duration_seconds",
+            "http.server.request.duration"
+        };
+
+        /// <summary>
+        /// Instrument names that receive <see cref="SizeBucketBoundariesBytes"/>.
+        /// </summary>
+        public static readonly IReadOnlyList<string> SizeHistogramNames = new List<string>
+        {
+            "switchboard_request_body_bytes",
+            "switchboard_response_body_bytes",
+            "http.server.request.body.size",
+            "http.server.response.body.size"
+        };
+
         #endregion
 
         #region Private-Members
+
+        private static double[] _DurationBucketBoundariesSeconds = new double[]
+        {
+            0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 30, 60
+        };
+
+        private static double[] _SizeBucketBoundariesBytes = new double[]
+        {
+            64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864
+        };
 
         private static readonly Counter<long> _RequestsTotal = Meter.CreateCounter<long>(
             "switchboard_requests_total", "requests", "Total requests handled by the gateway, by endpoint, method, and response code.");
@@ -225,6 +282,22 @@ namespace Switchboard.Core.Telemetry
 
         #region Private-Methods
 
+        private static double[] ValidateBoundaries(double[] value, string name)
+        {
+            if (value == null || value.Length == 0)
+                throw new ArgumentException("Bucket boundaries must contain at least one value.", name);
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!(value[i] > 0) || Double.IsInfinity(value[i]))
+                    throw new ArgumentException("Bucket boundaries must be positive finite numbers; found " + value[i] + " at index " + i + ".", name);
+                if (i > 0 && value[i] <= value[i - 1])
+                    throw new ArgumentException("Bucket boundaries must be strictly ascending; " + value[i] + " at index " + i + " does not exceed " + value[i - 1] + ".", name);
+            }
+
+            return (double[])value.Clone();
+        }
+
         private static IEnumerable<Measurement<long>> ObserveBuildInfo()
         {
             yield return new Measurement<long>(1, new KeyValuePair<string, object?>("version", Constants.SoftwareVersion));
@@ -309,18 +382,21 @@ namespace Switchboard.Core.Telemetry
         {
             SwitchboardSettings? settings = _Settings;
             if (settings == null) yield break;
+            DateTime now = DateTime.UtcNow;
             foreach (OriginServer origin in settings.Origins)
             {
                 long up;
                 long down;
                 lock (origin.Lock)
                 {
-                    up = origin.TotalUptimeMs;
-                    down = origin.TotalDowntimeMs;
+                    // Includes the current, still-open period (same computation as the health API).
+                    origin.ComputeUptime(now, out up, out down);
                 }
+
+                // Nothing is known until the first health check; report no value rather than a false 0%.
                 long total = up + down;
-                double ratio = total > 0 ? (double)up / total : 0.0;
-                yield return new Measurement<double>(ratio, OriginTag(origin));
+                if (total <= 0) continue;
+                yield return new Measurement<double>((double)up / total, OriginTag(origin));
             }
         }
 

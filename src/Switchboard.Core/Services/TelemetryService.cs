@@ -3,6 +3,7 @@
 namespace Switchboard.Core.Services
 {
     using System;
+    using System.Linq;
 
     using OpenTelemetry;
     using OpenTelemetry.Exporter;
@@ -14,6 +15,7 @@ namespace Switchboard.Core.Services
 
     using Switchboard.Core.Settings;
     using Switchboard.Core.Telemetry;
+    using WatsonWebserver.Core.Telemetry;
 
     /// <summary>
     /// Owns the OpenTelemetry metric and trace providers for the process. Constructed only when
@@ -64,6 +66,14 @@ namespace Switchboard.Core.Services
 
             SwitchboardTelemetry.SetSettings(rootSettings);
 
+            // Watson measures the HTTP layer itself (http.server.* and watson.* metrics, one server span
+            // per request) on its own meter and activity source; subscribe to them alongside Switchboard's
+            // so the HTTP and application layers land in the same backends and traces.
+            string? watsonMeter = rootSettings.Webserver?.Telemetry?.MeterName;
+            if (String.IsNullOrEmpty(watsonMeter)) watsonMeter = WatsonTelemetryNames.MeterName;
+            string? watsonSource = rootSettings.Webserver?.Telemetry?.ActivitySourceName;
+            if (String.IsNullOrEmpty(watsonSource)) watsonSource = WatsonTelemetryNames.ActivitySourceName;
+
             ResourceBuilder resourceBuilder = ResourceBuilder.CreateDefault().AddService(
                 serviceName: _Settings.ServiceName,
                 serviceVersion: Constants.SoftwareVersion,
@@ -74,6 +84,8 @@ namespace Switchboard.Core.Services
                 _MeterProvider = Sdk.CreateMeterProviderBuilder()
                     .SetResourceBuilder(resourceBuilder)
                     .AddMeter(SwitchboardTelemetry.SourceName)
+                    .AddMeter(watsonMeter)
+                    .AddView(instrument => BucketView(instrument.Name))
                     .AddOtlpExporter((exporterOptions, readerOptions) =>
                     {
                         ConfigureOtlpExporter(exporterOptions);
@@ -89,6 +101,7 @@ namespace Switchboard.Core.Services
                 _TracerProvider = Sdk.CreateTracerProviderBuilder()
                     .SetResourceBuilder(resourceBuilder)
                     .AddSource(SwitchboardTelemetry.SourceName)
+                    .AddSource(watsonSource)
                     .SetSampler(new ParentBasedSampler(new TraceIdRatioBasedSampler(_Settings.Traces.SamplingRatio)))
                     .AddOtlpExporter(ConfigureOtlpExporter)
                     .Build();
@@ -113,6 +126,19 @@ namespace Switchboard.Core.Services
         #endregion
 
         #region Private-Methods
+
+        // Seconds-scale buckets for latency histograms and byte-scale buckets for size histograms; every
+        // other instrument keeps the SDK default (null means "no change").
+        private static MetricStreamConfiguration? BucketView(string instrumentName)
+        {
+            if (SwitchboardTelemetry.DurationHistogramNames.Contains(instrumentName))
+                return new ExplicitBucketHistogramConfiguration { Boundaries = SwitchboardTelemetry.DurationBucketBoundariesSeconds };
+
+            if (SwitchboardTelemetry.SizeHistogramNames.Contains(instrumentName))
+                return new ExplicitBucketHistogramConfiguration { Boundaries = SwitchboardTelemetry.SizeBucketBoundariesBytes };
+
+            return null;
+        }
 
         /// <summary>
         /// Dispose.

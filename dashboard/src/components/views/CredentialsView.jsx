@@ -18,6 +18,7 @@ import {
   Icons,
 } from '../ui';
 import './ResourceViews.css';
+import { usePersistentPageSize } from '../../hooks/usePersistentPageSize';
 
 const EMPTY_FORM = {
   userGuid: '',
@@ -63,7 +64,7 @@ export default function CredentialsView() {
   const [error, setError] = useState(null);
 
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = usePersistentPageSize('credentials', 25);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -259,7 +260,7 @@ export default function CredentialsView() {
         loading={loading}
         error={error}
         onRetry={load}
-        onRowClick={(r) => setViewRow(r)}
+        onRowClick={(r) => (isAdmin ? openEdit(r) : setViewRow(r))}
         emptyMessage={t('credentials.empty')}
         emptyHint={t('credentials.emptyHint')}
       />

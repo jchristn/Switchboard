@@ -12,9 +12,62 @@ import {
 import './ObservabilityView.css';
 
 // External UI URLs are deployment-specific; the compose stack publishes Grafana on 3001 and
-// Prometheus on 9090. Allow a build-time override without requiring a backend endpoint.
+// Prometheus on 9090, while Loki and Tempo are only reachable inside the Docker network (Grafana
+// queries them). Allow build-time overrides without requiring a backend endpoint.
 const GRAFANA_URL = import.meta.env.VITE_GRAFANA_URL || 'http://localhost:3001';
 const PROMETHEUS_URL = import.meta.env.VITE_PROMETHEUS_URL || 'http://localhost:9090';
+const LOKI_URL = import.meta.env.VITE_LOKI_URL || 'http://loki:3100';
+const TEMPO_URL = import.meta.env.VITE_TEMPO_URL || 'http://tempo:3200';
+
+// Grafana Explore with a provisioned datasource (uids match Docker/telemetry/grafana/provisioning).
+function grafanaExplore(uid, type) {
+  const panes = {
+    a: {
+      datasource: uid,
+      queries: [{ refId: 'A', datasource: { type, uid } }],
+      range: { from: 'now-1h', to: 'now' },
+    },
+  };
+  return `${GRAFANA_URL}/explore?schemaVersion=1&orgId=1&panes=${encodeURIComponent(JSON.stringify(panes))}`;
+}
+
+// The bundled observability stack. Credentials describe the compose defaults.
+const TOOLS = [
+  {
+    key: 'grafana',
+    name: 'Grafana',
+    url: GRAFANA_URL,
+    href: GRAFANA_URL,
+    credentialsKey: 'observability.grafanaCredentials',
+    openKey: 'observability.open',
+  },
+  {
+    key: 'prometheus',
+    name: 'Prometheus',
+    url: PROMETHEUS_URL,
+    href: PROMETHEUS_URL,
+    credentialsKey: 'observability.noCredentials',
+    openKey: 'observability.open',
+  },
+  {
+    key: 'loki',
+    name: 'Loki',
+    url: LOKI_URL,
+    href: grafanaExplore('loki', 'loki'),
+    credentialsKey: 'observability.noCredentials',
+    openKey: 'observability.exploreInGrafana',
+    internal: true,
+  },
+  {
+    key: 'tempo',
+    name: 'Tempo',
+    url: TEMPO_URL,
+    href: grafanaExplore('tempo', 'tempo'),
+    credentialsKey: 'observability.noCredentials',
+    openKey: 'observability.exploreInGrafana',
+    internal: true,
+  },
+];
 
 function signalTone(enabled) {
   return enabled ? 'success' : 'neutral';
@@ -71,36 +124,49 @@ function ObservabilityView() {
   const logs = telemetry?.logs ?? {};
   const otlp = telemetry?.otlp ?? {};
 
-  const links = (
-    <div className="obs-links">
-      <a
-        className="sb-btn sb-btn--ghost"
-        href={GRAFANA_URL}
-        target="_blank"
-        rel="noreferrer noopener"
-        title={t('observability.openGrafanaTip')}
-      >
-        <Icons.ExternalLink aria-hidden="true" />
-        <span>{t('observability.openGrafana')}</span>
-      </a>
-      <a
-        className="sb-btn sb-btn--ghost"
-        href={PROMETHEUS_URL}
-        target="_blank"
-        rel="noreferrer noopener"
-        title={t('observability.openPrometheusTip')}
-      >
-        <Icons.ExternalLink aria-hidden="true" />
-        <span>{t('observability.openPrometheus')}</span>
-      </a>
-    </div>
-  );
-
   return (
     <div className="obs">
-      <PageHeader title={t('observability.title')} subtitle={t('observability.subtitle')} actions={links} />
+      <PageHeader title={t('observability.title')} subtitle={t('observability.subtitle')} />
 
       {error && <ErrorBanner message={error} onRetry={load} />}
+
+      <section className="obs-tools" aria-label={t('observability.toolsTitle')}>
+        {TOOLS.map((tool) => (
+          <article className="obs-tool" key={tool.key}>
+            <div className="obs-tool__head">
+              <h2 className="obs-tool__name">{tool.name}</h2>
+              {tool.internal && (
+                <Badge tone="neutral" title={t('observability.internalOnlyTip')}>
+                  {t('observability.internalOnly')}
+                </Badge>
+              )}
+            </div>
+            <p className="obs-tool__desc">{t(`observability.${tool.key}Desc`)}</p>
+            <dl className="obs-tool__facts">
+              <div className="obs-tool__fact">
+                <dt>{t('observability.url')}</dt>
+                <dd>
+                  <CopyableId value={tool.url} />
+                </dd>
+              </div>
+              <div className="obs-tool__fact">
+                <dt>{t('observability.credentials')}</dt>
+                <dd>{t(tool.credentialsKey)}</dd>
+              </div>
+            </dl>
+            <a
+              className="sb-btn sb-btn--ghost obs-tool__open"
+              href={tool.href}
+              target="_blank"
+              rel="noreferrer noopener"
+              title={t('observability.openTip', { name: tool.name })}
+            >
+              <Icons.ExternalLink aria-hidden="true" />
+              <span>{t(tool.openKey)}</span>
+            </a>
+          </article>
+        ))}
+      </section>
 
       <div className="obs-kpis">
         <Metric

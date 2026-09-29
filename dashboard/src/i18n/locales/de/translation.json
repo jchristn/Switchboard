@@ -151,7 +151,7 @@
   "history": {
     "title": "Anfrageverlauf",
     "subtitle": "Weitergeleitete Anfragen und ihre Ergebnisse.",
-    "kpiRetained": "Aufbewahrt",
+    "kpiRetained": "Alle",
     "kpiFailures": "Fehler",
     "kpiSuccessRate": "Erfolgsrate",
     "kpiAvgDuration": "Durchschn. Dauer",
@@ -201,7 +201,12 @@
     "deleteConfirmTitle": "Anfrage löschen?",
     "deleteConfirmMessage": "Dieser Anfragedatensatz wird dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
     "loadError": "Anfrageverlauf konnte nicht geladen werden.",
-    "detailLoadError": "Anfragedetails konnten nicht geladen werden."
+    "detailLoadError": "Anfragedetails konnten nicht geladen werden.",
+    "kpiAllTip": "Alle gespeicherten Anfragen. Klicken, um alle Filter zu entfernen.",
+    "kpiFailuresTip": "Anfragen, die weder 2xx noch 3xx zurückgegeben haben. Klicken, um alle Nicht-2xx-Anfragen anzuzeigen.",
+    "statusInvalid": "Unbekannter Statusausdruck „{{term}}“",
+    "filterStatusTip": "Nach HTTP-Status filtern. Begriffe mit Kommas trennen: 200 (genau), 200,201 (Liste), 403-429 (Bereich), 4xx (Klasse), >=200,<=299 (Vergleiche ergeben zusammen einen Bereich), !2xx (ausschließen). Beispiel: 200,400,401,403-429.",
+    "clientFilterWindow": "Filter gelten für die {{count}} neuesten Anfragen."
   },
   "apiExplorer": {
     "title": "API-Explorer",
@@ -494,7 +499,9 @@
     "canaryValue": "Canary-Wert",
     "canaryHeaderPlaceholder": "Canary-Header (optional)",
     "canaryValuePlaceholder": "Canary-Wert",
-    "mappingParamsHint": "Gewicht bestimmt den Traffic-Anteil (0 entleert). Priorität bildet Backup-Stufen. Canary bindet passende Anfragen an diesen Origin."
+    "mappingParamsHint": "Gewicht bestimmt den Traffic-Anteil (0 entleert). Priorität bildet Backup-Stufen. Canary bindet passende Anfragen an diesen Origin.",
+    "editRoutes": "Routen bearbeiten",
+    "viewRoutes": "Routen anzeigen"
   },
   "users": {
     "title": "Benutzer",
@@ -638,6 +645,31 @@
     "catchAllTip": "Dieses Muster endet mit einem Catch-all ({*name}) und passt auf jeden Pfad unterhalb seines Präfixes. Es wird nur verwendet, wenn keine Route ohne Catch-all passt; das spezifischste Catch-all gewinnt.",
     "catchAllPartial": "Das Catch-all {{segment}} muss ein vollständiges Pfadsegment sein, zum Beispiel /api/{*rest}",
     "catchAllNotLast": "Das Catch-all {{segment}} muss das letzte Segment des Musters sein",
-    "catchAllMultiple": "Ein Muster darf nur ein Catch-all enthalten ({{segment}} ist ein zweites)"
+    "catchAllMultiple": "Ein Muster darf nur ein Catch-all enthalten ({{segment}} ist ein zweites)",
+    "legendTitle": "Syntax für URL-Muster",
+    "legendLiteral": "Literal",
+    "legendLiteralDesc": "Passt genau auf diesen Pfad. Groß-/Kleinschreibung wird beachtet.",
+    "legendParam": "Parameter",
+    "legendParamDesc": "Passt auf genau ein Segment, z. B. /api/users/42. Der Wert wird als id erfasst.",
+    "legendCatchAll": "Catch-all",
+    "legendCatchAllDesc": "Passt auf /api und alles darunter, z. B. /api/users/42/orders. Muss das gesamte letzte Segment sein, höchstens eines pro Muster.",
+    "legendPrecedence": "Routen ohne Catch-all haben immer Vorrang. Unter Catch-alls gewinnt das längste feste Präfix, also schlägt /api/v2/{*rest} die Route /api/{*rest}.",
+    "legendQuery": "Die Query-Zeichenfolge wird beim Abgleich ignoriert und trotzdem an den Ursprung weitergeleitet."
+  },
+  "observability": {
+    "toolsTitle": "Observability-Stack",
+    "grafanaDesc": "Dashboards und ein zentraler Ort, um Switchboard-Metriken, Traces und Logs gemeinsam zu untersuchen.",
+    "prometheusDesc": "Speichert die Switchboard-Metriken, die vom OpenTelemetry Collector abgerufen werden. Für direkte PromQL-Abfragen.",
+    "lokiDesc": "Speichert Switchboard-Logs. Loki hat keine eigene Weboberfläche; Logs werden über Grafana Explore durchsucht.",
+    "tempoDesc": "Speichert einen Trace pro weitergeleiteter Anfrage. Tempo hat keine eigene Weboberfläche; Traces werden über Grafana Explore durchsucht.",
+    "url": "URL",
+    "credentials": "Standard-Anmeldedaten",
+    "grafanaCredentials": "Nicht erforderlich (anonymer Admin-Zugriff). Falls eine Anmeldung erscheint: admin / admin",
+    "noCredentials": "Keine (keine Authentifizierung)",
+    "internalOnly": "Intern",
+    "internalOnlyTip": "Unter dieser Adresse nur innerhalb des Docker-Netzwerks erreichbar; nicht auf dem Host veröffentlicht.",
+    "open": "Öffnen",
+    "exploreInGrafana": "In Grafana untersuchen",
+    "openTip": "{{name}} in einem neuen Tab öffnen."
   }
 }

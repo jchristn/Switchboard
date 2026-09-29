@@ -151,7 +151,7 @@
   "history": {
     "title": "Historial de solicitudes",
     "subtitle": "Solicitudes redirigidas y sus resultados.",
-    "kpiRetained": "Retenidas",
+    "kpiRetained": "Todas",
     "kpiFailures": "Fallos",
     "kpiSuccessRate": "Tasa de éxito",
     "kpiAvgDuration": "Duración media",
@@ -201,7 +201,12 @@
     "deleteConfirmTitle": "¿Eliminar solicitud?",
     "deleteConfirmMessage": "Este registro de solicitud se eliminará de forma permanente. Esta acción no se puede deshacer.",
     "loadError": "No se pudo cargar el historial de solicitudes.",
-    "detailLoadError": "No se pudieron cargar los detalles de la solicitud."
+    "detailLoadError": "No se pudieron cargar los detalles de la solicitud.",
+    "kpiAllTip": "Todas las solicitudes conservadas. Haga clic para quitar todos los filtros.",
+    "kpiFailuresTip": "Solicitudes que no devolvieron 2xx ni 3xx. Haga clic para ver todas las solicitudes que no son 2xx.",
+    "statusInvalid": "Término de estado no reconocido \"{{term}}\"",
+    "filterStatusTip": "Filtrar por estado HTTP. Separe los términos con comas: 200 (exacto), 200,201 (lista), 403-429 (rango), 4xx (clase), >=200,<=299 (las comparaciones forman un solo rango), !2xx (excluir). Ejemplo: 200,400,401,403-429.",
+    "clientFilterWindow": "Los filtros se aplican a las {{count}} solicitudes más recientes."
   },
   "apiExplorer": {
     "title": "Explorador de API",
@@ -494,7 +499,9 @@
     "canaryValue": "Valor canary",
     "canaryHeaderPlaceholder": "Encabezado canary (opcional)",
     "canaryValuePlaceholder": "Valor canary",
-    "mappingParamsHint": "El peso define la cuota de tráfico (0 drena). La prioridad crea niveles de respaldo. Canary fija las solicitudes coincidentes a este origen."
+    "mappingParamsHint": "El peso define la cuota de tráfico (0 drena). La prioridad crea niveles de respaldo. Canary fija las solicitudes coincidentes a este origen.",
+    "editRoutes": "Editar rutas",
+    "viewRoutes": "Ver rutas"
   },
   "users": {
     "title": "Usuarios",
@@ -638,6 +645,31 @@
     "catchAllTip": "Este patrón termina en un comodín ({*name}) y coincide con cualquier ruta bajo su prefijo. Solo se usa cuando ninguna ruta sin comodín coincide; gana el comodín más específico.",
     "catchAllPartial": "El comodín {{segment}} debe ser un segmento de ruta completo, por ejemplo /api/{*rest}",
     "catchAllNotLast": "El comodín {{segment}} debe ser el último segmento del patrón",
-    "catchAllMultiple": "Un patrón solo puede contener un comodín ({{segment}} es un segundo)"
+    "catchAllMultiple": "Un patrón solo puede contener un comodín ({{segment}} es un segundo)",
+    "legendTitle": "Sintaxis de patrones de URL",
+    "legendLiteral": "Literal",
+    "legendLiteralDesc": "Coincide con esta ruta exacta. Distingue mayúsculas y minúsculas.",
+    "legendParam": "Parámetro",
+    "legendParamDesc": "Coincide con exactamente un segmento, p. ej. /api/users/42. El valor se captura como id.",
+    "legendCatchAll": "Comodín",
+    "legendCatchAllDesc": "Coincide con /api y todo lo que hay debajo, p. ej. /api/users/42/orders. Debe ser el último segmento completo y solo uno por patrón.",
+    "legendPrecedence": "Las rutas sin comodín siempre ganan. Entre comodines gana el prefijo fijo más largo, así que /api/v2/{*rest} gana a /api/{*rest}.",
+    "legendQuery": "La cadena de consulta se ignora al comparar y se sigue reenviando al origen."
+  },
+  "observability": {
+    "toolsTitle": "Pila de observabilidad",
+    "grafanaDesc": "Paneles y un único lugar para explorar juntas las métricas, trazas y registros de Switchboard.",
+    "prometheusDesc": "Almacena las métricas de Switchboard recogidas del OpenTelemetry Collector. Úselo para consultas PromQL directas.",
+    "lokiDesc": "Almacena los registros de Switchboard. No tiene interfaz web propia; consulte los registros en Grafana Explore.",
+    "tempoDesc": "Almacena una traza por cada solicitud proxificada. No tiene interfaz web propia; consulte las trazas en Grafana Explore.",
+    "url": "URL",
+    "credentials": "Credenciales predeterminadas",
+    "grafanaCredentials": "No se necesitan (acceso anónimo de administrador). Si aparece un inicio de sesión: admin / admin",
+    "noCredentials": "Ninguna (sin autenticación)",
+    "internalOnly": "Interno",
+    "internalOnlyTip": "Solo accesible en esta dirección dentro de la red de Docker; no está publicado en el host.",
+    "open": "Abrir",
+    "exploreInGrafana": "Explorar en Grafana",
+    "openTip": "Abrir {{name}} en una pestaña nueva."
   }
 }

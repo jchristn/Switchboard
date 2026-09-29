@@ -99,12 +99,6 @@
   background-color: var(--color-surface-alt);
 }
 
-.sb-chip-label {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-subtle);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
 
 .sb-chip-value {
   font-family: var(--font-family-mono);

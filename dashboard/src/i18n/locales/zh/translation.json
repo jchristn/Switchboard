@@ -151,7 +151,7 @@
   "history": {
     "title": "请求历史",
     "subtitle": "代理的请求及其结果。",
-    "kpiRetained": "已保留",
+    "kpiRetained": "全部",
     "kpiFailures": "失败",
     "kpiSuccessRate": "成功率",
     "kpiAvgDuration": "平均耗时",
@@ -201,7 +201,12 @@
     "deleteConfirmTitle": "删除请求？",
     "deleteConfirmMessage": "此请求记录将被永久移除。此操作无法撤销。",
     "loadError": "无法加载请求历史。",
-    "detailLoadError": "无法加载请求详情。"
+    "detailLoadError": "无法加载请求详情。",
+    "kpiAllTip": "所有保留的请求。点击清除全部筛选条件。",
+    "kpiFailuresTip": "未返回 2xx 或 3xx 的请求。点击显示所有非 2xx 请求。",
+    "statusInvalid": "无法识别的状态条件“{{term}}”",
+    "filterStatusTip": "按 HTTP 状态筛选，多个条件用逗号分隔：200（精确）、200,201（列表）、403-429（范围）、4xx（类别）、>=200,<=299（比较条件合并为一个范围）、!2xx（排除）。示例：200,400,401,403-429。",
+    "clientFilterWindow": "筛选仅作用于最近的 {{count}} 个请求。"
   },
   "apiExplorer": {
     "title": "API 浏览器",
@@ -494,7 +499,9 @@
     "canaryValue": "金丝雀值",
     "canaryHeaderPlaceholder": "金丝雀请求头（可选）",
     "canaryValuePlaceholder": "金丝雀值",
-    "mappingParamsHint": "权重决定流量份额（0 为排空）。优先级用于分层备份。金丝雀将匹配的请求固定到该源。"
+    "mappingParamsHint": "权重决定流量份额（0 为排空）。优先级用于分层备份。金丝雀将匹配的请求固定到该源。",
+    "editRoutes": "编辑路由",
+    "viewRoutes": "查看路由"
   },
   "users": {
     "title": "用户",
@@ -638,6 +645,31 @@
     "catchAllTip": "此模式以通配段 ({*name}) 结尾，匹配其前缀下的所有路径。仅当没有非通配路由匹配时才使用；最具体的通配路由优先。",
     "catchAllPartial": "通配段 {{segment}} 必须是完整的路径段，例如 /api/{*rest}",
     "catchAllNotLast": "通配段 {{segment}} 必须是模式的最后一个段",
-    "catchAllMultiple": "一个模式只能包含一个通配段（{{segment}} 是第二个）"
+    "catchAllMultiple": "一个模式只能包含一个通配段（{{segment}} 是第二个）",
+    "legendTitle": "URL 模式语法",
+    "legendLiteral": "字面量",
+    "legendLiteralDesc": "精确匹配此路径，区分大小写。",
+    "legendParam": "参数",
+    "legendParamDesc": "仅匹配一个路径段，例如 /api/users/42，值捕获为 id。",
+    "legendCatchAll": "通配",
+    "legendCatchAllDesc": "匹配 /api 及其下的所有路径，例如 /api/users/42/orders。必须是完整的最后一段，每个模式只能有一个。",
+    "legendPrecedence": "不含通配段的路由总是优先。多个通配路由中，固定前缀最长的优先，因此 /api/v2/{*rest} 优先于 /api/{*rest}。",
+    "legendQuery": "匹配时忽略查询字符串，但仍会转发到源服务器。"
+  },
+  "observability": {
+    "toolsTitle": "可观测性组件",
+    "grafanaDesc": "仪表板，以及统一查看 Switchboard 指标、链路追踪和日志的入口。",
+    "prometheusDesc": "存储从 OpenTelemetry Collector 采集的 Switchboard 指标。可用于直接执行 PromQL 查询。",
+    "lokiDesc": "存储 Switchboard 日志。Loki 没有自己的网页界面；请通过 Grafana Explore 浏览日志。",
+    "tempoDesc": "为每个代理请求存储一条链路追踪。Tempo 没有自己的网页界面；请通过 Grafana Explore 浏览追踪。",
+    "url": "URL",
+    "credentials": "默认凭据",
+    "grafanaCredentials": "无需登录（匿名管理员访问）。如出现登录页：admin / admin",
+    "noCredentials": "无（不需要身份验证）",
+    "internalOnly": "内部",
+    "internalOnlyTip": "此地址仅在 Docker 网络内可访问，未发布到主机。",
+    "open": "打开",
+    "exploreInGrafana": "在 Grafana 中查看",
+    "openTip": "在新标签页中打开 {{name}}。"
   }
 }

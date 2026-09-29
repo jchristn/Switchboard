@@ -73,8 +73,7 @@ function Topbar() {
           <span className="sb-health-label">{healthLabel}</span>
         </span>
 
-        <span className="sb-topbar-chip">
-          <span className="sb-chip-label">{t('topbar.server')}</span>
+        <span className="sb-topbar-chip" title={t('topbar.server')}>
           <code className="sb-chip-value">{serverUrl}</code>
           <CopyButton value={serverUrl} title={t('topbar.copyServer')} size={14} />
         </span>

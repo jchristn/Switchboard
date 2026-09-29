@@ -42,7 +42,7 @@ function Sidebar() {
                     title={sidebarCollapsed ? t(item.labelKey) : undefined}
                   >
                     <span className="sb-nav-icon">
-                      <Ico size={18} />
+                      <Ico size={16} />
                     </span>
                     {!sidebarCollapsed && <span className="sb-nav-label">{t(item.labelKey)}</span>}
                   </NavLink>

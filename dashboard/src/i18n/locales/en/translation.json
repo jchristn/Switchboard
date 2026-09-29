@@ -158,7 +158,7 @@
   "history": {
     "title": "Request History",
     "subtitle": "Proxied requests and their outcomes.",
-    "kpiRetained": "Retained",
+    "kpiRetained": "All",
     "kpiFailures": "Failures",
     "kpiSuccessRate": "Success Rate",
     "kpiAvgDuration": "Avg Duration",
@@ -224,11 +224,15 @@
     "responseHeadersTip": "The full set of HTTP headers Switchboard returned to the client with the response.",
     "responseBodyTip": "Payload returned to the client. Binary content is not shown inline, and large bodies may be truncated to the captured size.",
     "filterMethodTip": "Show only requests that used this HTTP method; leave as Any to include every method.",
-    "filterStatusTip": "Match requests by HTTP status code; enter a full or partial code such as 404 or 5 to catch all 5xx errors.",
+    "filterStatusTip": "Filter by HTTP status. Separate terms with commas: 200 (exact), 200,201 (list), 403-429 (range), 4xx (class), >=200,<=299 (comparisons combine into one range), !2xx (exclude). Example: 200,400,401,403-429.",
     "filterPathTip": "Show only requests whose path contains this text; matching is case-insensitive and partial.",
     "filterFromTip": "Include only requests received at or after this date and time, shown in your local timezone.",
     "filterToTip": "Include only requests received at or before this date and time, shown in your local timezone.",
-    "failedOnlyTip": "Show only failed requests (5xx or otherwise unsuccessful outcomes); combine with the time range to narrow the history."
+    "failedOnlyTip": "Show only failed requests (5xx or otherwise unsuccessful outcomes); combine with the time range to narrow the history.",
+    "kpiAllTip": "Every retained request. Click to clear all filters.",
+    "kpiFailuresTip": "Requests that did not return 2xx or 3xx. Click to show every non-2xx request.",
+    "statusInvalid": "Unrecognized status term \"{{term}}\"",
+    "clientFilterWindow": "Filters apply to the {{count}} most recent requests."
   },
   "apiExplorer": {
     "title": "API Explorer",
@@ -628,7 +632,9 @@
     "weightTip": "Relative share of traffic this origin receives in weight-aware load-balancing modes - higher means more requests. Set to 0 to drain the origin (stop sending it new traffic).",
     "priorityTip": "Priority tier for this origin; lower numbers are preferred. Only the lowest tier present serves traffic while healthy; higher-numbered tiers act as failover backups.",
     "canaryHeaderTip": "Optional request header name that, when it matches the canary value, forces the request to this origin - used to steer test traffic to a canary backend.",
-    "canaryValueTip": "Value the canary header must equal to divert a request to this origin. Leave both canary fields blank for a normal (non-canary) mapping."
+    "canaryValueTip": "Value the canary header must equal to divert a request to this origin. Leave both canary fields blank for a normal (non-canary) mapping.",
+    "editRoutes": "Edit routes",
+    "viewRoutes": "View routes"
   },
   "users": {
     "title": "Users",
@@ -821,13 +827,36 @@
     "openGrafana": "Open Grafana",
     "openGrafanaTip": "Open the bundled Grafana dashboards in a new tab.",
     "openPrometheus": "Open Prometheus",
-    "openPrometheusTip": "Open the Prometheus query UI in a new tab."
+    "openPrometheusTip": "Open the Prometheus query UI in a new tab.",
+    "toolsTitle": "Observability stack",
+    "grafanaDesc": "Dashboards, plus one place to explore Switchboard metrics, traces, and logs together.",
+    "prometheusDesc": "Stores the Switchboard metrics scraped from the OpenTelemetry Collector. Use it for raw PromQL queries.",
+    "lokiDesc": "Stores Switchboard logs. It has no web UI of its own; browse logs through Grafana Explore.",
+    "tempoDesc": "Stores one trace per proxied request. It has no web UI of its own; browse traces through Grafana Explore.",
+    "url": "URL",
+    "credentials": "Default credentials",
+    "grafanaCredentials": "None needed (anonymous admin access). If a sign-in appears: admin / admin",
+    "noCredentials": "None (no authentication)",
+    "internalOnly": "Internal",
+    "internalOnlyTip": "Reachable only inside the Docker network at this address; it is not published to the host.",
+    "open": "Open",
+    "exploreInGrafana": "Explore in Grafana",
+    "openTip": "Open {{name}} in a new tab."
   },
   "routePattern": {
     "catchAll": "Catch-all",
     "catchAllTip": "This pattern ends in a catch-all ({*name}) and matches every path below its prefix. It is used only when no route without a catch-all matches; the most specific catch-all wins.",
     "catchAllPartial": "The catch-all {{segment}} must be an entire path segment, for example /api/{*rest}",
     "catchAllNotLast": "The catch-all {{segment}} must be the last segment of the pattern",
-    "catchAllMultiple": "A pattern can contain only one catch-all ({{segment}} is a second one)"
+    "catchAllMultiple": "A pattern can contain only one catch-all ({{segment}} is a second one)",
+    "legendTitle": "URL pattern syntax",
+    "legendLiteral": "Literal",
+    "legendLiteralDesc": "Matches this exact path. Case-sensitive.",
+    "legendParam": "Parameter",
+    "legendParamDesc": "Matches exactly one segment, e.g. /api/users/42. The value is captured as id.",
+    "legendCatchAll": "Catch-all",
+    "legendCatchAllDesc": "Matches /api and everything below it, e.g. /api/users/42/orders. Must be the whole last segment, and only one per pattern.",
+    "legendPrecedence": "Routes without a catch-all always win. Among catch-alls, the longest fixed prefix wins, so /api/v2/{*rest} beats /api/{*rest}.",
+    "legendQuery": "The query string is ignored when matching and is still forwarded to the origin."
   }
 }

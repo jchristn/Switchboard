@@ -151,7 +151,7 @@
   "history": {
     "title": "Historique des requêtes",
     "subtitle": "Requêtes proxifiées et leurs résultats.",
-    "kpiRetained": "Conservées",
+    "kpiRetained": "Toutes",
     "kpiFailures": "Échecs",
     "kpiSuccessRate": "Taux de réussite",
     "kpiAvgDuration": "Durée moyenne",
@@ -201,7 +201,12 @@
     "deleteConfirmTitle": "Supprimer la requête ?",
     "deleteConfirmMessage": "Cet enregistrement de requête sera définitivement supprimé. Cette action est irréversible.",
     "loadError": "Impossible de charger l'historique des requêtes.",
-    "detailLoadError": "Impossible de charger les détails de la requête."
+    "detailLoadError": "Impossible de charger les détails de la requête.",
+    "kpiAllTip": "Toutes les requêtes conservées. Cliquez pour effacer tous les filtres.",
+    "kpiFailuresTip": "Requêtes qui n'ont renvoyé ni 2xx ni 3xx. Cliquez pour afficher toutes les requêtes non 2xx.",
+    "statusInvalid": "Terme de statut non reconnu « {{term}} »",
+    "filterStatusTip": "Filtrer par statut HTTP. Séparez les termes par des virgules : 200 (exact), 200,201 (liste), 403-429 (plage), 4xx (classe), >=200,<=299 (les comparaisons forment une seule plage), !2xx (exclure). Exemple : 200,400,401,403-429.",
+    "clientFilterWindow": "Les filtres s'appliquent aux {{count}} requêtes les plus récentes."
   },
   "apiExplorer": {
     "title": "API Explorer",
@@ -494,7 +499,9 @@
     "canaryValue": "Valeur canary",
     "canaryHeaderPlaceholder": "En-tête canary (facultatif)",
     "canaryValuePlaceholder": "Valeur canary",
-    "mappingParamsHint": "Le poids définit la part de trafic (0 draine). La priorité crée des niveaux de secours. Canary fixe les requêtes correspondantes à cette origine."
+    "mappingParamsHint": "Le poids définit la part de trafic (0 draine). La priorité crée des niveaux de secours. Canary fixe les requêtes correspondantes à cette origine.",
+    "editRoutes": "Modifier les routes",
+    "viewRoutes": "Voir les routes"
   },
   "users": {
     "title": "Utilisateurs",
@@ -638,6 +645,31 @@
     "catchAllTip": "Ce motif se termine par un segment générique ({*name}) et correspond à tout chemin sous son préfixe. Il n'est utilisé que si aucune route sans segment générique ne correspond ; le plus spécifique l'emporte.",
     "catchAllPartial": "Le segment générique {{segment}} doit occuper un segment de chemin entier, par exemple /api/{*rest}",
     "catchAllNotLast": "Le segment générique {{segment}} doit être le dernier segment du motif",
-    "catchAllMultiple": "Un motif ne peut contenir qu'un seul segment générique ({{segment}} en est un deuxième)"
+    "catchAllMultiple": "Un motif ne peut contenir qu'un seul segment générique ({{segment}} en est un deuxième)",
+    "legendTitle": "Syntaxe des motifs d'URL",
+    "legendLiteral": "Littéral",
+    "legendLiteralDesc": "Correspond exactement à ce chemin. Sensible à la casse.",
+    "legendParam": "Paramètre",
+    "legendParamDesc": "Correspond à exactement un segment, par ex. /api/users/42. La valeur est capturée sous id.",
+    "legendCatchAll": "Générique",
+    "legendCatchAllDesc": "Correspond à /api et à tout ce qui se trouve en dessous, par ex. /api/users/42/orders. Doit être le dernier segment entier, un seul par motif.",
+    "legendPrecedence": "Les routes sans segment générique l'emportent toujours. Entre génériques, le préfixe fixe le plus long gagne : /api/v2/{*rest} passe avant /api/{*rest}.",
+    "legendQuery": "La chaîne de requête est ignorée lors de la correspondance et reste transmise à l'origine."
+  },
+  "observability": {
+    "toolsTitle": "Pile d'observabilité",
+    "grafanaDesc": "Tableaux de bord et point unique pour explorer ensemble les métriques, traces et journaux de Switchboard.",
+    "prometheusDesc": "Stocke les métriques de Switchboard collectées depuis l'OpenTelemetry Collector. Pour les requêtes PromQL directes.",
+    "lokiDesc": "Stocke les journaux de Switchboard. Loki n'a pas d'interface web ; parcourez les journaux dans Grafana Explore.",
+    "tempoDesc": "Stocke une trace par requête relayée. Tempo n'a pas d'interface web ; parcourez les traces dans Grafana Explore.",
+    "url": "URL",
+    "credentials": "Identifiants par défaut",
+    "grafanaCredentials": "Aucun (accès administrateur anonyme). Si une connexion s'affiche : admin / admin",
+    "noCredentials": "Aucun (pas d'authentification)",
+    "internalOnly": "Interne",
+    "internalOnlyTip": "Accessible à cette adresse uniquement dans le réseau Docker ; non publié sur l'hôte.",
+    "open": "Ouvrir",
+    "exploreInGrafana": "Explorer dans Grafana",
+    "openTip": "Ouvrir {{name}} dans un nouvel onglet."
   }
 }

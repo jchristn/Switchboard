@@ -61,3 +61,27 @@
 .history-path__query {
   color: var(--color-text-subtle);
 }
+
+.history-status-error {
+  color: var(--color-danger);
+}
+
+/* The status error sits under the input without changing the field's height, so the other filters
+   stay aligned while the user types. */
+.history-status-field {
+  position: relative;
+}
+
+.history-status-field .sb-field__hint {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 100%;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.history-window-note {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}

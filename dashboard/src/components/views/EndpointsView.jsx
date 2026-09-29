@@ -22,6 +22,7 @@ import {
 } from '../ui';
 import { routePatternError, isCatchAllPattern } from '../../utils/routePattern';
 import './EndpointsView.css';
+import { usePersistentPageSize } from '../../hooks/usePersistentPageSize';
 
 // Marks a route whose pattern ends in a catch-all ({*name}), which only serves requests no other route matches.
 function CatchAllBadge({ pattern }) {
@@ -100,7 +101,7 @@ function EndpointsView() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = usePersistentPageSize('endpoints', 25);
 
   // ---- Create / edit endpoint modal ----
   const [formOpen, setFormOpen] = useState(false);
@@ -459,6 +460,14 @@ function EndpointsView() {
             onDelete: () => setDeleteTarget(row),
             canEdit: isAdmin,
             canDelete: isAdmin,
+            extra: [
+              {
+                key: 'routes',
+                label: isAdmin ? t('endpoints.editRoutes') : t('endpoints.viewRoutes'),
+                icon: <Icons.Route size={16} />,
+                onClick: () => openDetail(row),
+              },
+            ],
           })}
         />
       ),
@@ -515,7 +524,7 @@ function EndpointsView() {
         loading={loading}
         error={error}
         onRetry={loadEndpoints}
-        onRowClick={openDetail}
+        onRowClick={(r) => (isAdmin ? openEdit(r) : openDetail(r))}
         emptyMessage={t('endpoints.empty')}
         emptyHint={t('endpoints.emptyHint')}
       />
@@ -870,6 +879,37 @@ EndpointFormFields.propTypes = {
 
 // ---------------------------------------------------------------------------
 // Routes tab.
+// Right-hand reference for the URL pattern syntax used by routes (and rewrite sources).
+function PatternLegend({ t }) {
+  const rows = [
+    { pattern: '/api/users', label: t('routePattern.legendLiteral'), desc: t('routePattern.legendLiteralDesc') },
+    { pattern: '/api/users/{id}', label: t('routePattern.legendParam'), desc: t('routePattern.legendParamDesc') },
+    { pattern: '/api/{*rest}', label: t('routePattern.legendCatchAll'), desc: t('routePattern.legendCatchAllDesc') },
+  ];
+  return (
+    <aside className="ep-pattern-legend" aria-label={t('routePattern.legendTitle')}>
+      <h3 className="ep-pattern-legend__title">{t('routePattern.legendTitle')}</h3>
+      <dl className="ep-pattern-legend__list">
+        {rows.map((r) => (
+          <div className="ep-pattern-legend__item" key={r.pattern}>
+            <dt>
+              <code className="ep-code">{r.pattern}</code>
+              <span className="ep-pattern-legend__kind">{r.label}</span>
+            </dt>
+            <dd>{r.desc}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="ep-pattern-legend__note">{t('routePattern.legendPrecedence')}</p>
+      <p className="ep-pattern-legend__note">{t('routePattern.legendQuery')}</p>
+    </aside>
+  );
+}
+
+PatternLegend.propTypes = {
+  t: PropTypes.func.isRequired,
+};
+
 function RoutesTab({
   t,
   isAdmin,
@@ -980,53 +1020,63 @@ function RoutesTab({
   ];
 
   return (
-    <div>
-      {isAdmin && (
-        <div className="ep-inline-form">
-          <select
-            className="form-input ep-inline-form__method"
-            value={newRoute.httpMethod}
-            onChange={(e) => setNewRoute({ ...newRoute, httpMethod: e.target.value })}
-            aria-label={t('endpoints.httpMethod')}
-            title={t('endpoints.httpMethodTip')}
-          >
-            {HTTP_METHODS.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            className="form-input ep-inline-form__grow"
-            placeholder="/api/resource/{id}"
-            value={newRoute.urlPattern}
-            onChange={(e) => setNewRoute({ ...newRoute, urlPattern: e.target.value })}
-            aria-label={t('endpoints.urlPattern')}
-            title={t('endpoints.urlPatternTip')}
-          />
-          <label className="form-checkbox" title={t('endpoints.requiresAuthTip')}>
+    <div className="ep-routes-layout">
+      <div className="ep-routes-main">
+        {isAdmin && (
+          <div className="ep-inline-form">
+            <select
+              className="form-input ep-inline-form__method"
+              value={newRoute.httpMethod}
+              onChange={(e) => setNewRoute({ ...newRoute, httpMethod: e.target.value })}
+              aria-label={t('endpoints.httpMethod')}
+              title={t('endpoints.httpMethodTip')}
+            >
+              {HTTP_METHODS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
             <input
-              type="checkbox"
-              checked={newRoute.requiresAuthentication}
-              onChange={(e) => setNewRoute({ ...newRoute, requiresAuthentication: e.target.checked })}
-              title={t('endpoints.requiresAuthTip')}
+              type="text"
+              className="form-input ep-inline-form__grow"
+              placeholder="/api/resource/{id}"
+              value={newRoute.urlPattern}
+              onChange={(e) => setNewRoute({ ...newRoute, urlPattern: e.target.value })}
+              aria-label={t('endpoints.urlPattern')}
+              title={t('endpoints.urlPatternTip')}
             />
-            {t('endpoints.requiresAuth')}
-          </label>
-          <button type="button" className="btn btn-primary" onClick={onAddRoute}>
-            <Icons.Plus size={16} />
-            {t('endpoints.addRoute')}
-          </button>
-        </div>
-      )}
+            <label className="form-checkbox" title={t('endpoints.requiresAuthTip')}>
+              <input
+                type="checkbox"
+                checked={newRoute.requiresAuthentication}
+                onChange={(e) => setNewRoute({ ...newRoute, requiresAuthentication: e.target.checked })}
+                title={t('endpoints.requiresAuthTip')}
+              />
+              {t('endpoints.requiresAuth')}
+            </label>
+            <button type="button" className="btn btn-primary" onClick={onAddRoute}>
+              <Icons.Plus size={16} />
+              {t('endpoints.addRoute')}
+            </button>
+          </div>
+        )}
 
-      <DataTable
-        columns={columns}
-        rows={routes}
-        rowKey={(row) => row.id}
-        emptyMessage={t('endpoints.routesEmpty')}
-      />
+        <DataTable
+          columns={columns}
+          rows={routes}
+          rowKey={(row) => row.id}
+          onRowClick={
+            isAdmin
+              ? (row) => {
+                  if (!editingRoute || editingRoute.id !== row.id) setEditingRoute({ ...row });
+                }
+              : undefined
+          }
+          emptyMessage={t('endpoints.routesEmpty')}
+        />
+      </div>
+      <PatternLegend t={t} />
     </div>
   );
 }

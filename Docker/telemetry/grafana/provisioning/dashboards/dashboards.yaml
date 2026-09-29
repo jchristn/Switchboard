@@ -2,15 +2,17 @@ apiVersion: 1
 
 providers:
 
+  # All Switchboard dashboards live in one "Switchboard" folder, split by domain (Overview, Traffic &
+  # Endpoints, Origins, Origin Detail, Load Balancing & Resilience, Gateway & HTTP, Traces & Logs).
+  # Start with Overview; every dashboard links to the others from its "Switchboard" menu.
   - name: Switchboard
     orgId: 1
-    # Empty folder => the dashboard lands in the top-level Dashboards list so it is
-    # immediately visible without opening a folder.
-    folder: ''
+    folder: 'Switchboard'
+    folderUid: 'switchboard'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
     allowUiUpdates: true
     options:
-      path: /var/lib/grafana/dashboards
+      path: /var/lib/grafana/dashboards/switchboard
       foldersFromFilesStructure: false

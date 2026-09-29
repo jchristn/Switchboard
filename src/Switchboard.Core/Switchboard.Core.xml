@@ -6205,6 +6205,35 @@
             The shared meter that owns all Switchboard metric instruments.
             </summary>
         </member>
+        <member name="P:Switchboard.Core.Telemetry.SwitchboardTelemetry.DurationBucketBoundariesSeconds">
+            <summary>
+            Histogram bucket boundaries, in seconds, applied to the latency histograms
+            (switchboard_request_duration_seconds and Watson's http.server.request.duration).
+            The OpenTelemetry default boundaries (0, 5, 10, ... 10000) are sized for milliseconds, so
+            without these nearly every request falls into the first bucket and quantiles are meaningless.
+            Default spans 1 ms to 60 s. Must be non-empty, positive, and strictly ascending. Set before the
+            telemetry service starts; later changes do not affect a running meter provider.
+            </summary>
+            <exception cref="T:System.ArgumentException">Thrown when the value is null, empty, non-positive, or not strictly ascending.</exception>
+        </member>
+        <member name="P:Switchboard.Core.Telemetry.SwitchboardTelemetry.SizeBucketBoundariesBytes">
+            <summary>
+            Histogram bucket boundaries, in bytes, applied to the request and response body-size histograms
+            (Switchboard's and Watson's). Default spans 64 B to 64 MiB in powers of four. Must be non-empty,
+            positive, and strictly ascending. Set before the telemetry service starts.
+            </summary>
+            <exception cref="T:System.ArgumentException">Thrown when the value is null, empty, non-positive, or not strictly ascending.</exception>
+        </member>
+        <member name="F:Switchboard.Core.Telemetry.SwitchboardTelemetry.DurationHistogramNames">
+            <summary>
+            Instrument names that receive <see cref="P:Switchboard.Core.Telemetry.SwitchboardTelemetry.DurationBucketBoundariesSeconds"/>.
+            </summary>
+        </member>
+        <member name="F:Switchboard.Core.Telemetry.SwitchboardTelemetry.SizeHistogramNames">
+            <summary>
+            Instrument names that receive <see cref="P:Switchboard.Core.Telemetry.SwitchboardTelemetry.SizeBucketBoundariesBytes"/>.
+            </summary>
+        </member>
         <member name="M:Switchboard.Core.Telemetry.SwitchboardTelemetry.SetSettings(Switchboard.Core.SwitchboardSettings)">
             <summary>
             Register the live settings whose origins/endpoints the observable gauges snapshot at collection time.

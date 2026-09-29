@@ -1131,8 +1131,16 @@ Collector, Prometheus, Tempo, Loki, and Grafana — so you get dashboards with z
   active/pending load, health (`up`), ejections, EWMA latency, and uptime ratio; load-balancer selections;
   retries and failovers; gateway rejections by reason; and build/config info. Series are labeled only by
   bounded values (endpoint, origin, method, status code, reason) — never by raw path or client IP.
+- **HTTP server metrics from Watson**: Switchboard also subscribes to the webserver's built-in `Watson`
+  meter: `http.server.request.duration` by route/method/status, active requests, connections, bytes in and
+  out, uptime, and route/auth counters. Proxied traffic has no route template; the management API does.
+- **Histogram buckets**: latency histograms use seconds-scale buckets from 1 ms to 60 s and body-size
+  histograms use 64 B to 64 MiB, so p50/p95/p99 are accurate. Embedders can change them through
+  `SwitchboardTelemetry.DurationBucketBoundariesSeconds` and `SizeBucketBoundariesBytes` before telemetry
+  starts.
 - **Traces** — one span per proxied request (`proxy {endpoint}`) with the endpoint, origin, method, and
-  status attributes; the W3C `traceparent` header is propagated to the origin so it can continue the trace.
+  status attributes, nested under Watson's server span for the request; the W3C `traceparent` header is
+  propagated to the origin so it can continue the trace.
 - **Logs** — collected from Switchboard's log files by the Collector's filelog receiver and shipped to Loki.
 
 ### Enabling it
@@ -1164,7 +1172,9 @@ After `docker compose up -d`, give the containers a few seconds, then:
    access with the Admin role. (If you later disable anonymous access, Grafana's default login is
    `admin` / `admin`.)
 2. The Prometheus, Tempo, and Loki data sources are already wired up — nothing to configure.
-3. Open **Dashboards** → **Switchboard Overview** (it is provisioned into the top-level list).
+3. Open **Dashboards** → the **Switchboard** folder and start with **Switchboard / Overview**. Every
+   dashboard has a *Switchboard* menu (top right) linking to the others, and they share the time range
+   and the *Instance* variable.
 4. **Panels start empty.** They fill once traffic flows through the proxy and the first export/scrape
    interval elapses (~15 s). Generate some traffic — e.g. `curl http://localhost:8000/` a few times, or
    run the `LoadGenerator` project — then refresh.
@@ -1172,8 +1182,27 @@ After `docker compose up -d`, give the containers a few seconds, then:
    `switchboard`) or **Loki** to query logs (`{service_name="switchboard"}`); you can pivot from a trace
    to its logs and back.
 
-The dashboard's **Observability** view (under *Operate*) shows live telemetry status — enabled signals,
-OTLP endpoint, sampling ratio — and links straight out to Grafana and Prometheus.
+### Grafana dashboards
+
+The dashboards are provisioned from `Docker/telemetry/grafana/dashboards/switchboard/` into one
+**Switchboard** folder, split by domain so each one answers a single question:
+
+| Dashboard | Answers |
+|---|---|
+| **Overview** | Is the gateway healthy right now? Request rate, success and error ratios, latency quantiles, origin fleet state, rejections, retries, and a per-instance table. Start here. |
+| **Traffic & Endpoints** | Which endpoint is slow or failing? An endpoint scorecard (rate, share, 4xx/5xx ratio, p50/p95/p99, body sizes), top-N panels, and a latency heatmap. |
+| **Origins** | Which backends need attention? Built for large fleets: a *needs attention* table that lists only unhealthy, ejected, erroring, or check-failing origins; a sortable, filterable table of every origin (health, routing, uptime, rate, error ratio, p95, EWMA, active, queued, check failures, ejections); top-N outlier panels; and per-origin health timelines. |
+| **Origin Detail** | Everything about one origin (click any origin in the tables): health, errors including transport failures, latency, saturation, which endpoints route to it and at what share, and its failed and slow traces. |
+| **Load Balancing & Resilience** | How is traffic actually split? Endpoint-to-origin share, retries, failovers, retry ratio, and ejections. |
+| **Gateway & HTTP** | What is the gateway rejecting and why (400/401/413/429/502/505), plus Watson's HTTP layer: connections, throughput, and per-route latency for the management API. |
+| **Traces & Logs** | Failed and slow requests from Tempo, and warning/error log volume and search from Loki. |
+
+Origin panels treat status code `0` (connection refused, reset, or timed out) as an error alongside 5xx,
+so a backend that is down shows up even though it never returned a status.
+
+The dashboard's **Observability** view (under *Operate*) shows live telemetry status (enabled signals,
+OTLP endpoint, sampling ratio) and cards for Grafana, Prometheus, Loki, and Tempo with their URLs and
+default credentials.
 
 > Ports (host): Grafana `3001`, Prometheus `9090`, OTLP `4317`/`4318`. See the
 > [Docker Compose services table](#quick-start-with-docker-compose) for every service's URL and credentials.

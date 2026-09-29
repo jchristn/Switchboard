@@ -20,6 +20,7 @@ import {
   Icons,
 } from '../ui';
 import './ResourceViews.css';
+import { usePersistentPageSize } from '../../hooks/usePersistentPageSize';
 
 const EMPTY_FORM = {
   identifier: '',
@@ -68,7 +69,7 @@ export default function OriginsView() {
   const [error, setError] = useState(null);
 
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = usePersistentPageSize('origins', 25);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -296,7 +297,7 @@ export default function OriginsView() {
         loading={loading}
         error={error}
         onRetry={load}
-        onRowClick={(r) => setViewRow(r)}
+        onRowClick={(r) => openEdit(r)}
         emptyMessage={t('origins.empty')}
         emptyHint={t('origins.emptyHint')}
       />

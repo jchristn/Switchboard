@@ -24,8 +24,14 @@ import {
 } from '../ui';
 import RequestDetailsModal from './RequestDetailsModal';
 import './HistoryView.css';
+import { usePersistentPageSize } from '../../hooks/usePersistentPageSize';
+import { parseStatusFilter, NON_2XX_FILTER } from '../../utils/statusFilter';
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+
+// The history API cannot filter by method, status, or path, so while one of those filters is active
+// the dashboard fetches this many of the most recent requests, filters them, and pages the result.
+const CLIENT_FILTER_WINDOW = 1000;
 
 const EMPTY_FILTERS = {
   method: '',
@@ -71,10 +77,14 @@ function HistoryView() {
 
   // Table state.
   const [rows, setRows] = useState([]);
+  // Filtered total when filtering in the browser (null when the server-side count applies), and
+  // whether the fetched window was full (older requests exist that the filter did not see).
+  const [clientTotal, setClientTotal] = useState(null);
+  const [clientWindowFull, setClientWindowFull] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = usePersistentPageSize('history', 50);
 
   // Filters — `?failed=1` presets the failed-only toggle.
   const [filters, setFilters] = useState(() => ({
@@ -110,6 +120,14 @@ function HistoryView() {
     setFilters({ ...EMPTY_FILTERS });
     setPageNumber(1);
   };
+
+  // "Failures" KPI card: every status except 2xx, with all other filters cleared.
+  const showNon2xx = () => {
+    setFilters({ ...EMPTY_FILTERS, status: NON_2XX_FILTER });
+    setPageNumber(1);
+  };
+
+  const statusFilter = useMemo(() => parseStatusFilter(filters.status), [filters.status]);
 
   // ---- Stats ----
   const loadStats = useCallback(async () => {
@@ -162,15 +180,18 @@ function HistoryView() {
     // getFailedHistory is the server-side path for failed-only when no date window is
     // applied; otherwise we fetch the window via getHistory and drop successes below.
     const useFailedEndpoint = filters.failedOnly && !start && !end;
+    const clientFiltering = Boolean(filters.method || filters.path || (filters.status && statusFilter.valid));
+    const fetchSkip = clientFiltering ? 0 : skip;
+    const fetchTake = clientFiltering ? CLIENT_FILTER_WINDOW : take;
     try {
       let data = useFailedEndpoint
-        ? await apiClient.getFailedHistory({ skip, take })
-        : await apiClient.getHistory({ skip, take, start, end });
+        ? await apiClient.getFailedHistory({ skip: fetchSkip, take: fetchTake })
+        : await apiClient.getHistory({ skip: fetchSkip, take: fetchTake, start, end });
       data = Array.isArray(data) ? data : [];
+      const windowFull = clientFiltering && data.length >= CLIENT_FILTER_WINDOW;
 
       // Client-side fallback: the backend does not filter by method/status/path (nor
-      // by failed when a date window forced us onto getHistory), so apply those here
-      // over the fetched page.
+      // by failed when a date window forced us onto getHistory), so apply those here.
       if (filters.failedOnly && !useFailedEndpoint) {
         data = data.filter((r) => r.success === false || (r.statusCode >= 400));
       }
@@ -178,23 +199,32 @@ function HistoryView() {
         const m = filters.method.toUpperCase();
         data = data.filter((r) => String(r.httpMethod || '').toUpperCase() === m);
       }
-      if (filters.status) {
-        const needle = filters.status.trim().toLowerCase();
-        data = data.filter((r) => String(r.statusCode ?? '').toLowerCase().includes(needle));
+      if (filters.status && statusFilter.valid) {
+        data = data.filter((r) => statusFilter.matches(r.statusCode));
       }
       if (filters.path) {
         const needle = filters.path.trim().toLowerCase();
         data = data.filter((r) => String(r.requestPath || '').toLowerCase().includes(needle));
       }
 
-      setRows(data);
+      if (clientFiltering) {
+        setClientTotal(data.length);
+        setClientWindowFull(windowFull);
+        setRows(data.slice(skip, skip + take));
+      } else {
+        setClientTotal(null);
+        setClientWindowFull(false);
+        setRows(data);
+      }
     } catch (err) {
       setError(err?.message || t('history.loadError'));
+      setClientTotal(null);
+      setClientWindowFull(false);
       setRows([]);
     } finally {
       setLoading(false);
     }
-  }, [apiClient, pageNumber, pageSize, filters, t]);
+  }, [apiClient, pageNumber, pageSize, filters, statusFilter, t]);
 
   useEffect(() => {
     loadRows();
@@ -266,16 +296,17 @@ function HistoryView() {
 
   const successRateText = useMemo(() => {
     if (!stats || stats.successRate == null) return '—';
-    const rate = stats.successRate > 1 ? stats.successRate / 100 : stats.successRate;
-    return fmt.percent(rate, 1);
+    // The server reports successRate on a 0-100 scale, which is what fmt.percent expects.
+    return fmt.percent(stats.successRate, 1);
   }, [stats, fmt]);
 
   const total = useMemo(() => {
+    if (clientTotal != null) return clientTotal;
     if (stats) {
       return filters.failedOnly ? stats.failedRequests ?? rows.length : stats.totalRequests ?? rows.length;
     }
     return rows.length;
-  }, [stats, filters.failedOnly, rows.length]);
+  }, [clientTotal, stats, filters.failedOnly, rows.length]);
 
   // ---- Table columns ----
   const columns = useMemo(
@@ -368,11 +399,16 @@ function HistoryView() {
       />
 
       <div className="history-kpis">
-        <Metric label={t('history.kpiRetained')} value={fmt.number(stats?.totalRequests ?? rows.length)} />
         <Metric
-          label={t('history.kpiFailures')}
+          label={<span title={t('history.kpiAllTip')}>{t('history.kpiRetained')}</span>}
+          value={fmt.number(stats?.totalRequests ?? rows.length)}
+          onClick={clearFilters}
+        />
+        <Metric
+          label={<span title={t('history.kpiFailuresTip')}>{t('history.kpiFailures')}</span>}
           value={fmt.number(stats?.failedRequests ?? 0)}
           tone={stats?.failedRequests ? 'danger' : 'neutral'}
+          onClick={showNon2xx}
         />
         <Metric label={t('history.kpiSuccessRate')} value={successRateText} tone="success" />
         <Metric
@@ -398,12 +434,22 @@ function HistoryView() {
                 ))}
               </select>
             </Field>
-            <Field label={<span title={t('history.filterStatusTip')}>{t('history.filterStatus')}</span>}>
+            <Field
+              className="history-status-field"
+              label={<span title={t('history.filterStatusTip')}>{t('history.filterStatus')}</span>}
+              hint={
+                statusFilter.valid ? null : (
+                  <span className="history-status-error" role="alert">
+                    {t('history.statusInvalid', { term: statusFilter.invalidTerm })}
+                  </span>
+                )
+              }
+            >
               <input
                 type="text"
                 className="sb-input"
                 title={t('history.filterStatusTip')}
-                inputMode="numeric"
+                aria-invalid={statusFilter.valid ? undefined : true}
                 placeholder={t('history.statusAny')}
                 value={filters.status}
                 onChange={(e) => updateFilter({ status: e.target.value })}
@@ -456,6 +502,12 @@ function HistoryView() {
             </FilterActions>
           )}
       </FilterBar>
+
+      {clientWindowFull && (
+        <p className="history-window-note" role="note">
+          {t('history.clientFilterWindow', { count: fmt.number(CLIENT_FILTER_WINDOW) })}
+        </p>
+      )}
 
       <TablePagination
         total={total}

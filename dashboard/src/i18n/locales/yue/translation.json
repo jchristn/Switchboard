@@ -151,7 +151,7 @@
   "history": {
     "title": "請求記錄",
     "subtitle": "已代理嘅請求同結果。",
-    "kpiRetained": "已保留",
+    "kpiRetained": "全部",
     "kpiFailures": "失敗",
     "kpiSuccessRate": "成功率",
     "kpiAvgDuration": "平均時長",
@@ -201,7 +201,12 @@
     "deleteConfirmTitle": "刪除請求？",
     "deleteConfirmMessage": "此請求記錄將會永久移除。此操作無法復原。",
     "loadError": "無法載入請求記錄。",
-    "detailLoadError": "無法載入請求詳情。"
+    "detailLoadError": "無法載入請求詳情。",
+    "kpiAllTip": "所有保留咗嘅請求。撳一下清除所有篩選。",
+    "kpiFailuresTip": "冇回傳 2xx 或 3xx 嘅請求。撳一下顯示所有非 2xx 請求。",
+    "statusInvalid": "認唔到嘅狀態條件「{{term}}」",
+    "filterStatusTip": "按 HTTP 狀態篩選，條件用逗號分隔：200（精確）、200,201（列表）、403-429（範圍）、4xx（類別）、>=200,<=299（比較條件合併成一個範圍）、!2xx（排除）。例子：200,400,401,403-429。",
+    "clientFilterWindow": "篩選只套用喺最近嘅 {{count}} 個請求。"
   },
   "apiExplorer": {
     "title": "API Explorer",
@@ -494,7 +499,9 @@
     "canaryValue": "金絲雀值",
     "canaryHeaderPlaceholder": "金絲雀請求頭（可選）",
     "canaryValuePlaceholder": "金絲雀值",
-    "mappingParamsHint": "權重決定流量份額（0 為排空）。優先級用嚟分層備份。金絲雀將匹配嘅請求固定到該源。"
+    "mappingParamsHint": "權重決定流量份額（0 為排空）。優先級用嚟分層備份。金絲雀將匹配嘅請求固定到該源。",
+    "editRoutes": "編輯路由",
+    "viewRoutes": "睇路由"
   },
   "users": {
     "title": "用戶",
@@ -638,6 +645,31 @@
     "catchAllTip": "呢個模式以通配段 ({*name}) 結尾，會配對佢前綴之下嘅所有路徑。只有喺冇非通配路由配對到嗰陣先會用；最具體嘅通配路由優先。",
     "catchAllPartial": "通配段 {{segment}} 一定要係完整嘅路徑段，例如 /api/{*rest}",
     "catchAllNotLast": "通配段 {{segment}} 一定要係模式嘅最後一段",
-    "catchAllMultiple": "一個模式只可以有一個通配段（{{segment}} 係第二個）"
+    "catchAllMultiple": "一個模式只可以有一個通配段（{{segment}} 係第二個）",
+    "legendTitle": "URL 模式語法",
+    "legendLiteral": "字面值",
+    "legendLiteralDesc": "完全配對呢條路徑，分大細楷。",
+    "legendParam": "參數",
+    "legendParamDesc": "只配對一段路徑，例如 /api/users/42，值會記錄做 id。",
+    "legendCatchAll": "通配",
+    "legendCatchAllDesc": "配對 /api 同佢之下嘅所有路徑，例如 /api/users/42/orders。一定要係完整嘅最後一段，每個模式只可以有一個。",
+    "legendPrecedence": "冇通配段嘅路由永遠優先。多個通配路由之中，固定前綴最長嗰個優先，所以 /api/v2/{*rest} 會贏 /api/{*rest}。",
+    "legendQuery": "配對時會忽略查詢字串，但仍然會轉發去源伺服器。"
+  },
+  "observability": {
+    "toolsTitle": "可觀測性組件",
+    "grafanaDesc": "儀表板，同埋一個地方一齊睇 Switchboard 嘅指標、追蹤同日誌。",
+    "prometheusDesc": "儲存由 OpenTelemetry Collector 收集嘅 Switchboard 指標。可以直接用 PromQL 查詢。",
+    "lokiDesc": "儲存 Switchboard 日誌。Loki 冇自己嘅網頁介面；請經 Grafana Explore 睇日誌。",
+    "tempoDesc": "每個代理請求儲存一條追蹤。Tempo 冇自己嘅網頁介面；請經 Grafana Explore 睇追蹤。",
+    "url": "URL",
+    "credentials": "預設憑證",
+    "grafanaCredentials": "唔使登入（匿名管理員存取）。如果見到登入頁：admin / admin",
+    "noCredentials": "冇（唔使驗證）",
+    "internalOnly": "內部",
+    "internalOnlyTip": "呢個地址只可以喺 Docker 網絡入面連到，冇發佈到主機。",
+    "open": "開啟",
+    "exploreInGrafana": "喺 Grafana 睇",
+    "openTip": "喺新分頁開啟 {{name}}。"
   }
 }

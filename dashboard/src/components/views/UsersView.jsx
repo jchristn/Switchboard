@@ -17,6 +17,7 @@ import {
   Icons,
 } from '../ui';
 import './ResourceViews.css';
+import { usePersistentPageSize } from '../../hooks/usePersistentPageSize';
 
 const EMPTY_FORM = {
   username: '',
@@ -61,7 +62,7 @@ export default function UsersView() {
   const [error, setError] = useState(null);
 
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = usePersistentPageSize('users', 25);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -232,7 +233,7 @@ export default function UsersView() {
         loading={loading}
         error={error}
         onRetry={load}
-        onRowClick={(r) => setViewRow(r)}
+        onRowClick={(r) => (isAdmin ? openEdit(r) : setViewRow(r))}
         emptyMessage={t('users.empty')}
         emptyHint={t('users.emptyHint')}
       />

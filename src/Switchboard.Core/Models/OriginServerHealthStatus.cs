@@ -153,17 +153,7 @@ namespace Switchboard.Core.Models
                 status.ConsecutiveFailures = origin.HealthCheckFailure;
                 status.LastError = origin.LastError;
 
-                long uptimeMs = origin.TotalUptimeMs;
-                long downtimeMs = origin.TotalDowntimeMs;
-
-                if (origin.LastStateChangeUtc.HasValue)
-                {
-                    long currentPeriodMs = (long)(DateTime.UtcNow - origin.LastStateChangeUtc.Value).TotalMilliseconds;
-                    if (currentPeriodMs < 0) currentPeriodMs = 0;
-
-                    if (origin.Healthy) uptimeMs += currentPeriodMs;
-                    else downtimeMs += currentPeriodMs;
-                }
+                origin.ComputeUptime(DateTime.UtcNow, out long uptimeMs, out long downtimeMs);
 
                 status.TotalUptimeMs = uptimeMs;
                 status.TotalDowntimeMs = downtimeMs;

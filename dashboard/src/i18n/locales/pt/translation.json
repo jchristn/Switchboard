@@ -151,7 +151,7 @@
   "history": {
     "title": "Histórico de pedidos",
     "subtitle": "Pedidos encaminhados e os respetivos resultados.",
-    "kpiRetained": "Retidos",
+    "kpiRetained": "Todas",
     "kpiFailures": "Falhas",
     "kpiSuccessRate": "Taxa de sucesso",
     "kpiAvgDuration": "Duração média",
@@ -201,7 +201,12 @@
     "deleteConfirmTitle": "Eliminar pedido?",
     "deleteConfirmMessage": "Este registo de pedido será removido permanentemente. Esta ação não pode ser anulada.",
     "loadError": "Não foi possível carregar o histórico de pedidos.",
-    "detailLoadError": "Não foi possível carregar os detalhes do pedido."
+    "detailLoadError": "Não foi possível carregar os detalhes do pedido.",
+    "kpiAllTip": "Todas as requisições retidas. Clique para limpar todos os filtros.",
+    "kpiFailuresTip": "Requisições que não retornaram 2xx nem 3xx. Clique para mostrar todas as requisições não 2xx.",
+    "statusInvalid": "Termo de status não reconhecido \"{{term}}\"",
+    "filterStatusTip": "Filtrar por status HTTP. Separe os termos com vírgulas: 200 (exato), 200,201 (lista), 403-429 (intervalo), 4xx (classe), >=200,<=299 (comparações formam um único intervalo), !2xx (excluir). Exemplo: 200,400,401,403-429.",
+    "clientFilterWindow": "Os filtros se aplicam às {{count}} requisições mais recentes."
   },
   "apiExplorer": {
     "title": "API Explorer",
@@ -494,7 +499,9 @@
     "canaryValue": "Valor canary",
     "canaryHeaderPlaceholder": "Cabeçalho canary (opcional)",
     "canaryValuePlaceholder": "Valor canary",
-    "mappingParamsHint": "O peso define a fração de tráfego (0 drena). A prioridade cria níveis de backup. Canary fixa requisições correspondentes a esta origem."
+    "mappingParamsHint": "O peso define a fração de tráfego (0 drena). A prioridade cria níveis de backup. Canary fixa requisições correspondentes a esta origem.",
+    "editRoutes": "Editar rotas",
+    "viewRoutes": "Ver rotas"
   },
   "users": {
     "title": "Utilizadores",
@@ -638,6 +645,31 @@
     "catchAllTip": "Este padrão termina em um curinga ({*name}) e corresponde a qualquer caminho abaixo do seu prefixo. Só é usado quando nenhuma rota sem curinga corresponde; vence o curinga mais específico.",
     "catchAllPartial": "O curinga {{segment}} deve ser um segmento de caminho inteiro, por exemplo /api/{*rest}",
     "catchAllNotLast": "O curinga {{segment}} deve ser o último segmento do padrão",
-    "catchAllMultiple": "Um padrão pode conter apenas um curinga ({{segment}} é um segundo)"
+    "catchAllMultiple": "Um padrão pode conter apenas um curinga ({{segment}} é um segundo)",
+    "legendTitle": "Sintaxe de padrões de URL",
+    "legendLiteral": "Literal",
+    "legendLiteralDesc": "Corresponde exatamente a este caminho. Diferencia maiúsculas de minúsculas.",
+    "legendParam": "Parâmetro",
+    "legendParamDesc": "Corresponde a exatamente um segmento, ex.: /api/users/42. O valor é capturado como id.",
+    "legendCatchAll": "Curinga",
+    "legendCatchAllDesc": "Corresponde a /api e a tudo abaixo dele, ex.: /api/users/42/orders. Deve ser o último segmento inteiro, apenas um por padrão.",
+    "legendPrecedence": "Rotas sem curinga sempre vencem. Entre curingas, vence o prefixo fixo mais longo, então /api/v2/{*rest} vence /api/{*rest}.",
+    "legendQuery": "A query string é ignorada na comparação e continua sendo encaminhada à origem."
+  },
+  "observability": {
+    "toolsTitle": "Pilha de observabilidade",
+    "grafanaDesc": "Painéis e um único lugar para explorar juntos as métricas, traces e logs do Switchboard.",
+    "prometheusDesc": "Armazena as métricas do Switchboard coletadas do OpenTelemetry Collector. Use para consultas PromQL diretas.",
+    "lokiDesc": "Armazena os logs do Switchboard. Não tem interface web própria; consulte os logs no Grafana Explore.",
+    "tempoDesc": "Armazena um trace por requisição encaminhada. Não tem interface web própria; consulte os traces no Grafana Explore.",
+    "url": "URL",
+    "credentials": "Credenciais padrão",
+    "grafanaCredentials": "Não são necessárias (acesso anônimo de administrador). Se aparecer um login: admin / admin",
+    "noCredentials": "Nenhuma (sem autenticação)",
+    "internalOnly": "Interno",
+    "internalOnlyTip": "Acessível neste endereço apenas dentro da rede Docker; não é publicado no host.",
+    "open": "Abrir",
+    "exploreInGrafana": "Explorar no Grafana",
+    "openTip": "Abrir {{name}} em uma nova aba."
   }
 }

@@ -151,7 +151,7 @@
   "history": {
     "title": "リクエスト履歴",
     "subtitle": "プロキシされたリクエストとその結果。",
-    "kpiRetained": "保持済み",
+    "kpiRetained": "すべて",
     "kpiFailures": "失敗",
     "kpiSuccessRate": "成功率",
     "kpiAvgDuration": "平均所要時間",
@@ -201,7 +201,12 @@
     "deleteConfirmTitle": "リクエストを削除しますか?",
     "deleteConfirmMessage": "このリクエスト記録は完全に削除されます。この操作は取り消せません。",
     "loadError": "リクエスト履歴を読み込めませんでした。",
-    "detailLoadError": "リクエストの詳細を読み込めませんでした。"
+    "detailLoadError": "リクエストの詳細を読み込めませんでした。",
+    "kpiAllTip": "保持されているすべてのリクエスト。クリックするとすべてのフィルターを解除します。",
+    "kpiFailuresTip": "2xx または 3xx を返さなかったリクエスト。クリックすると 2xx 以外のリクエストをすべて表示します。",
+    "statusInvalid": "認識できないステータス条件「{{term}}」",
+    "filterStatusTip": "HTTP ステータスで絞り込みます。条件はカンマ区切り: 200（完全一致）、200,201（リスト）、403-429（範囲）、4xx（クラス）、>=200,<=299（比較条件は 1 つの範囲になります）、!2xx（除外）。例: 200,400,401,403-429。",
+    "clientFilterWindow": "フィルターは直近 {{count}} 件のリクエストに適用されます。"
   },
   "apiExplorer": {
     "title": "APIエクスプローラー",
@@ -494,7 +499,9 @@
     "canaryValue": "カナリア 値",
     "canaryHeaderPlaceholder": "カナリア ヘッダー（任意）",
     "canaryValuePlaceholder": "カナリア 値",
-    "mappingParamsHint": "重みはトラフィック配分を決めます（0 でドレイン）。優先度はバックアップの階層です。カナリアは一致するリクエストをこのオリジンに固定します。"
+    "mappingParamsHint": "重みはトラフィック配分を決めます（0 でドレイン）。優先度はバックアップの階層です。カナリアは一致するリクエストをこのオリジンに固定します。",
+    "editRoutes": "ルートを編集",
+    "viewRoutes": "ルートを表示"
   },
   "users": {
     "title": "ユーザー",
@@ -638,6 +645,31 @@
     "catchAllTip": "このパターンはキャッチオール ({*name}) で終わり、プレフィックス以下のすべてのパスに一致します。キャッチオールを含まないルートが一致しない場合にのみ使用され、最も具体的なキャッチオールが優先されます。",
     "catchAllPartial": "キャッチオール {{segment}} はパスセグメント全体である必要があります（例: /api/{*rest}）",
     "catchAllNotLast": "キャッチオール {{segment}} はパターンの最後のセグメントである必要があります",
-    "catchAllMultiple": "パターンに含められるキャッチオールは 1 つだけです（{{segment}} は 2 つ目です）"
+    "catchAllMultiple": "パターンに含められるキャッチオールは 1 つだけです（{{segment}} は 2 つ目です）",
+    "legendTitle": "URL パターンの書式",
+    "legendLiteral": "リテラル",
+    "legendLiteralDesc": "このパスと完全一致します。大文字と小文字を区別します。",
+    "legendParam": "パラメーター",
+    "legendParamDesc": "ちょうど 1 つのセグメントに一致します（例: /api/users/42）。値は id として取得されます。",
+    "legendCatchAll": "キャッチオール",
+    "legendCatchAllDesc": "/api とその配下すべてに一致します（例: /api/users/42/orders）。最後のセグメント全体である必要があり、1 つのパターンに 1 つだけです。",
+    "legendPrecedence": "キャッチオールを含まないルートが常に優先されます。キャッチオール同士では固定プレフィックスが最も長いものが優先され、/api/v2/{*rest} は /api/{*rest} より優先されます。",
+    "legendQuery": "クエリ文字列は照合時には無視され、オリジンにはそのまま転送されます。"
+  },
+  "observability": {
+    "toolsTitle": "オブザーバビリティ スタック",
+    "grafanaDesc": "ダッシュボードと、Switchboard のメトリクス・トレース・ログをまとめて調べるための場所です。",
+    "prometheusDesc": "OpenTelemetry Collector から収集した Switchboard のメトリクスを保存します。PromQL を直接実行する場合に使用します。",
+    "lokiDesc": "Switchboard のログを保存します。Loki には独自の Web UI がないため、Grafana Explore でログを参照します。",
+    "tempoDesc": "プロキシされたリクエストごとに 1 つのトレースを保存します。Tempo には独自の Web UI がないため、Grafana Explore でトレースを参照します。",
+    "url": "URL",
+    "credentials": "既定の認証情報",
+    "grafanaCredentials": "不要（匿名の管理者アクセス）。サインイン画面が表示された場合: admin / admin",
+    "noCredentials": "なし（認証なし）",
+    "internalOnly": "内部",
+    "internalOnlyTip": "このアドレスは Docker ネットワーク内からのみ到達でき、ホストには公開されていません。",
+    "open": "開く",
+    "exploreInGrafana": "Grafana で表示",
+    "openTip": "{{name}} を新しいタブで開きます。"
   }
 }

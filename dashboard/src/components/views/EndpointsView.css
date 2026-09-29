@@ -82,14 +82,84 @@
   border-radius: var(--radius-md);
 }
 
-.ep-inline-form__method {
-  inline-size: 120px;
+/* Two classes so these widths win over the global .form-input { width: 100% }, keeping the method
+   select compact and on the same line as the URL pattern. */
+.ep-inline-form .ep-inline-form__method {
+  inline-size: 110px;
+  width: 110px;
   flex: 0 0 auto;
 }
 
-.ep-inline-form__grow {
+.ep-inline-form .ep-inline-form__grow {
+  width: auto;
   flex: 1 1 220px;
-  min-inline-size: 180px;
+  min-inline-size: 160px;
+}
+
+/* Routes tab: form and table on the left, pattern legend on the right. */
+.ep-routes-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: var(--spacing-4);
+  align-items: start;
+}
+
+.ep-routes-main {
+  min-width: 0;
+}
+
+.ep-pattern-legend {
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.ep-pattern-legend__title {
+  margin: 0 0 var(--spacing-3);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.ep-pattern-legend__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin: 0;
+}
+
+.ep-pattern-legend__item dt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--spacing-2);
+}
+
+.ep-pattern-legend__item dd {
+  margin: 2px 0 0;
+}
+
+.ep-pattern-legend__kind {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.ep-pattern-legend__note {
+  margin: var(--spacing-3) 0 0;
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 900px) {
+  .ep-routes-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Settings tab actions bar */

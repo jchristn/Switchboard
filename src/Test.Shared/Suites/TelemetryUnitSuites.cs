@@ -7,6 +7,7 @@ namespace Test.Shared
     using System.Threading.Tasks;
 
     using Switchboard.Core;
+    using Switchboard.Core.Services;
     using Switchboard.Core.Settings;
     using Switchboard.Core.Telemetry;
     using Touchstone.Core;
@@ -198,6 +199,42 @@ namespace Test.Shared
                         }
                     }),
 
+                    Case("UptimeGaugeIncludesCurrentPeriod", "The uptime gauge counts the current, still-open period and omits never-checked origins", () =>
+                    {
+                        DateTime now = DateTime.UtcNow;
+                        OriginServer steady = new OriginServer { Identifier = "steady", Name = "steady", Hostname = "127.0.0.1", Port = 11, Healthy = true };
+                        steady.FirstCheckUtc = now.AddMinutes(-10);
+                        steady.LastStateChangeUtc = now.AddMinutes(-10);
+
+                        OriginServer failing = new OriginServer { Identifier = "failing", Name = "failing", Hostname = "127.0.0.1", Port = 12, Healthy = false };
+                        failing.FirstCheckUtc = now.AddMinutes(-4);
+                        failing.TotalUptimeMs = 3 * 60 * 1000;
+                        failing.LastStateChangeUtc = now.AddMinutes(-1);
+
+                        OriginServer neverChecked = new OriginServer { Identifier = "unchecked", Name = "unchecked", Hostname = "127.0.0.1", Port = 13, Healthy = false };
+
+                        SwitchboardSettings root = new SwitchboardSettings();
+                        root.Origins.Add(steady);
+                        root.Origins.Add(failing);
+                        root.Origins.Add(neverChecked);
+                        try
+                        {
+                            SwitchboardTelemetry.SetSettings(root);
+                            List<Sample> uptime = Matching(Capture(true, null), "switchboard_origin_uptime_ratio");
+                            Check.Equal(1.0, uptime.Single(s => s.Tag("origin") == "steady").Value, "healthy since first check is 100%");
+                            double f = uptime.Single(s => s.Tag("origin") == "failing").Value;
+                            Check.True(f > 0.74 && f < 0.76, "3 min up then 1 min down is about 75% (got " + f + ")");
+                            Check.False(uptime.Any(s => s.Tag("origin") == "unchecked"), "never-checked origin reports no uptime");
+                        }
+                        finally
+                        {
+                            SwitchboardTelemetry.ClearSettings();
+                        }
+
+                        steady.ComputeUptime(now, out long up, out long down);
+                        Check.True(up >= 599000 && down == 0, "shared computation includes the open healthy period");
+                    }),
+
                     Case("ObservableGaugesInertWithoutSettings", "With no settings registered, per-origin gauges emit nothing", () =>
                     {
                         SwitchboardTelemetry.ClearSettings();
@@ -206,6 +243,74 @@ namespace Test.Shared
                         Check.False(Has(samples, "switchboard_config_origins"), "no config gauge without settings");
                         // build_info is static and does not depend on settings.
                         Check.True(Has(samples, "switchboard_build_info"), "build info still reported");
+                    }),
+
+                    Case("WatsonMeterAndSourceSubscribed", "The telemetry service subscribes Watson's built-in meter and activity source", () =>
+                    {
+                        TelemetrySettings telemetry = new TelemetrySettings { Enable = true };
+                        telemetry.Otlp.Endpoint = "http://127.0.0.1:1";
+                        SwitchboardSettings root = new SwitchboardSettings();
+                        SyslogLogging.LoggingModule logging = new SyslogLogging.LoggingModule();
+                        logging.Settings.EnableConsole = false;
+
+                        using (TelemetryService svc = new TelemetryService(telemetry, root, logging))
+                        using (Meter watson = new Meter(WatsonWebserver.Core.Telemetry.WatsonTelemetryNames.MeterName))
+                        using (Meter unrelated = new Meter("Switchboard.Test.Unrelated"))
+                        using (System.Diagnostics.ActivitySource watsonSource = new System.Diagnostics.ActivitySource(WatsonWebserver.Core.Telemetry.WatsonTelemetryNames.ActivitySourceName))
+                        using (System.Diagnostics.ActivitySource unrelatedSource = new System.Diagnostics.ActivitySource("Switchboard.Test.Unrelated"))
+                        {
+                            Check.True(watson.CreateCounter<long>("probe").Enabled, "Watson meter instruments are collected");
+                            Check.False(unrelated.CreateCounter<long>("probe").Enabled, "unrelated meters are not collected");
+                            Check.True(watsonSource.HasListeners(), "Watson activity source is traced");
+                            Check.False(unrelatedSource.HasListeners(), "unrelated activity sources are not traced");
+                        }
+                    }),
+
+                    Case("HistogramBucketDefaults", "Latency buckets are seconds-scale (1 ms to 60 s) and size buckets are byte-scale", () =>
+                    {
+                        double[] d = SwitchboardTelemetry.DurationBucketBoundariesSeconds;
+                        Check.Equal(0.001, d.First(), "smallest latency bucket is 1 ms");
+                        Check.Equal(60.0, d.Last(), "largest latency bucket is 60 s");
+                        Check.True(d.Count(x => x <= 1.0) >= 10, "most latency resolution sits below one second");
+                        double[] s = SwitchboardTelemetry.SizeBucketBoundariesBytes;
+                        Check.Equal(64.0, s.First(), "smallest size bucket is 64 B");
+                        Check.Equal(67108864.0, s.Last(), "largest size bucket is 64 MiB");
+                        for (int i = 1; i < d.Length; i++) Check.True(d[i] > d[i - 1], "latency buckets ascend");
+                        for (int i = 1; i < s.Length; i++) Check.True(s[i] > s[i - 1], "size buckets ascend");
+                    }),
+
+                    Case("HistogramBucketNamesCoverWatson", "Bucket views cover both Switchboard's and Watson's histograms", () =>
+                    {
+                        Check.True(SwitchboardTelemetry.DurationHistogramNames.Contains("switchboard_request_duration_seconds"), "switchboard latency");
+                        Check.True(SwitchboardTelemetry.DurationHistogramNames.Contains("http.server.request.duration"), "watson latency");
+                        Check.True(SwitchboardTelemetry.SizeHistogramNames.Contains("switchboard_request_body_bytes"), "switchboard request size");
+                        Check.True(SwitchboardTelemetry.SizeHistogramNames.Contains("http.server.response.body.size"), "watson response size");
+                        Check.False(SwitchboardTelemetry.DurationHistogramNames.Contains("switchboard_request_body_bytes"), "size histogram not given latency buckets");
+                    }),
+
+                    Case("HistogramBucketValidation", "Bucket setters reject empty, non-positive, and unordered boundaries and return copies", () =>
+                    {
+                        double[] original = SwitchboardTelemetry.DurationBucketBoundariesSeconds;
+                        try
+                        {
+                            Check.Throws<ArgumentException>(() => SwitchboardTelemetry.DurationBucketBoundariesSeconds = null!, "null");
+                            Check.Throws<ArgumentException>(() => SwitchboardTelemetry.DurationBucketBoundariesSeconds = new double[0], "empty");
+                            Check.Throws<ArgumentException>(() => SwitchboardTelemetry.DurationBucketBoundariesSeconds = new double[] { 0, 1 }, "zero");
+                            Check.Throws<ArgumentException>(() => SwitchboardTelemetry.DurationBucketBoundariesSeconds = new double[] { 1, 0.5 }, "descending");
+                            Check.Throws<ArgumentException>(() => SwitchboardTelemetry.SizeBucketBoundariesBytes = new double[] { 64, 64 }, "duplicate");
+                            Check.Throws<ArgumentException>(() => SwitchboardTelemetry.SizeBucketBoundariesBytes = new double[] { double.PositiveInfinity }, "infinite");
+
+                            SwitchboardTelemetry.DurationBucketBoundariesSeconds = new double[] { 0.1, 1 };
+                            Check.Equal(2, SwitchboardTelemetry.DurationBucketBoundariesSeconds.Length, "valid value accepted");
+
+                            double[] copy = SwitchboardTelemetry.DurationBucketBoundariesSeconds;
+                            copy[0] = 999;
+                            Check.Equal(0.1, SwitchboardTelemetry.DurationBucketBoundariesSeconds[0], "getter returns a copy");
+                        }
+                        finally
+                        {
+                            SwitchboardTelemetry.DurationBucketBoundariesSeconds = original;
+                        }
                     }),
 
                     Case("RecordingInertWithoutListener", "Recording with no listener attached is a safe no-op", () =>

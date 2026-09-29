@@ -4,6 +4,49 @@
 
 v5.2.0
 
+### Unreleased
+
+Changes on `main` since the v5.2.0 packages and images were published. The version number has not been
+changed for these yet.
+
+- **Accurate latency quantiles.** Latency histograms (`switchboard_request_duration_seconds` and Watson's
+  `http.server.request.duration`) recorded seconds but used OpenTelemetry's default bucket boundaries
+  (0, 5, 10 ... 10000), which are sized for milliseconds, so nearly every request fell in the first bucket
+  and p50/p95/p99 were meaningless. They now use seconds-scale buckets from 1 ms to 60 s, and the body-size
+  histograms use 64 B to 64 MiB. The boundaries are public on `SwitchboardTelemetry`
+  (`DurationBucketBoundariesSeconds`, `SizeBucketBoundariesBytes`) for embedders
+- **Origin uptime gauge fixed.** `switchboard_origin_uptime_ratio` ignored the current, still-open health
+  period, so an origin healthy since startup reported 0% and one that had just gone down reported 100%. It
+  now uses the same computation as the management API's health endpoint (shared through
+  `OriginServer.ComputeUptime`) and reports nothing until an origin has been checked
+- **Watson HTTP telemetry collected.** The telemetry service now subscribes to Watson's built-in meter and
+  activity source, adding `http.server.*` and `watson.*` metrics (per-route latency, connections,
+  throughput, uptime) and a server span per request that the proxy span nests under
+- **Grafana dashboards rebuilt by domain.** The single overview dashboard is replaced by seven dashboards
+  in a *Switchboard* folder: Overview, Traffic & Endpoints, Origins, Origin Detail, Load Balancing &
+  Resilience, Gateway & HTTP, and Traces & Logs. The Origins dashboard is designed for large fleets: a
+  *needs attention* table that lists only problem origins, a sortable and filterable table of every origin
+  that drills into Origin Detail, top-N outlier panels, and per-origin health timelines. Origin error ratios
+  count transport failures (status code 0) alongside 5xx
+- **Dashboard (web UI):**
+  - Rows-per-page choices are remembered per table across page visits and reloads
+  - Clicking a table row opens the Edit dialog when the user can edit, and the View dialog otherwise
+  - The API Endpoints row menu has an *Edit routes* action (*View routes* for read-only users)
+  - The route editor keeps the HTTP method narrow and on the same line as the URL pattern, and shows a
+    URL-pattern legend (literal, parameter, catch-all, precedence) in a side column
+  - Request History: the success rate showed 1/100th of its value (0.8% instead of 80%) and is fixed; the
+    *Retained* card is now *All* and clears every filter; the *Failures* card filters to non-2xx; and the
+    Status filter accepts codes, lists, ranges, classes, comparisons, and exclusions (`200`, `200,201`,
+    `403-429`, `4xx`, `>=200,<=299`, `!2xx`) with an inline error for anything it cannot parse. Status,
+    method, and path filters apply to the 1,000 most recent requests with an accurate filtered count
+  - The Observability view has cards for Grafana, Prometheus, Loki, and Tempo with URLs and default
+    credentials
+  - Smaller navigation text and padding; the top-bar server badge no longer repeats the word "Server"
+- **Docker:** `update.bat` pulls images first as separate, labeled steps that stop on failure, and starts
+  the stack with `--pull always`
+- **Tests:** new unit cases for the Watson subscription, histogram buckets, and the uptime gauge (console
+  runner 267 to 272), and 15 new dashboard unit tests (persistent page size and the status filter parser)
+
 ### Changes in v5.2.0
 
 - **Catch-all routes.** A route pattern whose last segment is `{*name}` matches that prefix and zero or more

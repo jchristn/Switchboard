@@ -315,6 +315,24 @@
         internal DateTime? LastStateChangeUtc = null;
         internal long TotalUptimeMs = 0;
         internal long TotalDowntimeMs = 0;
+
+        // Cumulative healthy and unhealthy time including the current, still-open period. Totals are only
+        // banked on a state change, so an origin healthy since startup has banked nothing and must have its
+        // open period added. Caller must hold Lock. Both are zero until the first health check.
+        internal void ComputeUptime(DateTime nowUtc, out long uptimeMs, out long downtimeMs)
+        {
+            uptimeMs = TotalUptimeMs;
+            downtimeMs = TotalDowntimeMs;
+
+            if (LastStateChangeUtc.HasValue)
+            {
+                long currentPeriodMs = (long)(nowUtc - LastStateChangeUtc.Value).TotalMilliseconds;
+                if (currentPeriodMs < 0) currentPeriodMs = 0;
+
+                if (Healthy) uptimeMs += currentPeriodMs;
+                else downtimeMs += currentPeriodMs;
+            }
+        }
         internal string LastError = null;
         internal readonly List<HealthCheckRecord> CheckHistory = new List<HealthCheckRecord>();
 
