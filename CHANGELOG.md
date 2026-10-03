@@ -2,7 +2,23 @@
 
 ## Current Version
 
-v5.2.2
+v5.2.3
+
+### Changes in v5.2.3
+
+A dependency-maintenance release. There are no API or behavior changes; all test runners (console, xUnit,
+NUnit) pass on net8.0 and net10.0.
+
+- Library (`SwitchboardApplicationProxy`) dependencies: Microsoft.Data.SqlClient 7.0.2 -> 7.1.1,
+  Microsoft.Data.Sqlite 10.0.11 -> 10.0.12, OpenTelemetry and OpenTelemetry.Exporter.OpenTelemetryProtocol
+  1.17.0 -> 1.19.1, RestWrapper 3.2.0 -> 3.3.1, SerializationHelper 2.0.3 -> 2.1.0, SyslogLogging
+  2.2.1 -> 2.3.1, Watson 7.2.1 -> 7.2.2
+- Test dependencies: NUnit 4.6.1 -> 5.0.0, NUnit.Analyzers 4.14.0 -> 4.15.0, NUnit3TestAdapter
+  6.2.0 -> 6.3.0, Microsoft.NET.Test.Sdk 18.9.0 -> 18.10.1, coverlet.collector 10.0.1 -> 10.1.0, Touchstone
+  (Core, Cli, XunitAdapter, NunitAdapter) 0.1.12 -> 0.2.0
+- Docker images were rebuilt in place under the existing `v5.2.2` and `latest` tags with these dependencies
+
+## Previous Versions
 
 ### Changes in v5.2.2
 
@@ -23,8 +39,6 @@ and server are unchanged apart from the version number.
 - Overview's origin tile read "0 of 3 healthy" for healthy origins because it counted health from
   `/origins`, which carries no health state; it now uses `/origins/health`, which also makes unhealthy
   origins appear under Attention again
-
-## Previous Versions
 
 ### Changes in v5.2.1
 

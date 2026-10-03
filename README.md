@@ -21,7 +21,7 @@ Switchboard is a **production-ready reverse proxy and API gateway** that combine
 ## Table of Contents
 
 - [What is Switchboard?](#what-is-switchboard)
-- [What's New in v5.2.2](#whats-new-in-v522)
+- [What's New in v5.2.3](#whats-new-in-v523)
 - [Key Features](#key-features)
 - [Who is it for?](#who-is-it-for)
 - [When to Use Switchboard](#when-to-use-switchboard)
@@ -101,9 +101,16 @@ Built on **.NET 8.0** and **.NET 10.0**, Switchboard is designed for developers 
 
 ---
 
-## What's New in v5.2.2
+## What's New in v5.2.3
 
-**Current version: `v5.2.2`.** See the [change log](CHANGELOG.md) for the complete history.
+**Current version: `v5.2.3`.** See the [change log](CHANGELOG.md) for the complete history.
+
+v5.2.3 is a dependency-maintenance release: the library's NuGet dependencies (Microsoft.Data.SqlClient,
+Microsoft.Data.Sqlite, OpenTelemetry, RestWrapper, SerializationHelper, SyslogLogging, Watson) and the test
+frameworks are updated to their latest versions, with no API or behavior changes. The Docker images keep
+the `v5.2.2` tag and were rebuilt with the updated dependencies.
+
+### Highlights from v5.2.2
 
 v5.2.2 is a dashboard release. The KPI tiles on Overview and Request History now describe the time range
 selected on the activity chart (all-time totals appear as notes), both charts query the same bucket-aligned

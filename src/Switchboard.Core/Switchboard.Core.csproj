@@ -2,10 +2,10 @@
 
 	<PropertyGroup>
 		<Title>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Title>
-		<Version>5.2.2</Version>
+		<Version>5.2.3</Version>
 		<Description>Switchboard is a lightweight application proxy combining reverse proxy and API gateway functionality.</Description>
 		<Copyright>(c)2026 Joel Christner</Copyright>
-		<PackageReleaseNotes>v5.2.2: Dashboard-only release; the library is unchanged from v5.2.1 apart from the version number. v5.2.1: Accurate telemetry. Latency histograms (switchboard_request_duration_seconds and Watson http.server.request.duration) now use seconds-scale buckets (1 ms to 60 s) instead of the millisecond-scaled defaults that made p50/p95/p99 meaningless; body-size histograms use 64 B to 64 MiB (configurable via SwitchboardTelemetry.DurationBucketBoundariesSeconds and SizeBucketBoundariesBytes). switchboard_origin_uptime_ratio now includes the current health period (it reported 0% for origins healthy since startup) via the shared OriginServer.ComputeUptime. The telemetry service also collects Watson's built-in HTTP server metrics and spans. Includes v5.2.0 catch-all routing ({*name}).</PackageReleaseNotes>
+		<PackageReleaseNotes>v5.2.3: Dependency update (Microsoft.Data.SqlClient 7.1.1, Microsoft.Data.Sqlite 10.0.12, OpenTelemetry 1.19.1, RestWrapper 3.3.1, SerializationHelper 2.1.0, SyslogLogging 2.3.1, Watson 7.2.2); no API or behavior changes. v5.2.2: Dashboard-only release; the library is unchanged from v5.2.1 apart from the version number. v5.2.1: Accurate telemetry. Latency histograms (switchboard_request_duration_seconds and Watson http.server.request.duration) now use seconds-scale buckets (1 ms to 60 s) instead of the millisecond-scaled defaults that made p50/p95/p99 meaningless; body-size histograms use 64 B to 64 MiB (configurable via SwitchboardTelemetry.DurationBucketBoundariesSeconds and SizeBucketBoundariesBytes). switchboard_origin_uptime_ratio now includes the current health period (it reported 0% for origins healthy since startup) via the shared OriginServer.ComputeUptime. The telemetry service also collects Watson's built-in HTTP server metrics and spans. Includes v5.2.0 catch-all routing ({*name}).</PackageReleaseNotes>
 
 		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -51,16 +51,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
 		<PackageReference Include="MySqlConnector" Version="2.6.2" />
 		<PackageReference Include="Npgsql" Version="10.0.3" />
-		<PackageReference Include="OpenTelemetry" Version="1.17.0" />
-		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
-		<PackageReference Include="RestWrapper" Version="3.2.0" />
-		<PackageReference Include="SerializationHelper" Version="2.0.3" />
-		<PackageReference Include="SyslogLogging" Version="2.2.1" />
-		<PackageReference Include="Watson" Version="7.2.1" />
+		<PackageReference Include="OpenTelemetry" Version="1.19.1" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
+		<PackageReference Include="RestWrapper" Version="3.3.1" />
+		<PackageReference Include="SerializationHelper" Version="2.1.0" />
+		<PackageReference Include="SyslogLogging" Version="2.3.1" />
+		<PackageReference Include="Watson" Version="7.2.2" />
 	</ItemGroup>
 
 </Project>
